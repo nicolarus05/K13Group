@@ -1,0 +1,326 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── 1. usuarios ────────────────────────────────────────────────────────────
+model Usuario {
+  id           String    @id @default(uuid()) @db.Uuid
+  username     String    @unique @db.VarChar(50)
+  nombre       String    @db.VarChar(150)
+  email        String?   @db.VarChar(150)
+  passwordHash String    @map("password_hash") @db.VarChar(255)
+  activo       Boolean   @default(true)
+  ultimoLogin  DateTime? @map("ultimo_login")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  sesiones     Sesion[]
+  actividad    Actividad[]
+  importaciones Importacion[]
+  exportaciones Exportacion[]
+
+  @@map("usuarios")
+}
+
+// ─── 2. sesiones ────────────────────────────────────────────────────────────
+model Sesion {
+  id        String   @id @default(uuid()) @db.Uuid
+  usuarioId String   @map("usuario_id") @db.Uuid
+  token     String   @db.VarChar(255)
+  ip        String?  @db.VarChar(50)
+  userAgent String?  @map("user_agent")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
+
+  @@map("sesiones")
+}
+
+// ─── 3. clientes ────────────────────────────────────────────────────────────
+model Cliente {
+  id           String    @id @default(uuid()) @db.Uuid
+  nombre       String    @db.VarChar(150)
+  telefono     String?   @db.VarChar(30)
+  email        String?   @db.VarChar(150)
+  observaciones String?
+  estadoId     String    @map("estado_id") @db.Uuid
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  estado        Estado         @relation("EstadoCliente", fields: [estadoId], references: [id])
+  suscripciones Suscripcion[]
+  recordatorios Recordatorio[]
+
+  @@map("clientes")
+}
+
+// ─── 4. suscripciones ───────────────────────────────────────────────────────
+model Suscripcion {
+  id           String    @id @default(uuid()) @db.Uuid
+  clienteId    String    @map("cliente_id") @db.Uuid
+  productoId   String    @map("producto_id") @db.Uuid
+  tarifaId     String    @map("tarifa_id") @db.Uuid
+  servidorId   String    @map("servidor_id") @db.Uuid
+  referenciaId String?   @map("referencia_id") @db.Uuid
+  fechaInicio  DateTime  @map("fecha_inicio") @db.Date
+  fechaFin     DateTime  @map("fecha_fin") @db.Date
+  estadoId     String    @map("estado_id") @db.Uuid
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  cliente       Cliente       @relation(fields: [clienteId], references: [id])
+  producto      Producto      @relation(fields: [productoId], references: [id])
+  tarifa        Tarifa        @relation(fields: [tarifaId], references: [id])
+  servidor      Servidor      @relation(fields: [servidorId], references: [id])
+  referencia    Referencia?   @relation(fields: [referenciaId], references: [id])
+  estado        Estado        @relation("EstadoSuscripcion", fields: [estadoId], references: [id])
+  renovaciones  Renovacion[]
+  movimientos   MovimientoFinanciero[]
+  recordatorios Recordatorio[]
+
+  @@map("suscripciones")
+}
+
+// ─── 5. renovaciones ────────────────────────────────────────────────────────
+model Renovacion {
+  id            String   @id @default(uuid()) @db.Uuid
+  suscripcionId String   @map("suscripcion_id") @db.Uuid
+  fechaInicio   DateTime @map("fecha_inicio") @db.Date
+  fechaFin      DateTime @map("fecha_fin") @db.Date
+  importe       Decimal  @db.Decimal(10, 2)
+  metodoPagoId  String   @map("metodo_pago_id") @db.Uuid
+  observaciones String?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  suscripcion   Suscripcion          @relation(fields: [suscripcionId], references: [id])
+  metodoPago    MetodoPago           @relation(fields: [metodoPagoId], references: [id])
+  movimientos   MovimientoFinanciero[]
+
+  @@map("renovaciones")
+}
+
+// ─── 6. productos ───────────────────────────────────────────────────────────
+model Producto {
+  id          String    @id @default(uuid()) @db.Uuid
+  nombre      String    @unique @db.VarChar(100)
+  descripcion String?
+  activo      Boolean   @default(true)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  tarifas       Tarifa[]
+  suscripciones Suscripcion[]
+
+  @@map("productos")
+}
+
+// ─── 7. tarifas ─────────────────────────────────────────────────────────────
+model Tarifa {
+  id            String    @id @default(uuid()) @db.Uuid
+  productoId    String    @map("producto_id") @db.Uuid
+  nombre        String    @db.VarChar(100)
+  duracionMeses Int       @map("duracion_meses") @db.SmallInt
+  precio        Decimal   @db.Decimal(10, 2)
+  activo        Boolean   @default(true)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  producto      Producto      @relation(fields: [productoId], references: [id])
+  suscripciones Suscripcion[]
+
+  @@map("tarifas")
+}
+
+// ─── 8. servidores ──────────────────────────────────────────────────────────
+model Servidor {
+  id        String    @id @default(uuid()) @db.Uuid
+  nombre    String    @unique @db.VarChar(100)
+  activo    Boolean   @default(true)
+  createdAt DateTime  @default(now()) @map("created_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  suscripciones Suscripcion[]
+
+  @@map("servidores")
+}
+
+// ─── 9. referencias ─────────────────────────────────────────────────────────
+model Referencia {
+  id           String    @id @default(uuid()) @db.Uuid
+  nombre       String    @unique @db.VarChar(100)
+  activo       Boolean   @default(true)
+  observaciones String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  suscripciones Suscripcion[]
+
+  @@map("referencias")
+}
+
+// ─── 10. movimientos_financieros ────────────────────────────────────────────
+model MovimientoFinanciero {
+  id               String   @id @default(uuid()) @db.Uuid
+  tipoId           String   @map("tipo_id") @db.Uuid
+  suscripcionId    String?  @map("suscripcion_id") @db.Uuid
+  renovacionId     String?  @map("renovacion_id") @db.Uuid
+  categoriaGastoId String?  @map("categoria_gasto_id") @db.Uuid
+  metodoPagoId     String?  @map("metodo_pago_id") @db.Uuid
+  importe          Decimal  @db.Decimal(10, 2)
+  fecha            DateTime
+  estadoId         String   @map("estado_id") @db.Uuid
+  descripcion      String?
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  tipo          Estado         @relation("TipoMovimiento", fields: [tipoId], references: [id])
+  estado        Estado         @relation("EstadoMovimiento", fields: [estadoId], references: [id])
+  suscripcion   Suscripcion?   @relation(fields: [suscripcionId], references: [id])
+  renovacion    Renovacion?    @relation(fields: [renovacionId], references: [id])
+  categoriaGasto CategoriaGasto? @relation(fields: [categoriaGastoId], references: [id])
+  metodoPago    MetodoPago?    @relation(fields: [metodoPagoId], references: [id])
+
+  @@map("movimientos_financieros")
+}
+
+// ─── 11. metodos_pago ───────────────────────────────────────────────────────
+model MetodoPago {
+  id        String    @id @default(uuid()) @db.Uuid
+  nombre    String    @unique @db.VarChar(100)
+  activo    Boolean   @default(true)
+  createdAt DateTime  @default(now()) @map("created_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  renovaciones Renovacion[]
+  movimientos  MovimientoFinanciero[]
+
+  @@map("metodos_pago")
+}
+
+// ─── 12. categorias_gasto ───────────────────────────────────────────────────
+model CategoriaGasto {
+  id        String   @id @default(uuid()) @db.Uuid
+  nombre    String   @unique @db.VarChar(100)
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  movimientos MovimientoFinanciero[]
+
+  @@map("categorias_gasto")
+}
+
+// ─── 13. recordatorios ──────────────────────────────────────────────────────
+model Recordatorio {
+  id            String   @id @default(uuid()) @db.Uuid
+  clienteId     String   @map("cliente_id") @db.Uuid
+  suscripcionId String?  @map("suscripcion_id") @db.Uuid
+  tipoId        String   @map("tipo_id") @db.Uuid
+  fecha         DateTime @db.Date
+  estadoId      String   @map("estado_id") @db.Uuid
+  descripcion   String?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  cliente     Cliente      @relation(fields: [clienteId], references: [id])
+  suscripcion Suscripcion? @relation(fields: [suscripcionId], references: [id])
+  tipo        Estado       @relation("TipoRecordatorio", fields: [tipoId], references: [id])
+  estado      Estado       @relation("EstadoRecordatorio", fields: [estadoId], references: [id])
+
+  @@map("recordatorios")
+}
+
+// ─── 14. actividad ──────────────────────────────────────────────────────────
+model Actividad {
+  id              String   @id @default(uuid()) @db.Uuid
+  usuarioId       String   @map("usuario_id") @db.Uuid
+  tabla           String   @db.VarChar(100)
+  registroId      String?  @map("registro_id") @db.Uuid
+  accion          String   @db.VarChar(50)
+  datosAnteriores Json?    @map("datos_anteriores")
+  datosNuevos     Json?    @map("datos_nuevos")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@map("actividad")
+}
+
+// ─── 15. configuracion ──────────────────────────────────────────────────────
+model Configuracion {
+  id          String  @id @default(uuid()) @db.Uuid
+  clave       String  @unique @db.VarChar(100)
+  valor       String
+  descripcion String?
+
+  @@map("configuracion")
+}
+
+// ─── 16. importaciones ──────────────────────────────────────────────────────
+model Importacion {
+  id        String   @id @default(uuid()) @db.Uuid
+  archivo   String   @db.VarChar(255)
+  usuarioId String   @map("usuario_id") @db.Uuid
+  registros Int      @default(0)
+  errores   Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@map("importaciones")
+}
+
+// ─── 17. exportaciones ──────────────────────────────────────────────────────
+model Exportacion {
+  id        String   @id @default(uuid()) @db.Uuid
+  tipo      String   @db.VarChar(20)
+  usuarioId String   @map("usuario_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@map("exportaciones")
+}
+
+// ─── 18. copias_seguridad ───────────────────────────────────────────────────
+model CopiaSeguridad {
+  id        String   @id @default(uuid()) @db.Uuid
+  archivo   String   @db.VarChar(255)
+  tamano    BigInt
+  estadoId  String   @map("estado_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  estado Estado @relation("EstadoCopiaSeguridad", fields: [estadoId], references: [id])
+
+  @@map("copias_seguridad")
+}
+
+// ─── 19. estados (catálogo centralizado) ────────────────────────────────────
+model Estado {
+  id       String  @id @default(uuid()) @db.Uuid
+  tipo     String  @db.VarChar(50)
+  valor    String  @db.VarChar(50)
+  etiqueta String  @db.VarChar(100)
+  activo   Boolean @default(true)
+  orden    Int     @default(0) @db.SmallInt
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relaciones inversas agrupadas por contexto
+  clientesEstado          Cliente[]              @relation("EstadoCliente")
+  suscripcionesEstado     Suscripcion[]          @relation("EstadoSuscripcion")
+  tiposMovimiento         MovimientoFinanciero[] @relation("TipoMovimiento")
+  estadosMovimiento       MovimientoFinanciero[] @relation("EstadoMovimiento")
+  tiposRecordatorio       Recordatorio[]         @relation("TipoRecordatorio")
+  estadosRecordatorio     Recordatorio[]         @relation("EstadoRecordatorio")
+  copiasSeguridad         CopiaSeguridad[]       @relation("EstadoCopiaSeguridad")
+
+  @@unique([tipo, valor])
+  @@map("estados")
+}
