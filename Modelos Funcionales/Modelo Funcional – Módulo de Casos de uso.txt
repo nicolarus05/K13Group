@@ -1,0 +1,104 @@
+Documento de Casos de Uso (Use Case Specification)
+Objetivo
+
+Describir de forma detallada todas las acciones que un usuario puede realizar en el sistema, indicando:
+
+Actor.
+Objetivo.
+Precondiciones.
+Flujo principal.
+Flujos alternativos.
+Excepciones.
+Resultado esperado.
+Reglas de negocio asociadas.
+Índice del documento
+Módulo 1 – Autenticación
+Código	Caso de uso
+UC-001	Iniciar sesión
+UC-002	Cerrar sesión
+UC-003	Cambiar contraseña
+Módulo 2 – Dashboard
+Código	Caso de uso
+UC-004	Visualizar Dashboard
+UC-005	Filtrar indicadores
+UC-006	Consultar accesos rápidos
+Módulo 3 – Clientes
+Código	Caso de uso
+UC-007	Crear cliente
+UC-008	Editar cliente
+UC-009	Eliminar cliente (borrado lógico)
+UC-010	Buscar cliente
+UC-011	Filtrar clientes
+UC-012	Consultar ficha del cliente
+UC-013	Importar clientes
+UC-014	Exportar clientes
+Módulo 4 – Suscripciones
+Código	Caso de uso
+UC-015	Crear suscripción
+UC-016	Editar suscripción
+UC-017	Renovar suscripción
+UC-018	Cancelar suscripción
+UC-019	Cambiar servidor
+UC-020	Cambiar referencia
+UC-021	Consultar historial
+Módulo 5 – Renovaciones
+Código	Caso de uso
+UC-022	Registrar renovación
+UC-023	Consultar renovaciones
+UC-024	Filtrar renovaciones
+UC-025	Marcar como pendiente
+UC-026	Marcar como cancelada
+Módulo 6 – Finanzas
+Código	Caso de uso
+UC-027	Registrar ingreso
+UC-028	Registrar gasto
+UC-029	Editar movimiento
+UC-030	Anular movimiento
+UC-031	Consultar balances
+Módulo 7 – Productos
+Código	Caso de uso
+UC-032	Crear producto
+UC-033	Editar producto
+UC-034	Desactivar producto
+Módulo 8 – Servidores
+Código	Caso de uso
+UC-035	Crear servidor
+UC-036	Editar servidor
+UC-037	Desactivar servidor
+Módulo 9 – Referencias
+Código	Caso de uso
+UC-038	Crear referencia
+UC-039	Editar referencia
+UC-040	Desactivar referencia
+Módulo 10 – Configuración
+Código	Caso de uso
+UC-041	Modificar configuración
+UC-042	Gestionar métodos de pago
+UC-043	Gestionar categorías de gasto
+UC-044	Crear copia de seguridad
+UC-045	Restaurar copia
+Módulo 11 – Estadísticas
+Código	Caso de uso
+UC-046	Consultar estadísticas
+UC-047	Aplicar filtros
+UC-048	Exportar informe
+Módulo 12 – Recordatorios
+Código	Caso de uso
+UC-049	Crear recordatorio
+UC-050	Completar recordatorio
+UC-051	Posponer recordatorio
+Total estimado
+Módulo	Casos
+Autenticación	3
+Dashboard	3
+Clientes	8
+Suscripciones	7
+Renovaciones	5
+Finanzas	5
+Productos	3
+Servidores	3
+Referencias	3
+Configuración	5
+Estadísticas	3
+Recordatorios	3
+TOTAL	51 casos de uso

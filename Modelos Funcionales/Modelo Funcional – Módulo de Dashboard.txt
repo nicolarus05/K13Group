@@ -1,0 +1,331 @@
+Modelo Funcional – Dashboard
+1. Objetivo
+
+El Dashboard será la pantalla principal de la aplicación y el punto de entrada tras iniciar sesión.
+
+Su finalidad será ofrecer una visión global del negocio en tiempo real y permitir acceder rápidamente a las acciones más importantes.
+
+El usuario no tendrá que navegar por varios módulos para conocer el estado del negocio; toda la información crítica estará disponible desde un único lugar.
+
+2. Principios de diseño
+
+El Dashboard seguirá cinco principios fundamentales:
+
+Mostrar solo la información realmente útil.
+Priorizar las acciones pendientes antes que las estadísticas.
+Actualizar los datos en tiempo real.
+Facilitar el acceso rápido a las funciones más utilizadas.
+Mantener una interfaz limpia y profesional.
+3. Estructura general
+
+Propongo dividir el Dashboard en seis grandes bloques.
+
+┌──────────────────────────────────────────┐
+│ Encabezado                              │
+├──────────────────────────────────────────┤
+│ Indicadores principales (KPIs)          │
+├──────────────────────────────────────────┤
+│ Acciones rápidas                        │
+├──────────────────────────────────────────┤
+│ Trabajo pendiente                       │
+├──────────────────────────────────────────┤
+│ Gráficas y estadísticas                 │
+├──────────────────────────────────────────┤
+│ Actividad reciente                      │
+└──────────────────────────────────────────┘
+
+Este orden está pensado para que lo primero que vea el usuario sea lo más importante.
+
+4. Encabezado
+
+Mostrará información contextual.
+
+Ejemplo:
+
+Buenos días, Juan
+
+Martes, 7 de abril de 2026
+
+────────────────────────
+
+Hoy tienes:
+
+• 8 renovaciones
+
+• 2 cobros pendientes
+
+• 3 mensajes de Telegram pendientes
+
+El objetivo es que, con un simple vistazo, el usuario sepa qué tareas tiene por delante.
+
+5. Indicadores principales (KPIs)
+
+Estos serán los indicadores económicos más relevantes.
+
+Cada uno se mostrará en una tarjeta independiente.
+
+Facturación de hoy
+
+Importe generado durante el día.
+
+Facturación del mes
+
+Ingresos acumulados del mes.
+
+Beneficio del mes
+
+Ingresos menos gastos del mes.
+
+Clientes activos
+
+Número total de clientes con servicio vigente.
+
+Renovaciones pendientes
+
+Clientes cuya renovación requiere atención.
+
+Gastos del mes
+
+Total de gastos registrados durante el mes.
+
+Nuevos clientes
+
+Clientes dados de alta en el periodo.
+
+Ticket medio
+
+Importe medio por operación.
+
+6. Acciones rápidas
+
+Este bloque permitirá acceder a las tareas más frecuentes con un solo clic.
+
+Acciones propuestas:
+
+Nuevo cliente.
+Registrar renovación.
+Registrar gasto.
+Añadir producto.
+Importar Excel.
+Exportar datos.
+Abrir calendario.
+
+Estas acciones estarán visibles permanentemente.
+
+7. Trabajo pendiente
+
+Este será el bloque más importante del Dashboard.
+
+No mostrará estadísticas, sino tareas.
+
+Renovaciones
+
+Ejemplo:
+
+Renovaciones hoy
+
+8
+
+---------------------
+
+Pendientes
+
+5
+
+---------------------
+
+Caducadas
+
+3
+
+Cada tarjeta abrirá directamente el listado correspondiente.
+
+Cobros pendientes
+
+Listado resumido.
+
+Recordatorios
+
+Ejemplo:
+
+Responder Telegram.
+
+Renovar cliente.
+
+Registrar gasto.
+
+8. Gráficas
+
+El Dashboard mostrará gráficos con información relevante.
+
+Evolución de ingresos
+
+Línea temporal.
+
+Últimos 30 días.
+
+Ingresos por producto
+
+Gráfico de barras.
+
+Métodos de pago
+
+Gráfico circular.
+
+Gastos por categoría
+
+Barras.
+
+Evolución mensual
+
+Comparativa entre meses.
+
+9. Actividad reciente
+
+Este bloque mostrará los últimos movimientos del sistema.
+
+Ejemplo:
+
+09:30
+
+Cliente creado
+
+Juan Pérez
+
+--------------------
+
+09:45
+
+Renovación
+
+María López
+
+--------------------
+
+10:05
+
+Nuevo gasto
+
+Servidor
+
+15 €
+
+El objetivo es conocer qué ha ocurrido recientemente.
+
+10. Calendario reducido
+
+En un lateral podrá mostrarse un mini calendario.
+
+Los días con actividad aparecerán resaltados.
+
+Al hacer clic:
+
+Abrirá el módulo de calendario.
+
+11. Alertas
+
+El Dashboard mostrará avisos importantes.
+
+Por ejemplo:
+
+🟠 Quedan 15 renovaciones esta semana.
+
+🔴 Hay 4 clientes caducados.
+
+🟡 El gasto en publicidad ha aumentado un 25 % respecto al mes anterior.
+
+🔵 Quedan 2 días para renovar el dominio.
+
+Estas alertas permitirán actuar antes de que aparezcan problemas.
+
+12. Integración con todos los módulos
+
+El Dashboard será un consumidor de información, no almacenará datos propios.
+
+Obtendrá información de:
+
+Clientes.
+Renovaciones.
+Finanzas.
+Productos.
+Calendario.
+Recordatorios.
+Estadísticas.
+
+Esto garantiza que siempre refleje el estado real de la aplicación.
+
+13. Actualización
+
+Los datos se actualizarán automáticamente cuando se produzcan eventos como:
+
+Alta de cliente.
+Renovación.
+Registro de gasto.
+Cambio de estado.
+Importación de datos.
+
+No será necesario refrescar la página para ver los cambios importantes.
+
+14. Reglas de negocio
+El Dashboard no almacenará información; únicamente la mostrará.
+Todos los indicadores se calcularán a partir de los datos existentes en otros módulos.
+Las acciones rápidas deberán estar disponibles desde cualquier momento de la sesión.
+Las alertas se generarán automáticamente según reglas configurables.
+El contenido del Dashboard deberá cargarse en pocos segundos, incluso con un gran volumen de datos.
+15. Mejoras funcionales propuestas
+
+Hasta aquí tendríamos un Dashboard muy completo, pero creo que podemos convertirlo en algo excepcional con algunas ideas adicionales.
+
+Centro de tareas
+
+En lugar de limitarse a mostrar información, el Dashboard debería responder a una pregunta:
+
+¿Qué tengo que hacer ahora?
+
+Por eso propongo una lista priorizada de tareas:
+
+Renovaciones vencidas.
+Renovaciones de hoy.
+Cobros pendientes.
+Recordatorios.
+Próximos vencimientos.
+
+Con un clic podrías ir resolviendo cada tarea.
+
+Resumen de objetivos
+
+Podríamos incluir indicadores de rendimiento para el periodo actual, por ejemplo:
+
+Objetivo de ingresos del mes.
+Ingresos conseguidos.
+Porcentaje completado.
+
+Esto no requiere un sistema complejo y puede resultar muy útil para seguir la evolución del negocio.
+
+Acciones recientes
+
+Además del historial de actividad, podríamos destacar las operaciones más relevantes:
+
+Último cliente añadido.
+Última renovación.
+Último gasto registrado.
+Última importación de Excel.
+
+Así tendrías una referencia inmediata de los cambios más recientes.
+
+Personalización futura
+
+Aunque inicialmente solo habrá un usuario, diseñaría el Dashboard para que en el futuro puedas decidir qué widgets mostrar u ocultar y en qué orden colocarlos. De este modo, la aplicación podrá adaptarse fácilmente si incorpora más usuarios o nuevos módulos.
+
+Una propuesta que creo que marcará la diferencia
+
+Hay una idea que considero especialmente valiosa para este proyecto: el Dashboard no debería ser una simple pantalla de bienvenida, sino una herramienta de trabajo.
+
+Mi propuesta es que, cuando abras la aplicación por la mañana, puedas realizar el 80 % de las tareas diarias sin salir del Dashboard:
+
+Ver qué clientes requieren renovación.
+Renovar directamente desde la lista.
+Registrar un gasto.
+Consultar los ingresos del día.
+Revisar recordatorios.
+Abrir la ficha de un cliente con un clic.

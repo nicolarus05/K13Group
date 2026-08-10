@@ -1,0 +1,278 @@
+ARQUITECTURA TÉCNICA (Versión 1.0)
+Objetivos
+
+La aplicación deberá cumplir los siguientes requisitos técnicos:
+
+Arquitectura modular.
+Separación estricta entre frontend y backend.
+API REST preparada para futuras integraciones.
+Base de datos PostgreSQL.
+Diseño responsive.
+Alto rendimiento.
+Seguridad desde el diseño.
+Escalabilidad horizontal.
+Código mantenible.
+Arquitectura General
+                    Usuario
+                       │
+                       ▼
+                 Navegador Web
+                       │
+                       ▼
+──────────────────────────────────────────
+               Frontend (Next.js)
+──────────────────────────────────────────
+                       │
+                HTTPS (REST API)
+                       │
+                       ▼
+──────────────────────────────────────────
+              Backend (NestJS)
+──────────────────────────────────────────
+                       │
+                  Prisma ORM
+                       │
+                       ▼
+──────────────────────────────────────────
+                PostgreSQL
+──────────────────────────────────────────
+                       │
+                Backups automáticos
+
+Esta separación hace que el backend pueda ser utilizado por:
+
+Web.
+Aplicación móvil.
+API para terceros.
+Automatizaciones.
+
+Sin modificar la lógica de negocio.
+
+Stack Tecnológico
+Frontend
+Tecnología	Motivo
+Next.js	Framework React maduro, excelente rendimiento y organización.
+React	Componentes reutilizables.
+TypeScript	Tipado fuerte y menos errores.
+Tailwind CSS	Desarrollo rápido y consistente.
+shadcn/ui	Componentes modernos, accesibles y personalizables.
+TanStack Query	Gestión de datos y caché.
+React Hook Form	Formularios eficientes.
+Zod	Validación compartida con el backend.
+Recharts	Gráficas del dashboard y estadísticas.
+Lucide React	Iconografía consistente.
+Backend
+Tecnología	Motivo
+NestJS	Arquitectura modular y mantenible.
+TypeScript	Consistencia con el frontend.
+Prisma ORM	Productividad, migraciones y tipado.
+PostgreSQL	Base de datos robusta y escalable.
+JWT	Autenticación.
+bcrypt	Hash seguro de contraseñas.
+class-validator	Validación de DTOs.
+Swagger/OpenAPI	Documentación automática de la API.
+Infraestructura
+Tecnología	Motivo
+Docker	Entorno reproducible.
+Docker Compose	Desarrollo local sencillo.
+Nginx	Proxy inverso y HTTPS.
+Let's Encrypt	Certificados SSL.
+GitHub	Control de versiones.
+GitHub Actions	CI/CD (fase futura).
+Arquitectura del Frontend
+src/
+│
+├── app/
+├── components/
+│   ├── ui/
+│   ├── layout/
+│   ├── common/
+│   └── charts/
+│
+├── modules/
+│   ├── auth/
+│   ├── dashboard/
+│   ├── clientes/
+│   ├── suscripciones/
+│   ├── renovaciones/
+│   ├── productos/
+│   ├── finanzas/
+│   ├── configuracion/
+│   └── estadisticas/
+│
+├── hooks/
+├── services/
+├── lib/
+├── schemas/
+├── types/
+├── utils/
+└── styles/
+
+Cada módulo será independiente.
+
+Arquitectura del Backend
+src/
+│
+├── auth/
+├── users/
+├── clientes/
+├── suscripciones/
+├── renovaciones/
+├── productos/
+├── tarifas/
+├── servidores/
+├── referencias/
+├── finanzas/
+├── dashboard/
+├── estadisticas/
+├── configuracion/
+├── auditoria/
+├── recordatorios/
+├── database/
+└── common/
+
+Cada módulo incluirá:
+
+Controller.
+Service.
+Repository (si es necesario).
+DTOs.
+Entidades.
+Validaciones.
+Tests.
+Flujo de una petición
+
+Ejemplo: crear un cliente.
+
+Usuario
+   │
+   ▼
+Formulario (Frontend)
+   │
+   ▼
+Validación (Zod)
+   │
+   ▼
+API REST
+   │
+   ▼
+Controller (NestJS)
+   │
+   ▼
+DTO
+   │
+   ▼
+Service
+   │
+   ▼
+Prisma
+   │
+   ▼
+PostgreSQL
+   │
+   ▼
+Respuesta
+
+La lógica de negocio estará exclusivamente en los servicios del backend.
+
+Seguridad
+Autenticación
+JWT de acceso.
+Refresh Token.
+Contraseñas con bcrypt.
+Cookies HttpOnly para los tokens (más seguras que localStorage).
+Autorización
+
+Aunque inicialmente solo habrá un usuario, la arquitectura permitirá incorporar roles en el futuro sin cambios importantes.
+
+Protección
+HTTPS obligatorio.
+Validación en frontend y backend.
+Sanitización de entradas.
+Protección frente a inyecciones SQL (a través de Prisma).
+Protección CSRF si se usan cookies de sesión.
+Cabeceras HTTP seguras (Helmet).
+Limitación de peticiones (Rate Limiting) para evitar ataques de fuerza bruta.
+Gestión de archivos
+
+La aplicación almacenará únicamente:
+
+Backups.
+Exportaciones.
+Importaciones temporales.
+
+No se guardarán imágenes de clientes en la primera versión.
+
+Configuración
+
+Separación por entornos:
+
+.env.development
+.env.test
+.env.production
+
+Variables como:
+
+URL de la base de datos.
+Claves JWT.
+Zona horaria.
+Configuración de correo (si se añade más adelante).
+Estrategia de despliegue
+Desarrollo: Docker Compose.
+Producción:
+Nginx.
+Backend NestJS.
+Frontend Next.js.
+PostgreSQL.
+Backups automáticos diarios.
+Logs centralizados.
+Calidad del código
+
+Normas obligatorias:
+
+TypeScript en modo estricto.
+ESLint.
+Prettier.
+Husky + lint-staged para validar antes de cada commit.
+Convención de nombres uniforme.
+Componentes pequeños y reutilizables.
+Cobertura de pruebas para la lógica crítica.
+Documentación
+
+La documentación se generará automáticamente:
+
+Swagger/OpenAPI para la API.
+README del proyecto.
+Guía de despliegue.
+Guía de desarrollo.
+Arquitectura preparada para el futuro
+
+Desde la primera versión dejaremos preparado el sistema para incorporar:
+
+Facturación.
+Aplicación móvil (consumiendo la misma API).
+Múltiples usuarios y roles.
+Integración con Telegram.
+Integración con WhatsApp.
+API pública para terceros.
+Sistema de notificaciones.
+Multiidioma.
+Mi recomendación: arquitectura basada en dominios
+
+Hay una decisión adicional que considero muy importante. En lugar de organizar el código por "capas" (controllers, services, repositories en carpetas separadas), organizaría el proyecto por dominios funcionales.
+
+Por ejemplo:
+
+clientes/
+├── cliente.controller.ts
+├── cliente.service.ts
+├── cliente.repository.ts
+├── dto/
+├── entities/
+├── validators/
+├── tests/
+└── cliente.module.ts
+
+Y lo mismo para suscripciones, finanzas, productos, etc.
+
+Esta organización hace que cada módulo sea casi independiente, facilita el mantenimiento y permite extraer funcionalidades a microservicios en el futuro si el proyecto creciera mucho.

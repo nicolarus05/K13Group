@@ -1,0 +1,415 @@
+Modelo Funcional – Módulo de Estadísticas
+1. Objetivo
+
+El módulo de Estadísticas tendrá como finalidad transformar todos los datos registrados en información útil para la toma de decisiones.
+
+No almacenará datos propios, sino que calculará métricas a partir de los módulos de:
+
+Clientes
+Renovaciones
+Finanzas
+Productos
+Referencias
+Servidores
+2. Filosofía del módulo
+
+Toda estadística deberá responder a una pregunta de negocio.
+
+Por ejemplo:
+
+"No quiero saber cuántos clientes tengo."
+
+Quiero saber:
+
+Cuántos clientes nuevos consigo cada mes.
+Cuántos renuevan.
+Cuántos pierdo.
+Qué productos generan más ingresos.
+
+Ese será el enfoque de todo el módulo.
+
+3. Organización
+
+Propongo dividir el módulo en ocho grandes apartados.
+
+Resumen General
+
+↓
+
+Clientes
+
+↓
+
+Renovaciones
+
+↓
+
+Facturación
+
+↓
+
+Productos
+
+↓
+
+Referencias
+
+↓
+
+Servidores
+
+↓
+
+Métodos de pago
+4. Resumen General
+
+Será la primera pantalla.
+
+Mostrará los principales indicadores del negocio.
+
+KPIs
+Facturación total.
+Beneficio total.
+Clientes activos.
+Clientes nuevos.
+Renovaciones realizadas.
+Gastos.
+Ticket medio.
+Ingreso medio por cliente.
+
+Todo con posibilidad de filtrar por fechas.
+
+5. Estadísticas de Clientes
+
+Este apartado analizará la evolución de la base de clientes.
+
+Indicadores:
+
+Clientes activos.
+Clientes nuevos.
+Clientes perdidos.
+Clientes "No renovar".
+Crecimiento mensual.
+Crecimiento anual.
+Tasa de retención.
+Tasa de renovación.
+
+Gráficas:
+
+Evolución mensual.
+Altas por mes.
+Clientes activos por producto.
+6. Estadísticas de Renovaciones
+
+Este será uno de los apartados más importantes.
+
+Mostrará:
+
+Renovaciones realizadas.
+Renovaciones pendientes.
+Renovaciones caducadas.
+Renovaciones canceladas.
+Renovaciones por periodo.
+
+Indicadores:
+
+Porcentaje de renovación.
+
+Ejemplo.
+
+100 clientes.
+
+85 renuevan.
+
+Tasa:
+
+85%.
+
+Este dato será muy útil para medir la fidelización.
+
+7. Estadísticas Financieras
+
+Toda la información económica.
+
+Ingresos.
+
+Gastos.
+
+Beneficio.
+
+Ticket medio.
+
+Ingreso medio diario.
+
+Ingreso medio mensual.
+
+Ingreso medio anual.
+
+Comparativas.
+
+Ejemplo.
+
+Abril 2026
+
+18 %
+
+respecto a marzo.
+
+8. Estadísticas por Producto
+
+Aquí responderemos preguntas como:
+
+¿Qué aplicación genera más dinero?
+
+Ejemplo.
+
+Producto	Clientes	Facturación
+K13	210	4.250 €
+IBO	145	3.100 €
+Smart TV	90	1.950 €
+
+También:
+
+Renovaciones por producto.
+
+Beneficio.
+
+Ingresos.
+
+Duración media.
+
+9. Estadísticas por Referencia
+
+Muy interesante.
+
+Ejemplo.
+
+Referencia	Clientes	Facturación
+Juan	45	3.250 €
+Pedro	18	1.450 €
+Manuel	60	5.800 €
+
+Así sabrás quién aporta más valor al negocio.
+
+10. Estadísticas por Servidor
+
+Ejemplo.
+
+Servidor
+
+Dead
+
+Clientes:
+
+120
+
+Facturación:
+
+2.800 €
+
+Servidor
+
+Premium
+
+Clientes:
+
+95
+
+Facturación:
+
+2.200 €
+
+Esto permitirá conocer el rendimiento de cada servidor.
+
+11. Métodos de Pago
+
+Ejemplo.
+
+Bizum
+
+65 %
+
+Transferencia
+
+18 %
+
+Stripe
+
+12 %
+
+Otros
+
+5 %
+
+Así podrás detectar tendencias y adaptar tus procesos de cobro.
+
+12. Comparativas
+
+Este apartado será muy potente.
+
+Podrás comparar.
+
+Hoy vs ayer.
+
+Semana actual vs anterior.
+
+Mes actual vs anterior.
+
+Año actual vs anterior.
+
+Periodo personalizado.
+
+Ejemplo.
+
+Marzo
+
+↓
+
+4.250 €
+
+Abril
+
+↓
+
+5.180 €
+
+21,9 %
+
+13. Filtros
+
+Todo el módulo será completamente filtrable.
+
+Filtros.
+
+Fecha.
+
+Producto.
+
+Servidor.
+
+Referencia.
+
+Método de pago.
+
+Duración.
+
+Estado del cliente.
+
+Estado de renovación.
+
+Categoría de gasto.
+
+Todos los gráficos responderán inmediatamente a estos filtros.
+
+14. Exportación
+
+Cualquier informe podrá exportarse.
+
+Excel.
+
+PDF.
+
+CSV.
+
+Con los filtros aplicados.
+
+15. Automatizaciones
+
+Cada vez que ocurra:
+
+Nueva venta.
+
+↓
+
+Actualizar estadísticas.
+
+Nueva renovación.
+
+↓
+
+Actualizar estadísticas.
+
+Nuevo gasto.
+
+↓
+
+Actualizar beneficio.
+
+Nuevo cliente.
+
+↓
+
+Actualizar métricas.
+
+Todo será automático.
+
+16. Reglas de negocio
+Ninguna estadística almacenará datos propios.
+Todas las métricas se calcularán a partir de los datos existentes.
+Las comparativas utilizarán siempre periodos equivalentes.
+Las estadísticas respetarán los filtros aplicados por el usuario.
+El acceso a las estadísticas no modificará ningún dato del sistema.
+17. Rendimiento
+
+Este módulo puede llegar a manejar miles de registros, por lo que debe diseñarse para ser eficiente.
+
+Por ello propongo:
+
+Consultas optimizadas.
+Caché para métricas costosas.
+Actualización incremental cuando sea posible.
+Cálculo bajo demanda para informes poco utilizados.
+
+Así evitaremos que el Dashboard o las estadísticas se vuelvan lentos a medida que crezca la base de datos.
+
+18. Visualizaciones
+
+El objetivo es que la información sea fácil de interpretar.
+
+Tipos de gráficos recomendados:
+
+📈 Líneas para evolución temporal.
+📊 Barras para comparativas.
+🥧 Circular para distribución de métodos de pago.
+📉 Área para evolución acumulada.
+🏆 Rankings para productos, referencias y servidores.
+📅 Heatmap opcional para visualizar los días con mayor actividad.
+19. Mejoras funcionales propuestas
+
+Aquí me gustaría añadir varias funciones que normalmente solo se encuentran en herramientas de análisis profesionales.
+
+Objetivos (KPIs)
+
+Permitir definir metas mensuales, por ejemplo:
+
+Objetivo de ingresos: 5.000 €.
+Objetivo de nuevos clientes: 50.
+Objetivo de renovaciones: 90 %.
+
+Las estadísticas mostrarán el progreso hacia cada objetivo.
+
+Ranking automático
+
+Mostrar rankings dinámicos como:
+
+Top 10 productos.
+Top 10 referencias.
+Top 10 servidores.
+Top métodos de pago.
+Tendencias
+
+Detectar automáticamente cambios importantes, por ejemplo:
+
+"Las renovaciones han aumentado un 12 % respecto al mes pasado."
+"Los ingresos por K13 han descendido un 8 %."
+"Bizum se ha convertido en el método de pago más utilizado."
+
+Estas conclusiones se generarían a partir de los datos, facilitando una lectura rápida del estado del negocio.
+
+Preparado para el futuro
+
+Diseñaría este módulo para que cualquier nuevo dato que incorporemos (facturas, aplicación móvil, campañas, etc.) pueda generar nuevas estadísticas sin modificar la arquitectura existente.
+
+Conclusión del módulo
+
+El módulo de Estadísticas será la herramienta de análisis del negocio. Mientras que el Dashboard responderá a la pregunta "¿Qué está pasando ahora?", este módulo responderá a "¿Qué ha pasado, por qué ha pasado y cómo está evolucionando el negocio?".

@@ -1,0 +1,369 @@
+Modelo Funcional – Módulo de Renovaciones
+1. Objetivo del módulo
+
+El módulo de renovaciones será el encargado de gestionar todo el ciclo de renovación de los servicios contratados por los clientes.
+
+Su objetivo principal será automatizar el proceso completo para que el usuario nunca tenga que calcular fechas, revisar el Excel o recordar manualmente qué clientes deben renovar.
+
+El sistema controlará automáticamente:
+
+Fechas de renovación.
+Estados de las renovaciones.
+Historial.
+Cobros asociados.
+Actualización del cliente.
+Actualización de estadísticas.
+Actualización financiera.
+2. Filosofía del módulo
+
+Es importante entender una diferencia respecto al Excel actual.
+
+En Excel, una renovación consiste en editar el mismo registro del cliente.
+
+En la nueva plataforma, una renovación será un evento independiente.
+
+Es decir:
+
+El cliente nunca se modifica históricamente.
+Cada renovación genera un nuevo registro.
+El historial permanece intacto.
+
+Esto permitirá reconstruir toda la vida del cliente en cualquier momento.
+
+3. Ciclo de una renovación
+
+El flujo completo será el siguiente:
+
+Cliente Activo
+      │
+      ▼
+Se calcula automáticamente la fecha de renovación
+      │
+      ▼
+La renovación entra en seguimiento
+      │
+      ▼
+Llega la fecha
+      │
+      ▼
+Pendiente de renovar
+      │
+      ├──────────────► Renovar
+      │                     │
+      │                     ▼
+      │           Se registra la renovación
+      │                     │
+      │                     ▼
+      │           Nuevo periodo activo
+      │
+      └──────────────► No renovar
+                            │
+                            ▼
+                     Cliente caducado
+4. Estados de una renovación
+
+La renovación tendrá sus propios estados, independientes del estado del cliente.
+
+Programada
+
+La renovación existe.
+
+Todavía falta tiempo.
+
+No requiere ninguna acción.
+
+Próxima
+
+Quedan pocos días.
+
+Por defecto:
+
+7 días.
+
+Configurables.
+
+Pendiente
+
+La fecha ha llegado.
+
+Debe gestionarse.
+
+Renovada
+
+La renovación ya se ha realizado correctamente.
+
+Quedará registrada permanentemente.
+
+Cancelada
+
+El cliente decide no renovar.
+
+La renovación se marca como cancelada.
+
+No se elimina.
+
+Expirada
+
+Ha pasado un tiempo determinado sin renovar.
+
+Queda registrada como expirada.
+
+5. Pantalla de renovaciones
+
+La aplicación tendrá una sección exclusiva.
+
+No será necesario entrar cliente por cliente.
+
+Existirán vistas rápidas.
+
+Renovan hoy
+
+Lista de todos los clientes cuya fecha coincide con hoy.
+
+Renovan mañana
+
+Vista preventiva.
+
+Próximos 7 días
+
+Lista ordenada por fecha.
+
+Caducados
+
+Clientes que no han renovado.
+
+No renovar
+
+Clientes excluidos.
+
+Todas
+
+Histórico completo.
+
+6. Tarjeta de renovación
+
+Cada renovación mostrará información suficiente para gestionarla sin abrir la ficha del cliente.
+
+Ejemplo:
+
+Juan Pérez
+
+K13 Player
+
+Servidor Dead
+
+Inicio:
+01/08/2026
+
+Renueva:
+01/09/2026
+
+Duración:
+1 mes
+
+Importe:
+15 €
+
+Método pago:
+Bizum
+
+Estado:
+Pendiente
+
+Desde esta tarjeta se podrá renovar directamente.
+
+7. Proceso de renovación
+
+Al pulsar el botón "Renovar", la aplicación abrirá un cuadro de diálogo con la información necesaria.
+
+Campos:
+
+Duración (1 o 12 meses).
+Importe.
+Método de pago.
+Observaciones (opcionales).
+
+No será necesario introducir fechas.
+
+Al confirmar:
+
+La aplicación realizará automáticamente:
+
+Crear un registro de renovación.
+Crear un registro financiero.
+Actualizar la fecha de inicio del cliente.
+Calcular la nueva fecha de renovación.
+Cambiar el estado del cliente.
+Actualizar Dashboard.
+Actualizar estadísticas.
+Actualizar ingresos.
+Registrar la acción en el historial.
+
+Todo esto ocurrirá en una única operación para garantizar la integridad de los datos.
+
+8. Renovación anticipada
+
+Este es un caso que conviene definir desde el principio.
+
+Escenario
+
+Cliente:
+
+Renueva el 20 de agosto.
+
+Su suscripción vence:
+
+1 de septiembre.
+
+La nueva renovación no debe perder los días restantes.
+
+Por tanto:
+
+Antes:
+
+Inicio
+
+01/08
+
+Fin
+
+01/09
+
+Renueva:
+
+20/08
+
+La nueva suscripción finalizará:
+
+01/10
+
+No el 20/09.
+
+Esta regla será obligatoria.
+
+Nunca se perderán días ya pagados.
+
+9. Renovación tardía
+
+Otro caso importante.
+
+Ejemplo.
+
+Caduca:
+
+1 septiembre.
+
+Renueva:
+
+10 septiembre.
+
+Aquí propondría que el sistema permita dos modos, configurables desde los ajustes:
+
+Opción A (recomendada)
+
+La nueva suscripción comienza el día de la renovación.
+
+Caduca:
+
+10 octubre.
+
+Opción B
+
+La nueva suscripción comienza desde la fecha original de vencimiento.
+
+Caduca:
+
+1 octubre.
+
+Mi recomendación es utilizar la Opción A, ya que refleja mejor cuándo se ha prestado realmente el servicio. No obstante, dejar esta política configurable hará que la aplicación pueda adaptarse si el negocio cambia en el futuro.
+
+10. Historial de renovaciones
+
+Cada cliente tendrá un historial completo.
+
+Ejemplo:
+
+Fecha	Tipo	Duración	Importe	Pago
+01/08/2026	Alta	1 mes	15 €	Bizum
+01/09/2026	Renovación	1 mes	15 €	Transferencia
+01/10/2026	Renovación	12 meses	120 €	Stripe
+
+Nunca se eliminarán estos registros.
+
+11. Automatizaciones
+
+El sistema comprobará diariamente:
+
+Clientes que renuevan hoy.
+Clientes próximos a renovar.
+Clientes caducados.
+Clientes marcados como "No renovar".
+
+Estos cálculos serán automáticos y no dependerán de acciones del usuario.
+
+12. Integración con otros módulos
+
+El módulo de renovaciones no funcionará de forma aislada.
+
+Cada renovación impactará directamente en:
+
+Clientes
+Actualiza fechas.
+Cambia estados.
+Finanzas
+Registra el ingreso.
+Dashboard
+Incrementa la facturación.
+Estadísticas
+Actualiza métricas.
+Historial
+Añade un nuevo evento.
+13. Reglas de negocio
+
+Las siguientes reglas serán obligatorias:
+
+Una renovación nunca sobrescribe una anterior.
+Toda renovación genera un registro histórico.
+La fecha de renovación siempre se calcula automáticamente.
+No es posible renovar un cliente marcado como "No renovar" sin reactivarlo primero.
+Toda renovación genera un ingreso asociado.
+Las renovaciones modifican automáticamente las estadísticas.
+No se permite eliminar una renovación registrada; en caso de error, deberá anularse mediante un proceso de corrección para mantener la trazabilidad.
+14. Mejoras funcionales propuestas
+
+Además de los requisitos iniciales, propongo incorporar estas funcionalidades desde el diseño del sistema:
+
+Renovación masiva
+
+Permitir seleccionar varios clientes y renovarlos uno tras otro desde una misma pantalla. Esto ahorrará mucho tiempo cuando haya muchas renovaciones diarias.
+
+Cola de trabajo
+
+Una vista priorizada con secciones como:
+
+Renovan hoy.
+Renovan mañana.
+Retrasadas.
+No gestionadas.
+
+De esta forma, al entrar en la aplicación, sabrás exactamente qué tareas requieren atención inmediata.
+
+Indicadores visuales
+
+Utilizar colores e iconos para identificar rápidamente el estado de cada renovación:
+
+🟢 Activa
+🟡 Próxima
+🟠 Pendiente
+🔴 Caducada
+⚫ No renovar
+Registro de auditoría
+
+Cada acción relacionada con una renovación quedará registrada con:
+
+Fecha y hora.
+Acción realizada.
+Usuario (aunque inicialmente solo exista uno).
+Datos anteriores y posteriores cuando corresponda.
+
+Esto facilitará la resolución de incidencias y aportará una trazabilidad completa.

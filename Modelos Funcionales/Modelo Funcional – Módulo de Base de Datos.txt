@@ -1,0 +1,260 @@
+Esquema General de la Base de Datos
+Tabla	Propósito
+usuarios	Acceso a la aplicación
+sesiones	Gestión de sesiones activas
+clientes	Información de los clientes
+suscripciones	Servicio contratado por el cliente
+renovaciones	Historial de renovaciones
+productos	Catálogo de aplicaciones
+tarifas	Precios y duraciones de cada producto
+servidores	Servidores disponibles
+referencias	Referencias o distribuidores
+movimientos_financieros	Todos los ingresos y gastos
+metodos_pago	Métodos de cobro/pago
+categorias_gasto	Clasificación de gastos
+recordatorios	Recordatorios del sistema
+actividad	Auditoría de acciones
+configuracion	Parámetros generales
+importaciones	Historial de importaciones
+exportaciones	Historial de exportaciones
+copias_seguridad	Historial de backups
+estados	Catálogo centralizado de estados y tipos
+
+Total V1: 19 tablas.
+
+1. usuarios
+Campo	Tipo	PK	FK	Nulo
+id	UUID	✅		❌
+username	VARCHAR(50)			❌
+nombre	VARCHAR(150)			❌
+email	VARCHAR(150)			✅
+password_hash	VARCHAR(255)			❌
+activo	BOOLEAN			❌
+ultimo_login	TIMESTAMP			✅
+created_at	TIMESTAMP			❌
+updated_at	TIMESTAMP			❌
+2. sesiones
+Campo	Tipo	PK	FK
+id	UUID	✅	
+usuario_id	UUID		✅ usuarios.id
+token	VARCHAR(255)		
+ip	VARCHAR(50)		
+user_agent	TEXT		
+expires_at	TIMESTAMP		
+created_at	TIMESTAMP		
+3. clientes
+Campo	Tipo	PK	FK
+id	UUID	✅	
+nombre	VARCHAR(150)		
+telefono	VARCHAR(30)		
+email	VARCHAR(150)		
+observaciones	TEXT		
+estado_id	UUID		✅ estados.id
+created_at	TIMESTAMP		
+updated_at	TIMESTAMP		
+deleted_at	TIMESTAMP		
+4. suscripciones
+
+Representa el servicio contratado.
+
+Campo	Tipo	PK	FK
+id	UUID	✅	
+cliente_id	UUID		✅ clientes.id
+producto_id	UUID		✅ productos.id
+tarifa_id	UUID		✅ tarifas.id
+servidor_id	UUID		✅ servidores.id
+referencia_id	UUID		✅ referencias.id
+fecha_inicio	DATE		
+fecha_fin	DATE		
+estado_id	UUID		✅ estados.id
+created_at	TIMESTAMP		
+updated_at	TIMESTAMP		
+deleted_at	TIMESTAMP		
+5. renovaciones
+Campo	Tipo	PK	FK
+id	UUID	✅	
+suscripcion_id	UUID		✅ suscripciones.id
+fecha_inicio	DATE		
+fecha_fin	DATE		
+importe	DECIMAL(10,2)		
+metodo_pago_id	UUID		✅ metodos_pago.id
+observaciones	TEXT		
+created_at	TIMESTAMP		
+6. productos
+Campo	Tipo	PK
+id	UUID	✅
+nombre	VARCHAR(100)	
+descripcion	TEXT	
+activo	BOOLEAN	
+created_at	TIMESTAMP	
+updated_at	TIMESTAMP	
+deleted_at	TIMESTAMP	
+7. tarifas
+Campo	Tipo	PK	FK
+id	UUID	✅	
+producto_id	UUID		✅ productos.id
+nombre	VARCHAR(100)		
+duracion_meses	SMALLINT		
+precio	DECIMAL(10,2)		
+activo	BOOLEAN		
+created_at	TIMESTAMP		
+updated_at	TIMESTAMP		
+8. servidores
+Campo	Tipo	PK
+id	UUID	✅
+nombre	VARCHAR(100)	
+activo	BOOLEAN	
+created_at	TIMESTAMP	
+deleted_at	TIMESTAMP	
+9. referencias
+Campo	Tipo	PK
+id	UUID	✅
+nombre	VARCHAR(100)	
+activo	BOOLEAN	
+observaciones	TEXT	
+created_at	TIMESTAMP	
+deleted_at	TIMESTAMP	
+10. movimientos_financieros
+
+Toda la contabilidad pasa por esta tabla.
+
+Campo	Tipo	PK	FK
+id	UUID	✅	
+tipo_id	UUID		✅ estados.id
+suscripcion_id	UUID		✅ suscripciones.id
+renovacion_id	UUID		✅ renovaciones.id
+categoria_gasto_id	UUID		✅ categorias_gasto.id
+metodo_pago_id	UUID		✅ metodos_pago.id
+importe	DECIMAL(10,2)		
+fecha	TIMESTAMP		
+estado_id	UUID		✅ estados.id
+descripcion	TEXT		
+created_at	TIMESTAMP		
+11. metodos_pago
+Campo	Tipo	PK
+id	UUID	✅
+nombre	VARCHAR(100)	
+activo	BOOLEAN	
+created_at	TIMESTAMP	
+deleted_at	TIMESTAMP	
+12. categorias_gasto
+Campo	Tipo	PK
+id	UUID	✅
+nombre	VARCHAR(100)	
+activo	BOOLEAN	
+created_at	TIMESTAMP	
+13. recordatorios
+Campo	Tipo	PK	FK
+id	UUID	✅	
+cliente_id	UUID		✅ clientes.id
+suscripcion_id	UUID		✅ suscripciones.id
+tipo_id	UUID		✅ estados.id
+fecha	DATE		
+estado_id	UUID		✅ estados.id
+descripcion	TEXT		
+created_at	TIMESTAMP		
+14. actividad
+
+Registro completo de auditoría.
+
+Campo	Tipo	PK	FK
+id	UUID	✅	
+usuario_id	UUID		✅ usuarios.id
+tabla	VARCHAR(100)		
+registro_id	UUID		
+accion	VARCHAR(50)		
+datos_anteriores	JSONB		
+datos_nuevos	JSONB		
+created_at	TIMESTAMP		
+15. configuracion
+Campo	Tipo	PK
+id	UUID	✅
+clave	VARCHAR(100)	
+valor	TEXT	
+descripcion	TEXT	
+16. importaciones
+Campo	Tipo	PK	FK
+id	UUID	✅	
+archivo	VARCHAR(255)		
+usuario_id	UUID		✅ usuarios.id
+registros	INTEGER		
+errores	INTEGER		
+created_at	TIMESTAMP		
+17. exportaciones
+Campo	Tipo	PK	FK
+id	UUID	✅	
+tipo	VARCHAR(20)		
+usuario_id	UUID		✅ usuarios.id
+created_at	TIMESTAMP		
+18. copias_seguridad
+Campo	Tipo	PK	FK
+id	UUID	✅	
+archivo	VARCHAR(255)		
+tamano	BIGINT		
+estado_id	UUID		✅ estados.id
+created_at	TIMESTAMP		
+19. estados
+
+Catálogo centralizado de estados y tipos para todas las entidades del sistema.
+
+Campo	Tipo	PK
+id	UUID	✅
+tipo	VARCHAR(50)	(ej: 'cliente', 'suscripcion', 'movimiento_tipo', 'movimiento_estado', 'recordatorio_tipo', 'recordatorio_estado', 'copia_seguridad')
+valor	VARCHAR(50)	(ej: 'ACTIVA', 'PENDIENTE', 'INGRESO')
+etiqueta	VARCHAR(100)	(nombre visible en la UI)
+activo	BOOLEAN	
+orden	SMALLINT	(para ordenar en selectores)
+created_at	TIMESTAMP	
+Relaciones principales
+usuarios (1) ──────────────── (N) sesiones
+
+usuarios (1) ──────────────── (N) actividad
+
+usuarios (1) ──────────────── (N) importaciones
+
+usuarios (1) ──────────────── (N) exportaciones
+
+clientes (1) ──────────────── (N) suscripciones
+
+productos (1) ─────────────── (N) tarifas
+
+productos (1) ─────────────── (N) suscripciones
+
+tarifas (1) ───────────────── (N) suscripciones
+
+servidores (1) ────────────── (N) suscripciones
+
+referencias (1) ───────────── (N) suscripciones
+
+suscripciones (1) ─────────── (N) renovaciones
+
+suscripciones (1) ─────────── (N) movimientos_financieros
+
+suscripciones (1) ─────────── (N) recordatorios
+
+renovaciones (1) ──────────── (N) movimientos_financieros
+
+metodos_pago (1) ──────────── (N) renovaciones
+
+metodos_pago (1) ──────────── (N) movimientos_financieros
+
+categorias_gasto (1) ──────── (N) movimientos_financieros
+
+clientes (1) ──────────────── (N) recordatorios
+
+estados (1) ───────────────── (N) suscripciones
+
+estados (1) ───────────────── (N) clientes
+
+estados (1) ───────────────── (N) movimientos_financieros
+
+estados (1) ───────────────── (N) recordatorios
+
+estados (1) ───────────────── (N) copias_seguridad
+Cambios aplicados al esquema
+
+Los tres ajustes propuestos han sido incorporados al diseño antes de comenzar el desarrollo:
+
+Renombrar licencias → suscripciones. ✅ Aplicado. Refleja mejor la naturaleza del servicio y facilita futuras ampliaciones.
+Catálogo de estados. ✅ Aplicado. Se ha creado la tabla estados (tabla 19) para centralizar todos los estados y tipos del sistema, eliminando los campos ENUM individuales y sustituyéndolos por claves foráneas.
+deleted_at en entidades principales. ✅ Aplicado. Añadido en: clientes (ya existía), suscripciones, productos, servidores, referencias y metodos_pago.

@@ -1,0 +1,460 @@
+FASE 4 — Diseño de la API REST
+Objetivos
+
+La API deberá ser:
+
+RESTful.
+Versionada.
+Segura.
+Consistente.
+Fácil de documentar.
+Preparada para futuras integraciones (App móvil, Telegram, API pública).
+
+La URL base será:
+
+/api/v1
+Arquitectura de la API
+Cliente Web
+      │
+      ▼
+/api/v1
+      │
+      ├── Auth
+      ├── Dashboard
+      ├── Clientes
+      ├── Suscripciones
+      ├── Renovaciones
+      ├── Productos
+      ├── Tarifas
+      ├── Servidores
+      ├── Referencias
+      ├── Finanzas
+      ├── Estadísticas
+      ├── Recordatorios
+      ├── Configuración
+      └── Sistema
+Formato estándar de respuestas
+
+Todas las respuestas seguirán el mismo formato.
+
+Respuesta correcta
+{
+    "success": true,
+    "message": "Cliente creado correctamente.",
+    "data": {}
+}
+Respuesta de error
+{
+    "success": false,
+    "message": "El cliente ya existe.",
+    "errors": []
+}
+Códigos HTTP
+Código	Uso
+200	Consulta correcta
+201	Recurso creado
+204	Eliminación lógica correcta
+400	Datos incorrectos
+401	No autenticado
+403	Sin permisos
+404	No encontrado
+409	Conflicto
+422	Error de validación
+500	Error interno
+MÓDULO AUTH
+POST /auth/login
+
+Iniciar sesión.
+
+Body
+
+{
+    "username": "",
+    "password": ""
+}
+
+Respuesta
+
+{
+    "accessToken": "",
+    "refreshToken": "",
+    "user": {}
+}
+POST /auth/logout
+
+Cerrar sesión.
+
+POST /auth/refresh
+
+Renovar token.
+
+GET /auth/me
+
+Información del usuario autenticado.
+
+MÓDULO DASHBOARD
+GET /dashboard
+
+Obtiene todos los indicadores.
+
+Respuesta
+
+Clientes
+
+Renovaciones
+
+Ingresos
+
+Gastos
+
+Beneficio
+
+Próximos vencimientos
+
+Actividad reciente
+GET /dashboard/charts
+
+Datos de las gráficas.
+
+MÓDULO CLIENTES
+GET /clientes
+
+Listado.
+
+Filtros
+
+?page=
+
+&limit=
+
+&search=
+
+&estado=
+
+&producto=
+
+&servidor=
+
+&referencia=
+
+&sort=
+GET /clientes/:id
+
+Ficha completa.
+
+POST /clientes
+
+Crear cliente.
+
+Body
+
+{
+    "nombre": "",
+    "telefono": "",
+    "observaciones": ""
+}
+PUT /clientes/:id
+
+Editar.
+
+DELETE /clientes/:id
+
+Borrado lógico.
+
+POST /clientes/import
+
+Importar Excel.
+
+GET /clientes/export
+
+Exportar.
+
+Parámetros
+
+formato=
+
+excel
+
+csv
+
+pdf
+MÓDULO SUSCRIPCIONES
+GET /suscripciones
+
+Listado.
+
+GET /suscripciones/:id
+
+Detalle.
+
+POST /suscripciones
+
+Crear.
+
+Body
+
+{
+    "clienteId": "",
+    "productoId": "",
+    "tarifaId": "",
+    "servidorId": "",
+    "referenciaId": ""
+}
+PUT /suscripciones/:id
+
+Editar.
+
+POST /suscripciones/:id/renovar
+
+Renovación.
+
+Este endpoint realizará automáticamente:
+
+Crear renovación.
+Actualizar suscripción.
+Crear movimiento financiero.
+Registrar auditoría.
+Cerrar recordatorios.
+
+Todo dentro de una única transacción.
+
+POST /suscripciones/:id/cancelar
+
+Cancelar suscripción.
+
+POST /suscripciones/:id/suspender
+
+Suspender.
+
+POST /suscripciones/:id/reactivar
+
+Reactivar.
+
+MÓDULO RENOVACIONES
+GET /renovaciones
+
+Listado.
+
+Filtros
+
+estado
+
+fechaInicio
+
+fechaFin
+
+cliente
+
+producto
+GET /renovaciones/:id
+
+Detalle.
+
+POST /renovaciones
+
+Crear manualmente (casos excepcionales).
+
+POST /renovaciones/:id/anular
+
+Anulación.
+
+MÓDULO PRODUCTOS
+GET /productos
+GET /productos/:id
+POST /productos
+PUT /productos/:id
+DELETE /productos/:id
+
+(Borrado lógico).
+
+MÓDULO TARIFAS
+GET /tarifas
+POST /tarifas
+PUT /tarifas/:id
+DELETE /tarifas/:id
+MÓDULO SERVIDORES
+GET /servidores
+POST /servidores
+PUT /servidores/:id
+DELETE /servidores/:id
+MÓDULO REFERENCIAS
+GET /referencias
+POST /referencias
+PUT /referencias/:id
+DELETE /referencias/:id
+MÓDULO MÉTODOS DE PAGO
+GET /metodos-pago
+POST /metodos-pago
+PUT /metodos-pago/:id
+DELETE /metodos-pago/:id
+MÓDULO FINANZAS
+GET /finanzas
+
+Listado.
+
+Filtros
+
+fecha
+
+tipo
+
+categoria
+
+metodoPago
+POST /finanzas/ingreso
+
+Registrar ingreso.
+
+POST /finanzas/gasto
+
+Registrar gasto.
+
+PUT /finanzas/:id
+
+Editar.
+
+POST /finanzas/:id/anular
+
+Anular.
+
+GET /finanzas/balance
+
+Balance completo.
+
+MÓDULO ESTADÍSTICAS
+GET /estadisticas
+
+Resumen.
+
+GET /estadisticas/clientes
+GET /estadisticas/finanzas
+GET /estadisticas/renovaciones
+GET /estadisticas/productos
+MÓDULO RECORDATORIOS
+GET /recordatorios
+POST /recordatorios
+PUT /recordatorios/:id
+POST /recordatorios/:id/completar
+POST /recordatorios/:id/posponer
+MÓDULO CONFIGURACIÓN
+GET /configuracion
+PUT /configuracion
+GET /configuracion/backups
+POST /configuracion/backups
+
+Crear copia.
+
+POST /configuracion/backups/restaurar
+
+Restaurar.
+
+MÓDULO SISTEMA
+GET /actividad
+
+Auditoría.
+
+GET /importaciones
+GET /exportaciones
+GET /health
+
+Estado del servidor.
+
+Validaciones
+
+Todas las peticiones pasarán por tres niveles de validación:
+
+Frontend
+     │
+     ▼
+Zod
+
+     │
+     ▼
+API
+
+     │
+     ▼
+DTO (NestJS)
+
+     │
+     ▼
+Base de datos
+
+Esto garantiza una excelente experiencia de usuario sin renunciar a la seguridad.
+
+Paginación
+
+Todos los listados devolverán la misma estructura:
+
+{
+  "success": true,
+  "data": [],
+  "pagination": {
+    "page": 1,
+    "limit": 25,
+    "total": 320,
+    "totalPages": 13
+  }
+}
+Filtros
+
+Todos los listados admitirán una estructura homogénea:
+
+?page=1
+&limit=25
+&search=
+&sort=
+&order=asc
+
+Además, cada módulo añadirá sus filtros específicos (producto, servidor, fechas, estado, etc.).
+
+Versionado
+
+Toda la API se publicará bajo:
+
+/api/v1
+
+Cuando haya cambios incompatibles se creará:
+
+/api/v2
+
+Así evitaremos romper integraciones existentes.
+
+Mejoras que recomiendo incorporar desde el primer día
+
+Además de lo anterior, añadiría varios aspectos que suelen olvidarse y luego resultan costosos de implementar:
+
+1. Idempotencia
+
+Las operaciones críticas, especialmente las renovaciones y los movimientos financieros, deberían aceptar una clave de idempotencia para evitar registros duplicados si el usuario pulsa el botón dos veces o se repite una petición.
+
+2. Soft Delete consistente
+
+Los endpoints DELETE realizarán siempre borrado lógico. Para restaurar registros, es preferible disponer de endpoints específicos como:
+
+POST /clientes/{id}/restaurar
+POST /productos/{id}/restaurar
+3. Auditoría automática
+
+Las operaciones de creación, modificación, anulación y restauración registrarán automáticamente:
+
+Usuario.
+Fecha y hora.
+Acción realizada.
+Datos anteriores.
+Datos nuevos.
+Dirección IP.
+
+Sin que el frontend tenga que enviar esa información.
+
+4. Contratos OpenAPI
+
+Cada endpoint se documentará con:
+
+Parámetros.
+Ejemplos de petición.
+Ejemplos de respuesta.
+Posibles errores.
+Esquemas de datos.
+
+Esto permitirá generar clientes para el frontend y una documentación interactiva con Swagger.

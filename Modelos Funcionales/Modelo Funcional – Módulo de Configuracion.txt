@@ -1,0 +1,309 @@
+Modelo Funcional – Módulo de Configuración
+1. Objetivo
+
+El módulo de Configuración será el centro de administración de la aplicación.
+
+Desde aquí se gestionarán todos los parámetros globales del sistema, así como las listas maestras y las opciones de funcionamiento.
+
+Su objetivo principal es que cualquier cambio operativo pueda realizarse desde la interfaz sin necesidad de modificar el software.
+
+2. Filosofía del módulo
+
+Todo aquello que pueda cambiar con el tiempo no debe estar programado en el código.
+
+Debe ser configurable.
+
+Esto incluye:
+
+Productos.
+Servidores.
+Referencias.
+Métodos de pago.
+Categorías de gasto.
+Parámetros generales.
+Seguridad.
+
+Así conseguimos una aplicación flexible y preparada para crecer.
+
+3. Estructura del módulo
+
+Propongo organizar la configuración en ocho grandes apartados.
+
+Configuración
+
+├── General
+├── Productos
+├── Servidores
+├── Referencias
+├── Métodos de pago
+├── Categorías de gasto
+├── Seguridad
+└── Sistema
+
+Cada sección tendrá una responsabilidad clara y evitará mezclar conceptos distintos.
+
+4. Configuración General
+
+Este apartado incluirá los parámetros básicos de funcionamiento.
+
+Datos del negocio
+Nombre del negocio.
+Logotipo.
+Moneda (por defecto, euro).
+Zona horaria.
+Idioma (preparado para varios idiomas en el futuro).
+Parámetros operativos
+Días para considerar una renovación como "Próxima" (por defecto, 7).
+Política de renovación tardía (desde la fecha de renovación o desde la fecha de pago).
+Formato de fecha.
+Número de resultados por página.
+5. Gestión de Productos
+
+Aunque el módulo de Productos ya existe, desde Configuración se accederá a su mantenimiento.
+
+Acciones disponibles:
+
+Crear producto.
+Editar producto.
+Activar.
+Desactivar.
+Consultar tarifas.
+
+No se gestionarán clientes desde aquí.
+
+6. Gestión de Servidores
+
+Actualmente solo necesitas almacenar el nombre del servidor.
+
+Cada servidor tendrá:
+
+Campo	Descripción
+Nombre	Identificador del servidor.
+Estado	Activo o inactivo.
+Fecha de creación	Automática.
+Observaciones	Opcionales.
+Reglas
+No se permitirán nombres duplicados.
+Un servidor con clientes asociados no podrá eliminarse; solo desactivarse.
+7. Gestión de Referencias
+
+Las referencias representan a la persona que recomienda o gestiona un cliente.
+
+Cada referencia tendrá:
+
+Nombre.
+Estado (Activa/Inactiva).
+Observaciones.
+Funcionalidades
+Buscador instantáneo.
+Activar o desactivar.
+Ver cuántos clientes tiene asociados.
+Consultar ingresos generados.
+Acceso directo al listado de clientes relacionados.
+8. Métodos de Pago
+
+Todos los métodos de pago utilizados en ingresos y gastos se administrarán desde aquí.
+
+Ejemplos:
+
+Bizum.
+Transferencia.
+Stripe.
+PayPal.
+Efectivo.
+Funcionalidades
+Crear.
+Editar.
+Activar.
+Desactivar.
+Definir el orden en los formularios.
+9. Categorías de Gasto
+
+Permitirá mantener organizada la contabilidad.
+
+Categorías iniciales:
+
+Dominio.
+Hosting.
+Publicidad.
+Servidores.
+Herramientas.
+
+Podrán añadirse nuevas categorías en cualquier momento.
+
+10. Seguridad
+
+Aunque inicialmente solo habrá un usuario, este apartado dejará preparada la aplicación para el futuro.
+
+Usuario
+Cambiar nombre de usuario.
+Cambiar contraseña.
+Ver último acceso.
+Sesiones
+Cerrar todas las sesiones activas.
+Ver dispositivos conectados (funcionalidad futura).
+Registro de actividad
+
+Consulta de acciones importantes realizadas en la aplicación.
+
+11. Copias de Seguridad
+
+Este apartado permitirá gestionar las copias de seguridad.
+
+Información mostrada
+Fecha de la última copia.
+Tamaño.
+Estado.
+Acciones
+Crear copia manual.
+Descargar una copia.
+Restaurar una copia (con confirmación).
+Eliminar copias antiguas.
+
+Las copias automáticas seguirán la política definida por el sistema.
+
+12. Configuración del Sistema
+
+Parámetros técnicos de funcionamiento.
+
+Ejemplos:
+
+Intervalo de comprobación de renovaciones.
+Frecuencia de actualización de indicadores.
+Tiempo máximo de sesión.
+Activación del modo mantenimiento (futuro).
+
+Estos parámetros estarán protegidos para evitar cambios accidentales.
+
+13. Integración con otros módulos
+
+El módulo de Configuración actuará como proveedor de datos para el resto del sistema.
+
+Por ejemplo:
+
+Los productos aparecerán en Clientes y Renovaciones.
+Los métodos de pago se utilizarán en Finanzas.
+Los servidores estarán disponibles al crear clientes.
+Las referencias alimentarán estadísticas y búsquedas.
+
+No almacenará información duplicada.
+
+14. Automatizaciones
+
+Cuando se realice un cambio en Configuración:
+
+Las listas desplegables se actualizarán automáticamente.
+Las nuevas opciones estarán disponibles de inmediato.
+Las modificaciones quedarán registradas en la auditoría.
+No será necesario reiniciar la aplicación.
+15. Reglas de negocio
+Ningún elemento con información histórica asociada podrá eliminarse físicamente; deberá marcarse como inactivo.
+Los cambios de configuración no modificarán registros históricos.
+Todos los cambios relevantes quedarán registrados en el sistema de auditoría.
+Los parámetros generales afectarán únicamente al comportamiento futuro de la aplicación, salvo que se indique expresamente lo contrario.
+La configuración estará centralizada en este módulo para evitar duplicidades.
+16. Diseño de la interfaz
+
+La navegación será sencilla y consistente.
+
+Configuración
+
+├── General
+├── Productos
+├── Servidores
+├── Referencias
+├── Métodos de pago
+├── Categorías de gasto
+├── Seguridad
+└── Sistema
+
+Cada sección mostrará una tabla con:
+
+Buscador.
+Filtros (cuando proceda).
+Botón "Nuevo".
+Acciones rápidas (Editar, Activar/Desactivar).
+17. Mejoras funcionales propuestas
+Parámetros versionados
+
+Cada cambio importante en la configuración quedará registrado.
+
+Ejemplo:
+
+08/04/2026
+
+Renovación próxima
+
+7 días
+
+↓
+
+10 días
+
+Usuario:
+
+Administrador
+
+Esto facilitará saber cuándo y por qué cambió un parámetro.
+
+Modo mantenimiento
+
+Aunque no será necesario en la primera versión, propongo dejar prevista una opción para poner la aplicación en modo mantenimiento.
+
+Durante este estado:
+
+No se permitirán operaciones.
+Se mostrará un aviso al iniciar sesión.
+Solo el administrador podrá acceder.
+Centro de diagnóstico
+
+Una sección con información técnica útil para el mantenimiento:
+
+Estado de la base de datos.
+Estado de las copias de seguridad.
+Última importación.
+Última exportación.
+Espacio utilizado.
+Versión de la aplicación.
+
+No será un panel técnico complejo, sino una ayuda para detectar problemas rápidamente.
+
+Configuración preparada para crecer
+
+Aunque inicialmente solo habrá un usuario y pocas opciones, diseñaría este módulo con una estructura extensible.
+
+Esto permitirá añadir en el futuro:
+
+Gestión de usuarios y roles.
+Integraciones con APIs.
+Configuración de notificaciones.
+Preferencias del Dashboard.
+Facturación electrónica.
+Configuración de la aplicación móvil.
+
+Sin necesidad de reorganizar el panel de administración.
+
+Una propuesta de arquitectura que considero muy importante
+
+Mientras definía este módulo he detectado una oportunidad para simplificar el sistema.
+
+En lugar de crear módulos completamente separados para Servidores, Referencias, Métodos de pago y Categorías de gasto, los trataría como catálogos maestros (Master Data).
+
+Todos compartirían el mismo patrón de funcionamiento:
+
+Crear.
+Editar.
+Activar/Desactivar.
+Buscar.
+Auditoría.
+Uso en otros módulos.
+
+Esto tiene varias ventajas:
+
+Interfaz consistente.
+Menos código duplicado.
+Mantenimiento más sencillo.
+Posibilidad de reutilizar componentes tanto en el frontend como en el backend.
+Conclusión del módulo
+
+Con este diseño, Configuración deja de ser un simple menú de ajustes y se convierte en el centro de administración de la plataforma. Desde aquí podrás adaptar el comportamiento de la aplicación a medida que evolucione tu negocio, sin depender de cambios en el desarrollo.

@@ -1,0 +1,313 @@
+Modelo Funcional – Módulo de Productos
+1. Objetivo del módulo
+
+El módulo de productos será el encargado de gestionar todos los servicios comercializados por el negocio.
+
+Actualmente vendes aplicaciones con dos posibles duraciones (1 mes y 12 meses), pero la plataforma no estará limitada a esa situación.
+
+El objetivo es que, si dentro de unos meses decides vender un nuevo producto, únicamente tengas que crearlo desde la aplicación sin necesidad de realizar cambios técnicos.
+
+2. Filosofía del módulo
+
+En el Excel actual escribes manualmente el nombre de la aplicación.
+
+En la nueva plataforma esto desaparecerá.
+
+El usuario nunca escribirá el nombre de un producto.
+
+Siempre lo seleccionará desde un catálogo.
+
+Esto evita:
+
+Errores ortográficos.
+Productos duplicados.
+Estadísticas incorrectas.
+Diferentes formas de escribir el mismo producto.
+3. Catálogo de productos
+
+La plataforma dispondrá de un listado de productos.
+
+Cada producto tendrá una ficha propia.
+
+Ejemplo:
+
+Campo	Descripción
+Nombre	Nombre comercial del producto.
+Descripción	Información opcional.
+Estado	Activo / Inactivo.
+Fecha de creación	Automática.
+Fecha de modificación	Automática.
+4. Duraciones disponibles
+
+Aquí propongo una mejora respecto a la idea inicial.
+
+En lugar de almacenar una única duración por producto, cada producto podrá tener varias opciones de duración.
+
+Ejemplo:
+
+Producto
+
+K13 Player
+
+Duraciones disponibles
+
+1 mes
+12 meses
+
+Otro ejemplo
+
+Aplicación Premium
+
+12 meses
+
+Otro
+
+Demo
+
+1 mes
+
+Así, cuando renueves un cliente, la aplicación solo mostrará las duraciones válidas para ese producto.
+
+Esto aporta mucha flexibilidad.
+
+5. Precios
+
+También recomiendo separar el precio del producto.
+
+No guardaríamos:
+
+Producto = 15 €
+
+Guardaríamos:
+
+Producto
+
+↓
+
+Tiene distintas tarifas
+
+Ejemplo
+
+K13 Player
+
+Duración	Precio
+1 mes	15 €
+12 meses	120 €
+
+Si en el futuro cambias los precios:
+
+No tendrás que modificar clientes.
+
+Solo cambias la tarifa.
+
+6. Estado del producto
+
+Cada producto tendrá un estado.
+
+Activo
+
+Puede venderse.
+
+Aparece en las listas.
+
+Inactivo
+
+No aparece al crear clientes.
+
+Pero sigue existiendo.
+
+Así nunca perderemos información histórica.
+
+7. Pantalla de productos
+
+La pantalla principal mostrará una tabla.
+
+Columnas:
+
+Nombre.
+Duraciones.
+Tarifas.
+Clientes activos.
+Estado.
+Fecha creación.
+8. Acciones disponibles
+Crear producto
+
+Formulario.
+
+Guardar.
+
+Disponible inmediatamente.
+
+Editar
+
+Modificar información.
+
+Activar
+
+Vuelve a aparecer.
+
+Desactivar
+
+No se podrá vender.
+
+Pero seguirá asociado a clientes antiguos.
+
+Eliminar
+
+Aquí propongo una regla.
+
+Un producto nunca podrá eliminarse si tiene clientes asociados.
+
+Solo podrá marcarse como inactivo.
+
+Esto evita romper el historial.
+
+9. Integración con Clientes
+
+Cuando se crea un cliente:
+
+La aplicación preguntará:
+
+Producto
+
+↓
+
+Duración
+
+↓
+
+Precio
+
+No será necesario escribir nada manualmente.
+
+10. Integración con Renovaciones
+
+Al renovar:
+
+La aplicación leerá automáticamente las opciones disponibles.
+
+Ejemplo.
+
+Producto:
+
+K13 Player
+
+Solo mostrará:
+
+1 mes
+12 meses
+
+No permitirá seleccionar opciones inexistentes.
+
+11. Integración con Estadísticas
+
+El módulo alimentará automáticamente:
+
+Producto más vendido.
+
+Ingresos por producto.
+
+Clientes activos por producto.
+
+Renovaciones por producto.
+
+Facturación por producto.
+
+Crecimiento anual.
+
+12. Reglas de negocio
+Todo cliente debe tener un producto asignado.
+No pueden existir dos productos con el mismo nombre.
+Los productos inactivos no podrán asignarse a nuevos clientes.
+No se eliminarán productos con historial asociado.
+Cada renovación conservará el producto contratado en ese momento, aunque el producto cambie posteriormente.
+13. Automatizaciones
+
+Al crear un producto:
+
+Aparece automáticamente en el formulario de clientes.
+Aparece en renovaciones.
+Aparece en estadísticas.
+
+Al desactivar:
+
+Desaparece de nuevas ventas.
+Permanece en clientes antiguos.
+
+Al modificar tarifas:
+
+No cambiarán los clientes existentes.
+
+Solo afectarán a futuras ventas.
+
+Esto es muy importante.
+
+14. Historial de cambios
+
+Propongo que todos los cambios realizados sobre un producto queden registrados.
+
+Ejemplo:
+
+01/08/2026
+
+Producto creado
+
+-------------------------
+
+05/09/2026
+
+Precio anual cambiado
+
+120 €
+
+↓
+
+130 €
+
+-------------------------
+
+10/11/2026
+
+Producto desactivado
+
+Esto permitirá saber cuándo y por qué cambió un producto.
+
+15. Mejoras propuestas
+
+Aquí me gustaría introducir una mejora que considero muy útil para el crecimiento del proyecto.
+
+Separar "Producto" de "Tarifa"
+
+En lugar de tener un único registro con nombre, duración y precio, dividiría el modelo en dos entidades:
+
+Producto
+
+Representa la aplicación o servicio.
+
+Ejemplos:
+
+K13 Player
+IBO Player
+SmartTV App
+Tarifa
+
+Representa las condiciones comerciales de ese producto.
+
+Ejemplo:
+
+Producto: K13 Player
+
+Tarifa	Duración	Precio
+Mensual	1 mes	15 €
+Anual	12 meses	120 €
+
+Este diseño ofrece varias ventajas:
+
+Permite añadir nuevas modalidades (3 meses, 6 meses, promociones) sin cambiar la estructura.
+Facilita la gestión de precios.
+Hace que las estadísticas sean más completas.
+Prepara la aplicación para futuras ampliaciones.
+Conclusión
+
+Con este diseño, el módulo de productos deja de ser una simple lista y se convierte en el catálogo comercial del negocio. Será el origen de toda la información utilizada en clientes, renovaciones, estadísticas y finanzas.

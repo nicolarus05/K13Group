@@ -1,0 +1,592 @@
+Documento de Diseño UX/UI
+Objetivos
+
+La interfaz debe transmitir cuatro sensaciones:
+
+Profesional.
+Moderna.
+Muy rápida.
+Muy sencilla de utilizar.
+
+La idea es que cualquier operación importante pueda hacerse en menos de tres clics.
+
+Principios de diseño
+
+La aplicación seguirá estos principios:
+
+Diseño oscuro por defecto.
+Responsive (móvil, tablet y escritorio).
+Navegación consistente.
+Componentes reutilizables.
+Muy pocos colores.
+Mucho espacio entre elementos.
+Acciones importantes siempre visibles.
+Paleta de colores
+Fondo principal
+#0F172A
+Paneles
+#1E293B
+Hover
+#334155
+Color principal
+#3B82F6
+
+Azul.
+
+Éxito
+#22C55E
+Advertencia
+#F59E0B
+Error
+#EF4444
+Texto
+
+Principal
+
+#F8FAFC
+
+Secundario
+
+#CBD5E1
+Tipografía
+
+Fuente
+
+Inter
+
+Títulos
+
+600
+
+Texto
+
+400
+
+Botones
+
+500
+
+Layout general
+
+Toda la aplicación utilizará el mismo layout.
+
+┌──────────────────────────────────────────────────────────────┐
+│                      HEADER                                  │
+├───────────────┬──────────────────────────────────────────────┤
+│               │                                              │
+│               │                                              │
+│   SIDEBAR     │              CONTENIDO                       │
+│               │                                              │
+│               │                                              │
+│               │                                              │
+├───────────────┴──────────────────────────────────────────────┤
+│                       FOOTER                                 │
+└──────────────────────────────────────────────────────────────┘
+Header
+
+Altura
+
+70 px
+
+Contendrá:
+
+Logo.
+Buscador global.
+Recordatorios.
+Usuario.
+Menú rápido.
+Sidebar
+
+Ancho
+
+280 px
+
+Opciones
+
+Dashboard
+
+Clientes
+
+Suscripciones
+
+Renovaciones
+
+Productos
+
+Finanzas
+
+Estadísticas
+
+Configuración
+
+Siempre visible en escritorio.
+
+En móvil será desplegable.
+
+Footer
+
+Muy pequeño.
+
+Solo versión.
+
+Dashboard
+
+Será la pantalla principal.
+
+Distribución
+┌──────────────────────────────────────────────┐
+
+Bienvenido
+
+───────────────────────────────────────────────
+
+KPIs
+
+□□□□□□□□□□□□□□□□□□□□□□
+
+───────────────────────────────────────────────
+
+Gráficas
+
+□□□□□□□□□□□□
+
+───────────────────────────────────────────────
+
+Renovaciones próximas
+
+───────────────────────────────────────────────
+
+Actividad reciente
+
+───────────────────────────────────────────────
+
+Recordatorios
+
+───────────────────────────────────────────────
+
+Acciones rápidas
+
+└──────────────────────────────────────────────┘
+KPIs
+
+Tarjetas.
+
+Clientes activos.
+
+Renovaciones hoy.
+
+Ingresos.
+
+Gastos.
+
+Beneficio.
+
+Suscripciones vencidas.
+
+Cada tarjeta será clicable.
+
+Clientes
+
+Pantalla más utilizada.
+
+Distribución.
+
+┌────────────────────────────────────────────┐
+
+Clientes
+
+Buscar...
+
+────────────────────────────────────────────
+
+Filtros
+
+────────────────────────────────────────────
+
+Tabla
+
+────────────────────────────────────────────
+
+Paginación
+
+└────────────────────────────────────────────┘
+Tabla
+
+Columnas.
+
+Nombre.
+
+Teléfono.
+
+Producto.
+
+Servidor.
+
+Estado.
+
+Vencimiento.
+
+Acciones.
+
+Acciones.
+
+Editar.
+
+Renovar.
+
+Ver.
+
+Eliminar.
+
+Botón flotante.
+
+Nuevo cliente.
+
+Crear Cliente
+
+Formulario dividido en tarjetas.
+
+Información personal
+
+-------------------------
+
+Suscripción
+
+-------------------------
+
+Observaciones
+
+-------------------------
+
+Guardar
+
+No será un formulario interminable.
+
+Detalle Cliente
+
+Aquí estará toda la información.
+
+Primera tarjeta.
+
+Nombre
+
+Teléfono
+
+Estado
+
+Producto
+
+Servidor
+
+Referencia
+
+Debajo.
+
+Historial.
+
+Renovaciones.
+
+Movimientos.
+
+Recordatorios.
+
+Actividad.
+
+Todo en pestañas.
+
+Suscripciones
+
+Lista similar.
+
+Pero orientada al servicio.
+
+Columnas.
+
+Cliente.
+
+Producto.
+
+Servidor.
+
+Estado.
+
+Fecha inicio.
+
+Fecha fin.
+
+Renovaciones
+
+Tabla.
+
+Filtros.
+
+Pendientes.
+
+Hoy.
+
+Esta semana.
+
+Este mes.
+
+Botón.
+
+Registrar renovación.
+
+Finanzas
+
+Distribución.
+
+Resumen
+
+Ingresos
+
+Gastos
+
+Beneficio
+
+────────────────────────
+
+Gráfica
+
+────────────────────────
+
+Movimientos
+
+────────────────────────
+
+Filtros
+
+Movimiento.
+
+Color verde.
+
+Ingreso.
+
+Color rojo.
+
+Gasto.
+
+Estadísticas
+
+Varias gráficas.
+
+Clientes.
+
+Ingresos.
+
+Productos.
+
+Renovaciones.
+
+Filtros arriba.
+
+Configuración
+
+Dividida en secciones.
+
+General
+
+Productos
+
+Tarifas
+
+Servidores
+
+Referencias
+
+Métodos pago
+
+Backups
+
+Sistema
+Componentes reutilizables
+
+No quiero crear componentes diferentes para cada pantalla.
+
+Habrá una librería propia.
+
+Tabla
+
+Una sola.
+
+Se reutiliza.
+
+Buscador
+
+Uno.
+
+Filtros
+
+Uno.
+
+Modal
+
+Uno.
+
+Confirmación
+
+Uno.
+
+KPI Card
+
+Uno.
+
+Formulario
+
+Uno.
+
+Botón
+
+Tres variantes.
+
+Primario.
+
+Secundario.
+
+Peligro.
+
+Badge
+
+Estados.
+
+Activo.
+
+Vencido.
+
+Pendiente.
+
+Cancelado.
+
+Toast
+
+Notificaciones.
+
+Calendario
+
+Único.
+
+Select
+
+Único.
+
+Input
+
+Único.
+
+Responsive
+Escritorio
+
+Sidebar fija.
+
+Tablet
+
+Sidebar contraíble.
+
+Móvil
+
+Menú hamburguesa.
+
+Tarjetas en lugar de tablas cuando sea necesario.
+
+Animaciones
+
+Muy sutiles.
+
+150–250 ms.
+
+Nunca exageradas.
+
+Iconografía
+
+Lucide.
+
+Toda la aplicación utilizará la misma familia de iconos.
+
+Accesibilidad
+Contraste AA.
+Navegación por teclado.
+Etiquetas (aria-label) en los controles.
+Estados de foco visibles.
+Tamaño mínimo de objetivos táctiles de 44×44 px.
+No depender únicamente del color para transmitir información.
+Sistema de diseño
+
+En lugar de diseñar pantalla por pantalla de forma aislada, propongo crear un Design System completo que sirva como base para toda la aplicación.
+
+Grid
+Contenedor máximo: 1440 px.
+Sistema de 12 columnas.
+Espaciado base de 8 px.
+Radios
+Tarjetas: 12 px.
+Botones: 10 px.
+Inputs: 10 px.
+Modales: 16 px.
+Sombras
+Una sombra suave para tarjetas.
+Una sombra más pronunciada para modales.
+Sin sombras excesivas.
+Estados de componentes
+
+Todos los componentes tendrán definidos estos estados:
+
+Default.
+Hover.
+Focus.
+Active.
+Disabled.
+Loading.
+Error.
+Diseño pantalla por pantalla
+
+Creo que aquí está la mayor mejora que podemos hacer al proyecto.
+
+No diseñaría solo "módulos". Diseñaría todas las pantallas, una por una, antes de escribir código.
+
+Lista completa de pantallas (V1)
+Autenticación
+Login.
+Dashboard
+Dashboard principal.
+Clientes
+Listado.
+Crear.
+Editar.
+Detalle.
+Suscripciones
+Listado.
+Crear.
+Editar.
+Detalle.
+Renovaciones
+Listado.
+Registrar renovación.
+Productos
+Listado.
+Crear/Editar.
+Tarifas
+Listado.
+Crear/Editar.
+Servidores
+Listado.
+Crear/Editar.
+Referencias
+Listado.
+Crear/Editar.
+Finanzas
+Dashboard financiero.
+Movimientos.
+Crear ingreso.
+Crear gasto.
+Estadísticas
+Vista general.
+Recordatorios
+Listado.
+Configuración
+General.
+Métodos de pago.
+Categorías de gasto.
+Backups.
+Sistema.
+
+En total, la primera versión tendría aproximadamente 25–30 pantallas, todas basadas en el mismo sistema de diseño y en componentes reutilizables.

@@ -1,0 +1,200 @@
+Documento de Máquina de Estados
+Objetivo
+
+Definir el ciclo de vida de todas las entidades dinámicas del sistema.
+
+Aplicaremos este modelo a:
+
+Suscripciones.
+Renovaciones.
+Recordatorios.
+Movimientos financieros.
+Importaciones.
+Copias de seguridad.
+Máquina de Estados – Suscripciones
+
+La suscripción es el corazón de la aplicación.
+
+Estados
+Estado	Descripción
+BORRADOR	Suscripción creada pero aún no activada (opcional para futuras versiones).
+ACTIVA	Servicio operativo.
+PRÓXIMA_A_VENCER	Quedan pocos días para el vencimiento.
+VENCIDA	Ha expirado y el servicio debe bloquearse.
+SUSPENDIDA	Suspendida manualmente o por incidencia.
+CANCELADA	Finalizada de forma definitiva.
+Flujo principal
+BORRADOR
+    │
+    ▼
+ACTIVA
+    │
+    ├──────────────► PRÓXIMA_A_VENCER
+    │                    │
+    │                    ▼
+    │                 VENCIDA
+    │                    │
+    │      ┌─────────────┴─────────────┐
+    │      ▼                           ▼
+    │  RENOVACIÓN                  CANCELADA
+    │      │
+    └──────┘
+Transiciones permitidas
+Estado origen	Estado destino	Permitido
+BORRADOR	ACTIVA	✅
+ACTIVA	PRÓXIMA_A_VENCER	✅
+PRÓXIMA_A_VENCER	VENCIDA	✅
+VENCIDA	ACTIVA (mediante renovación)	✅
+ACTIVA	SUSPENDIDA	✅
+SUSPENDIDA	ACTIVA	✅
+ACTIVA	CANCELADA	✅
+PRÓXIMA_A_VENCER	CANCELADA	✅
+VENCIDA	CANCELADA	✅
+Transiciones prohibidas
+CANCELADA → ACTIVA
+CANCELADA → VENCIDA
+CANCELADA → SUSPENDIDA
+VENCIDA → BORRADOR
+SUSPENDIDA → BORRADOR
+
+Una suscripción cancelada nunca volverá a activarse. Si un cliente regresa, se creará una nueva suscripción.
+
+Eventos automáticos
+Al pasar a ACTIVA
+Registrar auditoría.
+Calcular nueva fecha de vencimiento.
+Cerrar recordatorios pendientes.
+Actualizar Dashboard.
+Al pasar a PRÓXIMA_A_VENCER
+Crear recordatorio de renovación.
+Mostrar aviso en Dashboard.
+Al pasar a VENCIDA
+Marcar servicio como bloqueado.
+Generar recordatorio de cobro.
+Mostrar alerta prioritaria.
+Al pasar a CANCELADA
+Cerrar recordatorios abiertos.
+Registrar motivo de cancelación.
+Mantener historial completo.
+Máquina de Estados – Renovaciones
+Estados
+Estado	Descripción
+PENDIENTE	Creada pero no confirmada.
+COMPLETADA	Renovación realizada correctamente.
+ANULADA	Invalidada por error.
+Flujo
+PENDIENTE
+     │
+     ├────────► COMPLETADA
+     │
+     └────────► ANULADA
+Reglas
+
+Una renovación completada:
+
+Actualiza la suscripción.
+Genera un movimiento financiero.
+Se registra en la auditoría.
+
+Una renovación anulada:
+
+No elimina el registro.
+Genera un movimiento correctivo si fuese necesario.
+Conserva el histórico.
+Máquina de Estados – Recordatorios
+Estados
+Estado	Descripción
+PENDIENTE	Pendiente de atender.
+POSPUESTO	Reprogramado para otra fecha.
+COMPLETADO	Resuelto.
+CANCELADO	Ya no aplica.
+Flujo
+PENDIENTE
+    │
+    ├────────► POSPUESTO
+    │             │
+    │             ▼
+    │        PENDIENTE
+    │
+    ├────────► COMPLETADO
+    │
+    └────────► CANCELADO
+Reglas
+Un recordatorio completado no puede volver a pendiente.
+Un recordatorio cancelado no puede reactivarse.
+Posponer cambia únicamente la fecha de ejecución.
+Máquina de Estados – Movimientos Financieros
+Estados
+Estado	Descripción
+PENDIENTE	Registrado pero aún no confirmado.
+CONFIRMADO	Válido para balances.
+ANULADO	Invalidado conservando el histórico.
+Flujo
+PENDIENTE
+     │
+     ├────────► CONFIRMADO
+     │
+     └────────► ANULADO
+Reglas
+Solo los movimientos confirmados afectan a estadísticas y balances.
+Los anulados permanecen visibles para auditoría.
+Nunca se eliminan físicamente.
+Máquina de Estados – Importaciones
+Estados
+Estado	Descripción
+EN_PROCESO	La importación está ejecutándose.
+COMPLETADA	Finalizada correctamente.
+COMPLETADA_CON_ERRORES	Se importó parcialmente.
+FALLIDA	No se importó ningún dato.
+Flujo
+EN_PROCESO
+     │
+     ├────────► COMPLETADA
+     │
+     ├────────► COMPLETADA_CON_ERRORES
+     │
+     └────────► FALLIDA
+Reglas
+Si la importación es atómica, cualquier error provoca FALLIDA y revierte toda la operación.
+Si en el futuro se permite importación parcial, se utilizará COMPLETADA_CON_ERRORES.
+Máquina de Estados – Copias de Seguridad
+Estados
+Estado	Descripción
+GENERANDO	Creando la copia.
+COMPLETADA	Copia válida.
+FALLIDA	Error durante la generación.
+RESTAURADA	Copia utilizada para restaurar el sistema.
+Flujo
+GENERANDO
+      │
+      ├────────► COMPLETADA
+      │
+      └────────► FALLIDA
+
+COMPLETADA
+      │
+      ▼
+RESTAURADA
+Reglas generales de transición
+
+Todas las entidades del sistema seguirán estas normas:
+
+Ninguna transición puede saltarse estados obligatorios.
+Toda transición se registrará en la tabla actividad.
+Cada transición podrá ejecutar acciones automáticas (actualización de fechas, creación de movimientos, generación de recordatorios, etc.).
+Las transiciones críticas se ejecutarán dentro de una transacción de base de datos.
+Los estados finales (CANCELADA, ANULADA, FALLIDA, etc.) no podrán modificarse salvo mediante procesos específicos definidos por el sistema.
+Motor de estados
+
+Para mantener el sistema consistente, implementaría un motor de estados centralizado en el backend en lugar de repartir la lógica entre distintos módulos.
+
+Cada transición definiría:
+
+Estado de origen.
+Estado de destino.
+Evento que la desencadena.
+Condiciones previas.
+Acciones automáticas.
+Registro de auditoría.
+
+De esta forma, cualquier cambio de estado seguiría siempre las mismas reglas, independientemente de si se produce desde la interfaz web, una futura aplicación móvil o una API externa.

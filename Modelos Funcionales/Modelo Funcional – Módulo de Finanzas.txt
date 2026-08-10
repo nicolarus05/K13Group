@@ -1,0 +1,546 @@
+Modelo Funcional – Módulo de Finanzas
+1. Objetivo del módulo
+
+El módulo de Finanzas será el encargado de registrar, organizar y analizar todos los movimientos económicos del negocio.
+
+Su finalidad no será únicamente mostrar cuánto dinero entra, sino ofrecer una visión completa de:
+
+Ingresos.
+Gastos.
+Beneficio.
+Evolución económica.
+Rentabilidad.
+
+Toda la información financiera se generará automáticamente siempre que sea posible, evitando la introducción manual de datos repetitivos.
+
+2. Filosofía del módulo
+
+Es importante entender que el dinero no pertenece a los clientes.
+
+El dinero pertenece a los movimientos financieros.
+
+Esto significa que cada operación económica será un registro independiente.
+
+Ejemplo:
+
+Cliente Juan
+
+↓
+
+Compra aplicación
+
+↓
+
+Se genera automáticamente:
+
+Movimiento financiero
+
+↓
+
+Ingreso
+
+↓
+
+15 €
+
+↓
+
+Bizum
+
+↓
+
+1 agosto
+
+Si más adelante renueva:
+
+No se modifica el movimiento anterior.
+
+Se crea otro nuevo.
+
+3. Tipos de movimientos
+
+El sistema trabajará con una única tabla de movimientos financieros.
+
+Cada movimiento tendrá un tipo.
+
+Ingreso
+
+Todo dinero que entra.
+
+Ejemplos:
+
+Alta cliente.
+Renovación.
+Gasto
+
+Todo dinero que sale.
+
+Ejemplos:
+
+Hosting.
+Dominio.
+Publicidad.
+Herramientas.
+Servidores.
+
+En el futuro podrían añadirse:
+
+Reembolsos.
+Ajustes.
+Comisiones.
+Otros ingresos.
+4. Registro de ingresos
+
+Los ingresos se crearán automáticamente.
+
+Nunca habrá que introducirlos manualmente.
+
+Ejemplo:
+
+Cliente nuevo
+
+↓
+
+Guardar
+
+↓
+
+Crear movimiento financiero
+
+↓
+
+Actualizar Dashboard
+
+↓
+
+Actualizar estadísticas
+
+Otro ejemplo:
+
+Renovación
+
+↓
+
+Guardar
+
+↓
+
+Nuevo ingreso
+
+↓
+
+Actualizar beneficios
+
+5. Registro de gastos
+
+Los gastos sí podrán añadirse manualmente.
+
+Existirá una pantalla específica.
+
+Ejemplo:
+
+Nuevo gasto
+
+Campos:
+
+Concepto.
+Categoría.
+Fecha.
+Importe.
+Método de pago.
+Observaciones.
+
+Guardar.
+
+Listo.
+
+6. Categorías de gasto
+
+Inicialmente existirán:
+
+Dominio.
+Publicidad.
+Servidores.
+Hosting.
+Herramientas.
+
+Pero serán totalmente configurables.
+
+Podrás añadir nuevas.
+
+Ejemplo:
+
+Internet
+
+Electricidad
+
+Equipo
+
+Software
+
+Viajes
+
+7. Métodos de pago
+
+Los gastos utilizarán exactamente la misma lista de métodos de pago que los ingresos.
+
+Esto evita duplicar información.
+
+8. Movimiento financiero
+
+Cada movimiento tendrá una ficha propia.
+
+Información:
+
+Campo	Descripción
+Tipo	Ingreso o gasto.
+Fecha	Fecha del movimiento.
+Importe	Valor económico.
+Método de pago	Lista configurable.
+Categoría	Tipo de ingreso o gasto.
+Cliente relacionado	Si aplica.
+Renovación relacionada	Si aplica.
+Observaciones	Texto libre.
+Estado	Confirmado o anulado.
+9. Dashboard financiero
+
+El Dashboard mostrará información en tiempo real.
+
+Ejemplos.
+
+Hoy.
+
+Ingresos
+
+125 €
+
+Gastos
+
+30 €
+
+Beneficio
+
+95 €
+
+Este mes.
+
+Ingresos
+
+3.250 €
+
+Gastos
+
+850 €
+
+Beneficio
+
+2.400 €
+
+Este año.
+
+Ingresos
+
+42.000 €
+
+Gastos
+
+9.200 €
+
+Beneficio
+
+32.800 €
+
+10. Informes
+
+El módulo permitirá consultar información por periodos.
+
+Hoy.
+
+Semana.
+
+Mes.
+
+Trimestre.
+
+Año.
+
+Personalizado.
+
+Cada informe mostrará:
+
+Ingresos.
+
+Gastos.
+
+Beneficio.
+
+Número de operaciones.
+
+Ticket medio.
+
+Gráficas.
+
+11. Estadísticas financieras
+
+Entre otras:
+
+Facturación diaria.
+
+Facturación mensual.
+
+Facturación anual.
+
+Ingresos por producto.
+
+Ingresos por referencia.
+
+Ingresos por servidor.
+
+Ingresos por método de pago.
+
+Gastos por categoría.
+
+Beneficio mensual.
+
+Beneficio anual.
+
+Comparativa entre años.
+
+12. Integración con otros módulos
+Clientes
+
+Alta
+
+↓
+
+Ingreso automático
+
+Renovaciones
+
+Renovación
+
+↓
+
+Nuevo ingreso
+
+Dashboard
+
+Actualización inmediata.
+
+Estadísticas
+
+Actualización automática.
+
+13. Automatizaciones
+
+Cuando ocurra una venta.
+
+↓
+
+Crear ingreso.
+
+↓
+
+Actualizar Dashboard.
+
+↓
+
+Actualizar estadísticas.
+
+↓
+
+Actualizar beneficios.
+
+Cuando ocurra una renovación.
+
+↓
+
+Nuevo ingreso.
+
+↓
+
+Actualizar informes.
+
+Cuando se registre un gasto.
+
+↓
+
+Actualizar beneficio.
+
+↓
+
+Actualizar Dashboard.
+
+↓
+
+Actualizar estadísticas.
+
+14. Reglas de negocio
+Todo ingreso generado por una venta o renovación se registrará automáticamente.
+Los ingresos no podrán eliminarse; únicamente anularse si existe un error.
+Los gastos podrán editarse mientras no estén cerrados en un periodo contable (si en el futuro se incorpora esta funcionalidad).
+Todo movimiento financiero conservará su historial.
+El beneficio se calculará siempre como Ingresos − Gastos.
+Las estadísticas financieras se recalcularán automáticamente tras cualquier cambio.
+15. Historial financiero
+
+Cada movimiento tendrá trazabilidad.
+
+Ejemplo.
+
+01/08/2026
+
+Ingreso creado
+
+15 €
+
+Bizum
+
+Cliente Juan
+
+--------------------
+
+03/08/2026
+
+Observación modificada
+
+--------------------
+
+05/08/2026
+
+Movimiento anulado
+
+Motivo:
+
+Cobro duplicado
+16. Conciliación (mejora propuesta)
+
+Esta es una mejora que considero muy útil.
+
+Cada movimiento financiero podría tener un estado.
+
+Pendiente.
+
+Confirmado.
+
+Anulado.
+
+Ejemplo.
+
+Cliente paga por Bizum.
+
+↓
+
+Registrar venta.
+
+↓
+
+Estado:
+
+Pendiente.
+
+↓
+
+Comprobar banco.
+
+↓
+
+Confirmado.
+
+Aunque inicialmente seas la única persona utilizando la aplicación, esta funcionalidad aporta seguridad y prepara el sistema para un posible crecimiento.
+
+17. Cierre de periodos (propuesta para el futuro)
+
+No será necesario en la primera versión, pero el diseño debe contemplarlo.
+
+Ejemplo.
+
+Finaliza agosto.
+
+↓
+
+Cerrar agosto.
+
+↓
+
+Los ingresos de agosto quedan bloqueados.
+
+↓
+
+No pueden modificarse.
+
+Esto aporta consistencia a los informes históricos.
+
+18. Mejoras funcionales propuestas
+
+Aquí me gustaría introducir una idea que creo que va a ser una de las mejores decisiones de todo el proyecto.
+
+No almacenar "beneficios"
+
+El beneficio nunca se guardará en la base de datos.
+
+Siempre se calculará.
+
+¿Por qué?
+
+Porque el beneficio es un dato derivado.
+
+Si mañana corriges un gasto.
+
+El beneficio cambia.
+
+Si estuviera almacenado.
+
+Habría que actualizar cientos de registros.
+
+En cambio.
+
+Si siempre se calcula.
+
+Siempre será correcto.
+
+Separar "Movimientos" de "Balance"
+
+Otra mejora importante.
+
+No existirán tablas de:
+
+Ingresos.
+
+Gastos.
+
+Beneficios.
+
+Existirá una única entidad:
+
+Movimiento financiero
+
+Con un campo:
+
+Tipo.
+
+Ingreso.
+
+Gasto.
+
+Esto simplifica enormemente el desarrollo y evita duplicidades.
+
+Preparado para facturación
+
+Como ya hemos hablado de incorporar un sistema de facturación en el futuro, todos los movimientos financieros deberán poder vincularse a una factura.
+
+Hoy esa relación estará vacía, pero el diseño la contemplará desde el principio.
+
+Esto permitirá generar facturas sin tener que rediseñar el módulo financiero.
+
+Conclusión del módulo
+
+El módulo de Finanzas se convertirá en la fuente oficial de toda la información económica de la plataforma. Todos los ingresos generados por clientes y renovaciones, así como los gastos registrados manualmente, convergerán en un único sistema de movimientos financieros, lo que garantizará la coherencia de los datos y facilitará la obtención de informes fiables.
+
+Además, el diseño deja preparada la aplicación para incorporar en el futuro:
+
+Facturación.
+Conciliación bancaria.
+Cierres contables.
+Informes avanzados.
+Exportación de datos financieros.

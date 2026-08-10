@@ -1,0 +1,310 @@
+Documento de Reglas de Negocio
+RN-001 — Clientes
+RN-001.001 — Cliente obligatorio
+
+Toda suscripción debe pertenecer a un cliente existente.
+
+RN-001.002 — Nombre obligatorio
+
+El nombre del cliente es obligatorio.
+
+RN-001.003 — Teléfono único (opcional)
+
+Si se introduce un teléfono, no podrá existir otro cliente con el mismo número.
+
+RN-001.004 — Borrado lógico
+
+Los clientes nunca se eliminarán físicamente.
+
+Se marcarán mediante deleted_at y dejarán de aparecer en las búsquedas normales.
+
+RN-001.005 — Historial
+
+Aunque un cliente esté eliminado lógicamente, se conservarán:
+
+Suscripciones
+Renovaciones
+Movimientos financieros
+Actividad
+Recordatorios
+RN-002 — Suscripciones
+RN-002.001 — Una suscripción pertenece a un único cliente.
+RN-002.002 — Producto obligatorio.
+RN-002.003 — Tarifa obligatoria.
+
+La tarifa debe pertenecer al producto seleccionado.
+
+RN-002.004 — Servidor obligatorio.
+RN-002.005 — Estado válido
+
+Estados permitidos:
+
+Activa
+Próxima a vencer
+Vencida
+Suspendida
+Cancelada
+
+No se permitirán otros valores.
+
+RN-002.006 — Fechas coherentes
+
+La fecha de fin debe ser posterior a la fecha de inicio.
+
+RN-002.007 — Una suscripción no puede renovarse si está cancelada.
+RN-002.008 — Una suscripción cancelada conserva todo su historial.
+RN-002.009 — Cambio de servidor
+
+Cambiar el servidor no modifica el historial de renovaciones.
+
+Solo afecta a la suscripción desde ese momento.
+
+RN-002.010 — Cambio de referencia
+
+Solo afectará a futuras operaciones.
+
+Nunca modificará datos históricos.
+
+RN-003 — Renovaciones
+RN-003.001
+
+Toda renovación pertenece a una suscripción.
+
+RN-003.002
+
+Una renovación genera automáticamente:
+
+Registro de renovación.
+Movimiento financiero de ingreso.
+Actualización de la fecha de vencimiento.
+Registro en auditoría.
+
+Todo debe ejecutarse dentro de una transacción para evitar inconsistencias.
+
+RN-003.003
+
+Las renovaciones nunca se eliminan.
+
+RN-003.004
+
+Si una renovación es incorrecta:
+
+No se modifica.
+
+Se crea una corrección o anulación.
+
+RN-003.005
+
+El importe queda congelado.
+
+Aunque el precio cambie posteriormente, el histórico conserva el importe original.
+
+RN-004 — Productos
+RN-004.001
+
+El nombre del producto debe ser único.
+
+RN-004.002
+
+Un producto con suscripciones activas no puede eliminarse.
+
+Solo podrá desactivarse.
+
+RN-004.003
+
+Un producto desactivado:
+
+No aparecerá al crear nuevas suscripciones.
+Seguirá apareciendo en el historial.
+RN-005 — Tarifas
+RN-005.001
+
+Toda tarifa pertenece a un producto.
+
+RN-005.002
+
+Duraciones permitidas inicialmente:
+
+1 mes
+12 meses
+
+La arquitectura permitirá añadir nuevas duraciones sin cambios estructurales.
+
+RN-005.003
+
+El precio debe ser mayor que cero.
+
+RN-006 — Servidores
+RN-006.001
+
+El nombre debe ser único.
+
+RN-006.002
+
+No se eliminarán servidores con historial.
+
+RN-006.003
+
+Solo podrán desactivarse.
+
+RN-007 — Referencias
+RN-007.001
+
+Una referencia puede estar asociada a múltiples suscripciones.
+
+RN-007.002
+
+No podrá eliminarse si tiene historial asociado.
+
+RN-008 — Métodos de pago
+RN-008.001
+
+Los métodos utilizados no podrán eliminarse.
+
+RN-008.002
+
+Solo podrán marcarse como inactivos.
+
+RN-008.003
+
+Los métodos inactivos no aparecerán en nuevos formularios.
+
+RN-009 — Movimientos financieros
+RN-009.001
+
+Todo movimiento será de tipo:
+
+Ingreso
+Gasto
+RN-009.002
+
+El importe debe ser mayor que cero.
+
+RN-009.003
+
+Los movimientos financieros nunca se eliminarán.
+
+RN-009.004
+
+Si existe un error:
+
+Se generará una anulación y quedará registrada en la auditoría.
+
+RN-009.005
+
+Toda renovación crea un movimiento financiero de ingreso automáticamente.
+
+RN-010 — Recordatorios
+RN-010.001
+
+Tipos permitidos:
+
+Renovación
+Cobro
+Telegram
+RN-010.002
+
+Un recordatorio completado no podrá volver a estado pendiente.
+
+RN-010.003
+
+Se permitirá posponer un recordatorio.
+
+RN-011 — Dashboard
+RN-011.001
+
+Todos los indicadores se calculan en tiempo real.
+
+RN-011.002
+
+No se almacenan KPIs.
+
+RN-011.003
+
+Los filtros afectan únicamente a la visualización.
+
+Nunca modifican datos.
+
+RN-012 — Estadísticas
+RN-012.001
+
+Todas las estadísticas se calculan desde los datos originales.
+
+RN-012.002
+
+Las comparativas siempre utilizarán periodos equivalentes.
+
+RN-012.003
+
+Las exportaciones respetarán los filtros activos.
+
+RN-013 — Configuración
+RN-013.001
+
+Toda modificación quedará registrada en la auditoría.
+
+RN-013.002
+
+Los parámetros generales afectarán únicamente a operaciones futuras, salvo indicación expresa.
+
+RN-014 — Seguridad
+RN-014.001
+
+Las contraseñas nunca se almacenarán en texto plano.
+
+RN-014.002
+
+Todas las operaciones requerirán un usuario autenticado.
+
+RN-014.003
+
+Todas las acciones importantes quedarán registradas.
+
+RN-015 — Auditoría
+
+Se registrarán como mínimo:
+
+Inicio y cierre de sesión.
+Creación, edición y desactivación de clientes.
+Creación y renovación de suscripciones.
+Cambios en productos, tarifas, servidores, referencias y métodos de pago.
+Movimientos financieros.
+Cambios en configuración.
+Importaciones y exportaciones.
+Restauraciones de copias de seguridad.
+RN-016 — Importación y Exportación
+RN-016.001
+
+Una importación deberá validar todos los datos antes de insertarlos.
+
+RN-016.002
+
+Si la importación falla, se cancelará completamente (transacción atómica).
+
+RN-016.003
+
+Toda exportación quedará registrada.
+
+RN-017 — Copias de seguridad
+RN-017.001
+
+Las copias automáticas no sobrescribirán la última copia válida.
+
+RN-017.002
+
+Toda restauración requerirá confirmación explícita.
+
+RN-017.003
+
+La restauración quedará registrada en la auditoría.
+
+Reglas técnicas globales
+
+Además de las reglas funcionales, establecería estas reglas para todo el proyecto:
+
+Todas las operaciones que afecten a varias tablas (por ejemplo, una renovación) se ejecutarán dentro de una transacción.
+Las claves primarias serán UUID.
+Todas las fechas se almacenarán en UTC y se mostrarán al usuario según su zona horaria.
+No se realizarán borrados físicos sobre entidades de negocio; se utilizará borrado lógico cuando corresponda.
+Todas las respuestas de la API seguirán un formato uniforme.
+Todas las validaciones se realizarán tanto en el frontend (mejora de experiencia) como en el backend (garantía de integridad).

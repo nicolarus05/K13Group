@@ -1,0 +1,332 @@
+PLAN DE DESARROLLO DEL PROYECTO
+Objetivos
+
+Cada sprint debe cumplir cuatro condiciones:
+
+Entregar una funcionalidad completa.
+No romper funcionalidades anteriores.
+Ser desplegable en un entorno de pruebas.
+Poder probarse de forma independiente.
+Vista general
+Sprint	Módulo	Estado esperado
+Sprint 0	Preparación del proyecto	Proyecto listo para desarrollar
+Sprint 1	Infraestructura + Autenticación	Usuario puede iniciar sesión
+Sprint 2	Diseño base + Layout	Interfaz completa
+Sprint 3	Clientes	CRUD completo
+Sprint 4	Productos, Tarifas, Servidores y Referencias	Catálogos completos
+Sprint 5	Suscripciones	Gestión completa de suscripciones
+Sprint 6	Renovaciones	Renovaciones automáticas
+Sprint 7	Finanzas	Control económico
+Sprint 8	Dashboard	Panel principal operativo
+Sprint 9	Estadísticas	Informes y gráficos
+Sprint 10	Recordatorios + Calendario	Gestión de tareas
+Sprint 11	Configuración	Administración del sistema
+Sprint 12	Importación / Exportación	Migración desde Excel
+Sprint 13	Auditoría + Seguridad	Sistema robusto
+Sprint 14	Optimización + Testing	Aplicación estable
+Sprint 15	Despliegue producción	Primera versión publicada
+SPRINT 0 – Preparación del proyecto
+
+Objetivo: dejar el entorno completamente preparado.
+
+Backend
+Crear proyecto NestJS.
+Configurar TypeScript.
+Configurar ESLint y Prettier.
+Configurar Prisma.
+Configurar PostgreSQL.
+Crear estructura modular.
+Variables de entorno.
+Docker Compose.
+Logger.
+Configuración global.
+Frontend
+Crear proyecto Next.js.
+Configurar Tailwind CSS.
+Configurar shadcn/ui.
+Configurar TanStack Query.
+Configurar React Hook Form.
+Configurar Zod.
+Tema oscuro.
+Rutas iniciales.
+
+Resultado: proyecto listo para empezar a desarrollar.
+
+SPRINT 1 – Autenticación
+Backend
+Login.
+Logout.
+Refresh Token.
+JWT.
+Hash de contraseñas.
+Middleware de autenticación.
+Frontend
+Pantalla Login.
+Protección de rutas.
+Gestión de sesión.
+Persistencia.
+
+Resultado: acceso seguro a la aplicación.
+
+SPRINT 2 – Layout y Design System
+
+Este sprint construye la base visual de toda la aplicación.
+
+Componentes
+Botones.
+Inputs.
+Select.
+Tablas.
+Tarjetas.
+Modales.
+Formularios.
+Toasts.
+Badges.
+Sidebar.
+Header.
+Footer.
+Loader.
+Skeletons.
+Empty States.
+
+Resultado: todas las pantallas futuras reutilizarán estos componentes.
+
+SPRINT 3 – Clientes
+Backend
+CRUD.
+Búsquedas.
+Filtros.
+Paginación.
+Validaciones.
+Frontend
+Listado.
+Crear.
+Editar.
+Eliminar (borrado lógico).
+Detalle.
+Historial.
+
+Resultado: gestión completa de clientes.
+
+SPRINT 4 – Catálogos
+
+Incluye:
+
+Productos.
+Tarifas.
+Servidores.
+Referencias.
+Métodos de pago.
+Categorías de gasto.
+
+Todos con:
+
+CRUD.
+Filtros.
+Búsquedas.
+Desactivación.
+
+Resultado: todos los datos maestros disponibles.
+
+SPRINT 5 – Suscripciones
+
+Este será probablemente el sprint más importante.
+
+Incluye:
+
+Crear suscripción.
+Editar.
+Cambiar servidor.
+Cambiar referencia.
+Suspender.
+Reactivar.
+Cancelar.
+Estados automáticos.
+Historial.
+
+Resultado: sistema completo de gestión de suscripciones.
+
+SPRINT 6 – Renovaciones
+
+Aquí implementaremos toda la lógica de negocio.
+
+Incluye:
+
+Renovación automática.
+Renovación manual.
+Actualización de fechas.
+Cambio de estado.
+Registro financiero.
+Auditoría.
+Recordatorios automáticos.
+
+Resultado: renovaciones completamente automatizadas.
+
+SPRINT 7 – Finanzas
+
+Incluye:
+
+Ingresos.
+Gastos.
+Balance.
+Categorías.
+Métodos de pago.
+Informes financieros.
+
+Resultado: control económico del negocio.
+
+SPRINT 8 – Dashboard
+
+Implementación de:
+
+KPIs.
+Tarjetas resumen.
+Gráficas.
+Actividad reciente.
+Próximas renovaciones.
+Recordatorios.
+Acciones rápidas.
+
+Resultado: panel principal completamente funcional.
+
+SPRINT 9 – Estadísticas
+
+Gráficas de:
+
+Clientes.
+Productos.
+Renovaciones.
+Ingresos.
+Beneficios.
+Evolución temporal.
+
+Incluye filtros por rango de fechas.
+
+SPRINT 10 – Recordatorios y Calendario
+
+Implementación de:
+
+Recordatorios de renovación.
+Recordatorios de cobro.
+Recordatorios de Telegram.
+Calendario mensual.
+Agenda diaria.
+SPRINT 11 – Configuración
+
+Incluye:
+
+Configuración general.
+Métodos de pago.
+Categorías.
+Backups.
+Parámetros del sistema.
+SPRINT 12 – Importación y Exportación
+Importación
+Excel.
+Validación previa.
+Vista previa.
+Importación segura.
+Exportación
+Excel.
+CSV.
+PDF.
+SPRINT 13 – Auditoría y Seguridad
+
+Implementación de:
+
+Registro de actividad.
+Historial de cambios.
+Logs.
+Protección contra ataques comunes.
+Limitación de peticiones.
+Cabeceras de seguridad.
+Copias de seguridad automáticas.
+SPRINT 14 – Optimización y Testing
+
+Pruebas:
+
+Unitarias.
+Integración.
+Funcionales.
+Rendimiento.
+Seguridad.
+
+Optimización de:
+
+Consultas SQL.
+Caché.
+Carga diferida.
+Índices de base de datos.
+SPRINT 15 – Producción
+
+Preparación final:
+
+Docker para producción.
+Nginx.
+HTTPS.
+Dominio.
+Backups programados.
+Monitorización.
+Logs.
+Documentación final.
+
+Resultado: versión 1.0 publicada.
+
+Flujo de trabajo de cada sprint
+
+Cada sprint seguirá siempre el mismo ciclo para mantener la calidad del proyecto:
+
+Revisar requisitos del módulo.
+Implementar la base de datos (si aplica).
+Desarrollar el backend.
+Escribir pruebas del backend.
+Desarrollar el frontend.
+Integrar frontend y backend.
+Realizar pruebas funcionales.
+Corregir errores.
+Revisar el código (code review).
+Marcar el sprint como completado.
+
+Así evitaremos acumular deuda técnica.
+
+Definición de "Terminado" (Definition of Done)
+
+Un sprint solo se considerará completado cuando:
+
+El código esté revisado y sin errores críticos.
+Todas las pruebas pasen correctamente.
+La documentación esté actualizada.
+La funcionalidad sea usable desde la interfaz.
+Se haya verificado en un entorno de pruebas.
+No existan errores conocidos de prioridad alta.
+Gestión de versiones
+
+Trabajaría siempre con una estrategia de ramas como esta:
+
+main
+ ├── develop
+ │     ├── feature/auth
+ │     ├── feature/clientes
+ │     ├── feature/suscripciones
+ │     ├── feature/finanzas
+ │     └── ...
+
+Cada funcionalidad se desarrolla en su propia rama y se integra en develop tras pasar las revisiones y pruebas. Cuando un conjunto de sprints está listo, se publica en main mediante una versión etiquetada (por ejemplo, v1.0.0).
+
+Estimación global
+Fase	Complejidad
+Preparación	Baja
+Autenticación	Media
+Layout	Media
+Clientes	Alta
+Catálogos	Media
+Suscripciones	Muy alta
+Renovaciones	Muy alta
+Finanzas	Alta
+Dashboard	Media
+Estadísticas	Media
+Configuración	Baja
+Importación/Exportación	Alta
+Auditoría y Seguridad	Alta
+Testing y Optimización	Muy alta
+Producción	Media
