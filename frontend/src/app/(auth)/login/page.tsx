@@ -1,11 +1,4 @@
-import dynamic from 'next/dynamic';
-
-// Renderizado solo en cliente para evitar hydration mismatch causado por
-// extensiones de navegador (gestores de contraseñas) que modifican el DOM
-const LoginForm = dynamic(
-  () => import('@/modules/auth/components/login-form').then((m) => ({ default: m.LoginForm })),
-  { ssr: false },
-);
+import { LoginFormClient } from '@/modules/auth/components/login-form-client';
 
 export default function LoginPage() {
   return (
@@ -15,7 +8,7 @@ export default function LoginPage() {
           <h1 className="text-2xl font-semibold text-text-main">K13Group</h1>
           <p className="mt-1 text-sm text-text-secondary">Accede a tu cuenta</p>
         </div>
-        <LoginForm />
+        <LoginFormClient />
       </div>
     </main>
   );
