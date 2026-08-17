@@ -1,10 +1,11 @@
+import { type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { TableSkeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 
 export interface Column<T> {
   header: string;
-  accessor: keyof T | ((row: T) => React.ReactNode);
+  accessor: keyof T | ((row: T) => ReactNode);
   className?: string;
   headerClassName?: string;
 }
@@ -66,7 +67,7 @@ export function Table<T extends { id: string }>({
                 <td key={i} className={cn('px-4 py-3 text-text-main', col.className)}>
                   {typeof col.accessor === 'function'
                     ? col.accessor(row)
-                    : (row[col.accessor] as React.ReactNode)}
+                    : (row[col.accessor] as ReactNode)}
                 </td>
               ))}
             </tr>

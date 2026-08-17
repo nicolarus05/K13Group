@@ -1,3 +1,4 @@
+import { type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 type BadgeVariant = 'success' | 'warning' | 'danger' | 'default' | 'primary';
@@ -13,7 +14,7 @@ const variants: Record<BadgeVariant, string> = {
 interface BadgeProps {
   variant?: BadgeVariant;
   className?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export function Badge({ variant = 'default', className, children }: BadgeProps) {

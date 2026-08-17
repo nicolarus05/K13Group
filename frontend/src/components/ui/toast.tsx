@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useContext, useReducer } from 'react';
+import { createContext, useCallback, useContext, useReducer, type ElementType, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { CheckCircle2, XCircle, AlertTriangle, Info, X } from 'lucide-react';
 
@@ -23,7 +23,7 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
-const icons: Record<ToastType, React.ElementType> = {
+const icons: Record<ToastType, ElementType> = {
   success: CheckCircle2,
   error: XCircle,
   warning: AlertTriangle,
@@ -37,7 +37,7 @@ const styles: Record<ToastType, string> = {
   info: 'border-primary/30 text-primary',
 };
 
-export function ToastProvider({ children }: { children: React.ReactNode }) {
+export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, dispatch] = useReducer(
     (state: Toast[], action: { type: 'add'; payload: Toast } | { type: 'remove'; id: string }) => {
       if (action.type === 'add') return [...state, action.payload];
