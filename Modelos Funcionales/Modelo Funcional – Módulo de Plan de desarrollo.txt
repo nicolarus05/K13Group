@@ -9,8 +9,8 @@ Ser desplegable en un entorno de pruebas.
 Poder probarse de forma independiente.
 Vista general
 Sprint	Módulo	Estado esperado
-Sprint 0	Preparación del proyecto	Proyecto listo para desarrollar
-Sprint 1	Infraestructura + Autenticación	Usuario puede iniciar sesión
+Sprint 0	Preparación del proyecto	Proyecto listo para desarrollar             Completado
+Sprint 1	Infraestructura + Autenticación	Usuario puede iniciar sesión            Completado
 Sprint 2	Diseño base + Layout	Interfaz completa
 Sprint 3	Clientes	CRUD completo
 Sprint 4	Productos, Tarifas, Servidores y Referencias	Catálogos completos
