@@ -16,12 +16,16 @@ async function bootstrap() {
   app.setGlobalPrefix('api/v1');
 
   // Seguridad
-  app.use(helmet());
+  // Helmet debe ir antes de CORS para no bloquear las cabeceras CORS
   app.use(cookieParser());
   app.enableCors({
     origin: config.get('FRONTEND_URL', 'http://localhost:3000'),
     credentials: true,
+    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Cookie'],
+    exposedHeaders: ['Set-Cookie'],
   });
+  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
   // Validación global de DTOs
   app.useGlobalPipes(
