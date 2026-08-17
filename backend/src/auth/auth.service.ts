@@ -1,5 +1,5 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { Response } from 'express';
@@ -48,18 +48,18 @@ export class AuthService {
 
     res.cookie(
       ACCESS_COOKIE,
-      this.sign(userId, 'JWT_SECRET', this.config.get('JWT_EXPIRES_IN', '15m')),
+      this.sign(userId, 'JWT_SECRET', this.config.get('JWT_EXPIRES_IN', '15m') as JwtSignOptions['expiresIn']),
       { ...base, maxAge: 15 * 60 * 1000 },
     );
 
     res.cookie(
       REFRESH_COOKIE,
-      this.sign(userId, 'JWT_REFRESH_SECRET', this.config.get('JWT_REFRESH_EXPIRES_IN', '7d')),
+      this.sign(userId, 'JWT_REFRESH_SECRET', this.config.get('JWT_REFRESH_EXPIRES_IN', '7d') as JwtSignOptions['expiresIn']),
       { ...base, maxAge: 7 * 24 * 60 * 60 * 1000 },
     );
   }
 
-  private sign(userId: string, secretKey: string, expiresIn: string) {
+  private sign(userId: string, secretKey: string, expiresIn: JwtSignOptions['expiresIn']) {
     return this.jwtService.sign(
       { sub: userId },
       { secret: this.config.getOrThrow(secretKey), expiresIn },
