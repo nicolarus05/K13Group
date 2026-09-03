@@ -17,7 +17,7 @@ import { es } from 'date-fns/locale';
 export default function ClienteDetallePage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { toast } = useToast();
+  const { success, error } = useToast();
   const [editOpen, setEditOpen] = useState(false);
 
   const { data: cliente, isLoading } = useCliente(id);
@@ -29,10 +29,10 @@ export default function ClienteDetallePage() {
   async function handleUpdate(data: ClienteFormData) {
     try {
       await updateMutation.mutateAsync(data);
-      toast.success('Cliente actualizado correctamente.');
+      success('Cliente actualizado correctamente.');
       setEditOpen(false);
     } catch {
-      toast.error('Error al actualizar el cliente.');
+      error('Error al actualizar el cliente.');
     }
   }
 

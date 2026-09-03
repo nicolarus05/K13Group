@@ -4,6 +4,7 @@ import { PrismaService } from '../database/prisma.service';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
 import { FindClientesDto } from './dto/find-clientes.dto';
+import { normalizePhone } from '../common/helpers/normalization';
 
 const INCLUDE_ESTADO = { estado: true } satisfies Prisma.ClienteInclude;
 
@@ -12,7 +13,10 @@ export class ClientesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(query: FindClientesDto) {
-    const { page = 1, limit = 25, search, estadoId, sort = 'nombre' } = query;
+    const { page = 1, search, estadoId } = query;
+    const limit = Math.min(query.limit ?? 25, 100);
+    const allowedSorts = new Set(['nombre', 'createdAt', 'updatedAt']);
+    const sort = allowedSorts.has(query.sort ?? '') ? query.sort! : 'nombre';
     const skip = (page - 1) * limit;
 
     const where: Prisma.ClienteWhereInput = {
@@ -22,6 +26,7 @@ export class ClientesService {
         OR: [
           { nombre: { contains: search, mode: 'insensitive' } },
           { telefono: { contains: search, mode: 'insensitive' } },
+          { telefonoNormalizado: { contains: normalizePhone(search) ?? search } },
           { email: { contains: search, mode: 'insensitive' } },
         ],
       }),
@@ -38,7 +43,10 @@ export class ClientesService {
       this.prisma.cliente.count({ where }),
     ]);
 
-    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+    return {
+      data,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   async findOne(id: string) {
@@ -65,10 +73,16 @@ export class ClientesService {
   }
 
   async create(dto: CreateClienteDto) {
-    // RN-001.003: teléfono único si se proporciona
-    if (dto.telefono) {
+    const telefono = dto.telefono?.trim() || null;
+    const telefonoNormalizado = normalizePhone(telefono);
+
+    // RN-001.003: teléfono normalizado único si se proporciona
+    if (telefonoNormalizado) {
       const existe = await this.prisma.cliente.findFirst({
-        where: { telefono: dto.telefono, deletedAt: null },
+        where: {
+          deletedAt: null,
+          OR: [{ telefonoNormalizado }, { telefono: telefonoNormalizado }, { telefono }],
+        },
       });
       if (existe) throw new ConflictException('Ya existe un cliente con ese teléfono');
     }
@@ -78,7 +92,7 @@ export class ClientesService {
     });
 
     return this.prisma.cliente.create({
-      data: { ...dto, estadoId: estadoActivo.id },
+      data: { ...dto, telefono, telefonoNormalizado, estadoId: estadoActivo.id },
       include: INCLUDE_ESTADO,
     });
   }
@@ -86,17 +100,25 @@ export class ClientesService {
   async update(id: string, dto: UpdateClienteDto) {
     await this.findOne(id);
 
-    // RN-001.003: teléfono único si se proporciona
-    if (dto.telefono) {
+    const hasTelefono = dto.telefono !== undefined;
+    const telefono = hasTelefono ? dto.telefono?.trim() || null : undefined;
+    const telefonoNormalizado = hasTelefono ? normalizePhone(telefono) : undefined;
+
+    // RN-001.003: teléfono normalizado único si se proporciona
+    if (telefonoNormalizado) {
       const existe = await this.prisma.cliente.findFirst({
-        where: { telefono: dto.telefono, deletedAt: null, NOT: { id } },
+        where: {
+          deletedAt: null,
+          NOT: { id },
+          OR: [{ telefonoNormalizado }, { telefono: telefonoNormalizado }, { telefono }],
+        },
       });
       if (existe) throw new ConflictException('Ya existe un cliente con ese teléfono');
     }
 
     return this.prisma.cliente.update({
       where: { id },
-      data: dto,
+      data: { ...dto, ...(hasTelefono ? { telefono, telefonoNormalizado } : {}) },
       include: INCLUDE_ESTADO,
     });
   }

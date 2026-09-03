@@ -17,6 +17,7 @@ import { EstadisticasModule } from './estadisticas/estadisticas.module';
 import { ConfiguracionModule } from './configuracion/configuracion.module';
 import { AuditoriaModule } from './auditoria/auditoria.module';
 import { RecordatoriosModule } from './recordatorios/recordatorios.module';
+import { ImportacionesModule } from './importaciones/importaciones.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { RecordatoriosModule } from './recordatorios/recordatorios.module';
     ConfiguracionModule,
     AuditoriaModule,
     RecordatoriosModule,
+    ImportacionesModule,
   ],
 })
 export class AppModule {}

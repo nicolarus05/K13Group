@@ -1,4 +1,4 @@
-import { IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -15,6 +15,7 @@ export class FindClientesDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
+  @Max(100)
   limit?: number = 25;
 
   @ApiProperty({ required: false })
@@ -30,5 +31,6 @@ export class FindClientesDto {
   @ApiProperty({ required: false, default: 'nombre' })
   @IsOptional()
   @IsString()
+  @IsIn(['nombre', 'createdAt', 'updatedAt'])
   sort?: string = 'nombre';
 }

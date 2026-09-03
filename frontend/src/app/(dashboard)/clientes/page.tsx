@@ -22,7 +22,7 @@ import type { ClienteFormData } from '@/modules/clientes/schemas/cliente.schema'
 
 export default function ClientesPage() {
   const router = useRouter();
-  const { toast } = useToast();
+  const { success, error } = useToast();
 
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -71,15 +71,15 @@ export default function ClientesPage() {
     try {
       if (editCliente) {
         await updateMutation.mutateAsync(formData);
-        toast.success('Cliente actualizado correctamente.');
+        success('Cliente actualizado correctamente.');
       } else {
         await createMutation.mutateAsync(formData);
-        toast.success('Cliente creado correctamente.');
+        success('Cliente creado correctamente.');
       }
       setFormOpen(false);
       setEditCliente(undefined);
     } catch {
-      toast.error('Error al guardar el cliente.');
+      error('Error al guardar el cliente.');
     }
   }
 
@@ -87,9 +87,9 @@ export default function ClientesPage() {
     if (!deleteId) return;
     try {
       await deleteMutation.mutateAsync(deleteId);
-      toast.success('Cliente eliminado correctamente.');
+      success('Cliente eliminado correctamente.');
     } catch {
-      toast.error('Error al eliminar el cliente.');
+      error('Error al eliminar el cliente.');
     } finally {
       setDeleteId(null);
     }
@@ -125,13 +125,13 @@ export default function ClientesPage() {
           emptyTitle="No hay clientes"
           emptyDescription="Crea el primer cliente pulsando el botón superior."
         />
-        {data && data.totalPages > 1 && (
+        {data && data.pagination.totalPages > 1 && (
           <div className="border-t border-hover px-4">
             <Pagination
-              page={data.page}
-              totalPages={data.totalPages}
-              total={data.total}
-              limit={data.limit}
+              page={data.pagination.page}
+              totalPages={data.pagination.totalPages}
+              total={data.pagination.total}
+              limit={data.pagination.limit}
               onPageChange={setPage}
             />
           </div>

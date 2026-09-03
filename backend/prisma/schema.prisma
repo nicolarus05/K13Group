@@ -19,8 +19,8 @@ model Usuario {
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
-  sesiones     Sesion[]
-  actividad    Actividad[]
+  sesiones      Sesion[]
+  actividad     Actividad[]
   importaciones Importacion[]
   exportaciones Exportacion[]
 
@@ -37,73 +37,94 @@ model Sesion {
   expiresAt DateTime @map("expires_at")
   createdAt DateTime @default(now()) @map("created_at")
 
-  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
 
   @@map("sesiones")
 }
 
 // ─── 3. clientes ────────────────────────────────────────────────────────────
 model Cliente {
-  id           String    @id @default(uuid()) @db.Uuid
-  nombre       String    @db.VarChar(150)
-  telefono     String?   @db.VarChar(30)
-  email        String?   @db.VarChar(150)
-  observaciones String?
-  estadoId     String    @map("estado_id") @db.Uuid
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
-  deletedAt    DateTime? @map("deleted_at")
+  id                  String    @id @default(uuid()) @db.Uuid
+  nombre              String    @db.VarChar(150)
+  telefono            String?   @db.VarChar(30)
+  telefonoNormalizado String?   @map("telefono_normalizado") @db.VarChar(30)
+  email               String?   @db.VarChar(150)
+  observaciones       String?
+  estadoId            String    @map("estado_id") @db.Uuid
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  deletedAt           DateTime? @map("deleted_at")
 
-  estado        Estado         @relation("EstadoCliente", fields: [estadoId], references: [id])
-  suscripciones Suscripcion[]
-  recordatorios Recordatorio[]
+  estado           Estado            @relation("EstadoCliente", fields: [estadoId], references: [id])
+  suscripciones    Suscripcion[]
+  recordatorios    Recordatorio[]
+  importacionFilas ImportacionFila[]
 
+  @@index([telefonoNormalizado])
   @@map("clientes")
 }
 
 // ─── 4. suscripciones ───────────────────────────────────────────────────────
 model Suscripcion {
-  id           String    @id @default(uuid()) @db.Uuid
-  clienteId    String    @map("cliente_id") @db.Uuid
-  productoId   String    @map("producto_id") @db.Uuid
-  tarifaId     String    @map("tarifa_id") @db.Uuid
-  servidorId   String    @map("servidor_id") @db.Uuid
-  referenciaId String?   @map("referencia_id") @db.Uuid
-  fechaInicio  DateTime  @map("fecha_inicio") @db.Date
-  fechaFin     DateTime  @map("fecha_fin") @db.Date
-  estadoId     String    @map("estado_id") @db.Uuid
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
-  deletedAt    DateTime? @map("deleted_at")
+  id                            String    @id @default(uuid()) @db.Uuid
+  clienteId                     String    @map("cliente_id") @db.Uuid
+  productoId                    String    @map("producto_id") @db.Uuid
+  tarifaId                      String    @map("tarifa_id") @db.Uuid
+  servidorId                    String    @map("servidor_id") @db.Uuid
+  referenciaId                  String?   @map("referencia_id") @db.Uuid
+  fechaInicio                   DateTime  @map("fecha_inicio") @db.Date
+  fechaFin                      DateTime  @map("fecha_fin") @db.Date
+  estadoId                      String    @map("estado_id") @db.Uuid
+  tipoDispositivo               String?   @map("tipo_dispositivo") @db.VarChar(80)
+  identificadorOperativoHash    String?   @map("identificador_operativo_hash") @db.VarChar(64)
+  identificadorOperativoCifrado String?   @map("identificador_operativo_cifrado") @db.Text
+  createdAt                     DateTime  @default(now()) @map("created_at")
+  updatedAt                     DateTime  @updatedAt @map("updated_at")
+  deletedAt                     DateTime? @map("deleted_at")
 
-  cliente       Cliente       @relation(fields: [clienteId], references: [id])
-  producto      Producto      @relation(fields: [productoId], references: [id])
-  tarifa        Tarifa        @relation(fields: [tarifaId], references: [id])
-  servidor      Servidor      @relation(fields: [servidorId], references: [id])
-  referencia    Referencia?   @relation(fields: [referenciaId], references: [id])
-  estado        Estado        @relation("EstadoSuscripcion", fields: [estadoId], references: [id])
-  renovaciones  Renovacion[]
-  movimientos   MovimientoFinanciero[]
-  recordatorios Recordatorio[]
+  cliente          Cliente                @relation(fields: [clienteId], references: [id])
+  producto         Producto               @relation(fields: [productoId], references: [id])
+  tarifa           Tarifa                 @relation(fields: [tarifaId], references: [id])
+  servidor         Servidor               @relation(fields: [servidorId], references: [id])
+  referencia       Referencia?            @relation(fields: [referenciaId], references: [id])
+  estado           Estado                 @relation("EstadoSuscripcion", fields: [estadoId], references: [id])
+  renovaciones     Renovacion[]
+  movimientos      MovimientoFinanciero[]
+  recordatorios    Recordatorio[]
+  importacionFilas ImportacionFila[]
 
+  @@index([clienteId])
+  @@index([identificadorOperativoHash])
   @@map("suscripciones")
 }
 
 // ─── 5. renovaciones ────────────────────────────────────────────────────────
 model Renovacion {
-  id            String   @id @default(uuid()) @db.Uuid
-  suscripcionId String   @map("suscripcion_id") @db.Uuid
-  fechaInicio   DateTime @map("fecha_inicio") @db.Date
-  fechaFin      DateTime @map("fecha_fin") @db.Date
-  importe       Decimal  @db.Decimal(10, 2)
-  metodoPagoId  String   @map("metodo_pago_id") @db.Uuid
-  observaciones String?
-  createdAt     DateTime @default(now()) @map("created_at")
+  id                       String    @id @default(uuid()) @db.Uuid
+  suscripcionId            String    @map("suscripcion_id") @db.Uuid
+  fechaInicio              DateTime  @map("fecha_inicio") @db.Date
+  fechaFin                 DateTime  @map("fecha_fin") @db.Date
+  fechaOperacion           DateTime? @map("fecha_operacion") @db.Date
+  importe                  Decimal   @db.Decimal(10, 2)
+  metodoPagoId             String    @map("metodo_pago_id") @db.Uuid
+  estadoId                 String?   @map("estado_id") @db.Uuid
+  origen                   String    @default("MANUAL") @db.VarChar(30)
+  productoNombreSnapshot   String?   @map("producto_nombre_snapshot") @db.VarChar(100)
+  tarifaNombreSnapshot     String?   @map("tarifa_nombre_snapshot") @db.VarChar(100)
+  servidorNombreSnapshot   String?   @map("servidor_nombre_snapshot") @db.VarChar(100)
+  referenciaNombreSnapshot String?   @map("referencia_nombre_snapshot") @db.VarChar(100)
+  metodoPagoNombreSnapshot String?   @map("metodo_pago_nombre_snapshot") @db.VarChar(100)
+  observaciones            String?
+  createdAt                DateTime  @default(now()) @map("created_at")
+  deletedAt                DateTime? @map("deleted_at")
 
-  suscripcion   Suscripcion          @relation(fields: [suscripcionId], references: [id])
-  metodoPago    MetodoPago           @relation(fields: [metodoPagoId], references: [id])
-  movimientos   MovimientoFinanciero[]
+  suscripcion     Suscripcion            @relation(fields: [suscripcionId], references: [id])
+  metodoPago      MetodoPago             @relation(fields: [metodoPagoId], references: [id])
+  estado          Estado?                @relation("EstadoRenovacion", fields: [estadoId], references: [id])
+  importacionFila ImportacionFila?       @relation("ImportacionFilaRenovacion")
+  movimientos     MovimientoFinanciero[]
 
+  @@index([suscripcionId, fechaOperacion])
   @@map("renovaciones")
 }
 
@@ -125,14 +146,14 @@ model Producto {
 
 // ─── 7. tarifas ─────────────────────────────────────────────────────────────
 model Tarifa {
-  id            String    @id @default(uuid()) @db.Uuid
-  productoId    String    @map("producto_id") @db.Uuid
-  nombre        String    @db.VarChar(100)
-  duracionMeses Int       @map("duracion_meses") @db.SmallInt
-  precio        Decimal   @db.Decimal(10, 2)
-  activo        Boolean   @default(true)
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  id            String   @id @default(uuid()) @db.Uuid
+  productoId    String   @map("producto_id") @db.Uuid
+  nombre        String   @db.VarChar(100)
+  duracionMeses Int      @map("duracion_meses") @db.SmallInt
+  precio        Decimal  @db.Decimal(10, 2)
+  activo        Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
   producto      Producto      @relation(fields: [productoId], references: [id])
   suscripciones Suscripcion[]
@@ -155,12 +176,12 @@ model Servidor {
 
 // ─── 9. referencias ─────────────────────────────────────────────────────────
 model Referencia {
-  id           String    @id @default(uuid()) @db.Uuid
-  nombre       String    @unique @db.VarChar(100)
-  activo       Boolean   @default(true)
+  id            String    @id @default(uuid()) @db.Uuid
+  nombre        String    @unique @db.VarChar(100)
+  activo        Boolean   @default(true)
   observaciones String?
-  createdAt    DateTime  @default(now()) @map("created_at")
-  deletedAt    DateTime? @map("deleted_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  deletedAt     DateTime? @map("deleted_at")
 
   suscripciones Suscripcion[]
 
@@ -169,25 +190,33 @@ model Referencia {
 
 // ─── 10. movimientos_financieros ────────────────────────────────────────────
 model MovimientoFinanciero {
-  id               String   @id @default(uuid()) @db.Uuid
-  tipoId           String   @map("tipo_id") @db.Uuid
-  suscripcionId    String?  @map("suscripcion_id") @db.Uuid
-  renovacionId     String?  @map("renovacion_id") @db.Uuid
-  categoriaGastoId String?  @map("categoria_gasto_id") @db.Uuid
-  metodoPagoId     String?  @map("metodo_pago_id") @db.Uuid
-  importe          Decimal  @db.Decimal(10, 2)
-  fecha            DateTime
-  estadoId         String   @map("estado_id") @db.Uuid
-  descripcion      String?
-  createdAt        DateTime @default(now()) @map("created_at")
+  id                       String   @id @default(uuid()) @db.Uuid
+  tipoId                   String   @map("tipo_id") @db.Uuid
+  suscripcionId            String?  @map("suscripcion_id") @db.Uuid
+  renovacionId             String?  @map("renovacion_id") @db.Uuid
+  categoriaGastoId         String?  @map("categoria_gasto_id") @db.Uuid
+  metodoPagoId             String?  @map("metodo_pago_id") @db.Uuid
+  importe                  Decimal  @db.Decimal(10, 2)
+  fecha                    DateTime
+  estadoId                 String   @map("estado_id") @db.Uuid
+  origen                   String   @default("MANUAL") @db.VarChar(30)
+  productoNombreSnapshot   String?  @map("producto_nombre_snapshot") @db.VarChar(100)
+  tarifaNombreSnapshot     String?  @map("tarifa_nombre_snapshot") @db.VarChar(100)
+  servidorNombreSnapshot   String?  @map("servidor_nombre_snapshot") @db.VarChar(100)
+  referenciaNombreSnapshot String?  @map("referencia_nombre_snapshot") @db.VarChar(100)
+  metodoPagoNombreSnapshot String?  @map("metodo_pago_nombre_snapshot") @db.VarChar(100)
+  descripcion              String?
+  createdAt                DateTime @default(now()) @map("created_at")
 
-  tipo          Estado         @relation("TipoMovimiento", fields: [tipoId], references: [id])
-  estado        Estado         @relation("EstadoMovimiento", fields: [estadoId], references: [id])
-  suscripcion   Suscripcion?   @relation(fields: [suscripcionId], references: [id])
-  renovacion    Renovacion?    @relation(fields: [renovacionId], references: [id])
-  categoriaGasto CategoriaGasto? @relation(fields: [categoriaGastoId], references: [id])
-  metodoPago    MetodoPago?    @relation(fields: [metodoPagoId], references: [id])
+  tipo            Estado           @relation("TipoMovimiento", fields: [tipoId], references: [id])
+  estado          Estado           @relation("EstadoMovimiento", fields: [estadoId], references: [id])
+  suscripcion     Suscripcion?     @relation(fields: [suscripcionId], references: [id])
+  renovacion      Renovacion?      @relation(fields: [renovacionId], references: [id])
+  categoriaGasto  CategoriaGasto?  @relation(fields: [categoriaGastoId], references: [id])
+  metodoPago      MetodoPago?      @relation(fields: [metodoPagoId], references: [id])
+  importacionFila ImportacionFila? @relation("ImportacionFilaMovimiento")
 
+  @@index([fecha])
   @@map("movimientos_financieros")
 }
 
@@ -264,16 +293,55 @@ model Configuracion {
 
 // ─── 16. importaciones ──────────────────────────────────────────────────────
 model Importacion {
-  id        String   @id @default(uuid()) @db.Uuid
-  archivo   String   @db.VarChar(255)
-  usuarioId String   @map("usuario_id") @db.Uuid
-  registros Int      @default(0)
-  errores   Int      @default(0)
-  createdAt DateTime @default(now()) @map("created_at")
+  id           String    @id @default(uuid()) @db.Uuid
+  archivo      String    @db.VarChar(255)
+  usuarioId    String    @map("usuario_id") @db.Uuid
+  checksum     String?   @unique @db.VarChar(64)
+  estado       String    @default("EN_PROCESO") @db.VarChar(40)
+  versionMapeo String    @default("1.1") @map("version_mapeo") @db.VarChar(20)
+  fechaInicio  DateTime? @map("fecha_inicio")
+  fechaFin     DateTime? @map("fecha_fin")
+  registros    Int       @default(0)
+  errores      Int       @default(0)
+  advertencias Int       @default(0)
+  informe      Json?
+  createdAt    DateTime  @default(now()) @map("created_at")
 
-  usuario Usuario @relation(fields: [usuarioId], references: [id])
+  usuario Usuario           @relation(fields: [usuarioId], references: [id])
+  filas   ImportacionFila[]
 
   @@map("importaciones")
+}
+
+// ─── 20. importacion_filas ─────────────────────────────────────────────────
+model ImportacionFila {
+  id                String   @id @default(uuid()) @db.Uuid
+  importacionId     String   @map("importacion_id") @db.Uuid
+  hojaOrigen        String   @map("hoja_origen") @db.VarChar(20)
+  filaOrigen        Int      @map("fila_origen")
+  hashFila          String   @map("hash_fila") @db.VarChar(64)
+  datosOriginales   Json     @map("datos_originales")
+  datosNormalizados Json?    @map("datos_normalizados")
+  estado            String   @default("PENDIENTE") @db.VarChar(30)
+  errores           Json?
+  advertencias      Json?
+  clienteId         String?  @map("cliente_id") @db.Uuid
+  suscripcionId     String?  @map("suscripcion_id") @db.Uuid
+  renovacionId      String?  @unique @map("renovacion_id") @db.Uuid
+  movimientoId      String?  @unique @map("movimiento_id") @db.Uuid
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  importacion Importacion           @relation(fields: [importacionId], references: [id], onDelete: Cascade)
+  cliente     Cliente?              @relation(fields: [clienteId], references: [id])
+  suscripcion Suscripcion?          @relation(fields: [suscripcionId], references: [id])
+  renovacion  Renovacion?           @relation("ImportacionFilaRenovacion", fields: [renovacionId], references: [id])
+  movimiento  MovimientoFinanciero? @relation("ImportacionFilaMovimiento", fields: [movimientoId], references: [id])
+
+  @@unique([importacionId, hojaOrigen, filaOrigen])
+  @@index([importacionId, estado])
+  @@index([hashFila])
+  @@map("importacion_filas")
 }
 
 // ─── 17. exportaciones ──────────────────────────────────────────────────────
@@ -313,13 +381,14 @@ model Estado {
   createdAt DateTime @default(now()) @map("created_at")
 
   // Relaciones inversas agrupadas por contexto
-  clientesEstado          Cliente[]              @relation("EstadoCliente")
-  suscripcionesEstado     Suscripcion[]          @relation("EstadoSuscripcion")
-  tiposMovimiento         MovimientoFinanciero[] @relation("TipoMovimiento")
-  estadosMovimiento       MovimientoFinanciero[] @relation("EstadoMovimiento")
-  tiposRecordatorio       Recordatorio[]         @relation("TipoRecordatorio")
-  estadosRecordatorio     Recordatorio[]         @relation("EstadoRecordatorio")
-  copiasSeguridad         CopiaSeguridad[]       @relation("EstadoCopiaSeguridad")
+  clientesEstado      Cliente[]              @relation("EstadoCliente")
+  suscripcionesEstado Suscripcion[]          @relation("EstadoSuscripcion")
+  tiposMovimiento     MovimientoFinanciero[] @relation("TipoMovimiento")
+  estadosMovimiento   MovimientoFinanciero[] @relation("EstadoMovimiento")
+  estadosRenovacion   Renovacion[]           @relation("EstadoRenovacion")
+  tiposRecordatorio   Recordatorio[]         @relation("TipoRecordatorio")
+  estadosRecordatorio Recordatorio[]         @relation("EstadoRecordatorio")
+  copiasSeguridad     CopiaSeguridad[]       @relation("EstadoCopiaSeguridad")
 
   @@unique([tipo, valor])
   @@map("estados")

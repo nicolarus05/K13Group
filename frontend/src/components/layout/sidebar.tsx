@@ -12,6 +12,7 @@ import {
   DollarSign,
   BarChart2,
   Settings,
+  Upload,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -30,6 +31,7 @@ const navItems: NavItem[] = [
   { label: 'Finanzas',       href: '/finanzas',        icon: DollarSign },
   { label: 'Estadísticas',   href: '/estadisticas',    icon: BarChart2 },
   { label: 'Configuración',  href: '/configuracion',   icon: Settings },
+  { label: 'Importar Excel', href: '/importaciones',    icon: Upload },
 ];
 
 export function Sidebar() {
