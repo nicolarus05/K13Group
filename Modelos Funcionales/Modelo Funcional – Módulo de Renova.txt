@@ -367,3 +367,24 @@ Usuario (aunque inicialmente solo exista uno).
 Datos anteriores y posteriores cuando corresponda.
 
 Esto facilitará la resolución de incidencias y aportará una trazabilidad completa.
+
+ANEXO V1.1 — Renovaciones históricas del Excel
+
+Las hojas mensuales del Excel contienen filas repetidas para algunos clientes y
+fechas que abarcan más de un año. Por ello, durante la migración:
+
+- una fila no se transformará directamente en un cliente;
+- una coincidencia de nombre se revisará junto con teléfono, producto,
+  referencia, fecha e importe;
+- las filas repetidas o idénticas se detectarán antes de crear renovaciones;
+- la fecha FECHA se conservará como fecha de origen hasta confirmar si significa
+  alta, vencimiento, cobro o renovación;
+- P.AÑO y TOTAL no se usarán para calcular automáticamente la duración o el
+  importe de una renovación mientras su semántica no esté validada;
+- las renovaciones históricas importadas quedarán con origen IMPORTACION y
+  mantendrán sus datos operativos originales.
+
+Las renovaciones procedentes del Excel no deberán alterar las fechas actuales
+de una suscripción sin una regla de reconstrucción aprobada. Primero se cargará
+el histórico y después se calculará el estado actual a partir del último evento
+válido.

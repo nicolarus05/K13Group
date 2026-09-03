@@ -413,3 +413,27 @@ Diseñaría este módulo para que cualquier nuevo dato que incorporemos (factura
 Conclusión del módulo
 
 El módulo de Estadísticas será la herramienta de análisis del negocio. Mientras que el Dashboard responderá a la pregunta "¿Qué está pasando ahora?", este módulo responderá a "¿Qué ha pasado, por qué ha pasado y cómo está evolucionando el negocio?".
+
+ANEXO V1.1 — Estadísticas sobre datos migrados
+
+Las estadísticas históricas solo utilizarán registros normalizados y reconciliados.
+No se sumarán simultáneamente TOTAL, P.AÑO y los totales de pago de las
+cabeceras del Excel, porque podrían representar el mismo dinero en formatos
+distintos.
+
+Cada informe deberá poder distinguir:
+
+- datos confirmados;
+- datos pendientes de conciliación;
+- filas con advertencias;
+- filas excluidas por error o duplicidad;
+- datos actuales frente a datos históricos importados.
+
+Los nombres de las hojas (ENE-DIC) no sustituirán a la fecha real de la
+operación. Las comparativas por mes utilizarán la fecha normalizada y una zona
+horaria definida en Configuración.
+
+Las métricas por producto, servidor, referencia y método de pago se calcularán
+con sus valores canónicos, pero cada resultado podrá enlazar con las variantes
+originales usadas en el Excel. Así se evitará que MAXPLAYER, K13PLAYER o una
+variante con dispositivo aparezcan como productos independientes sin revisión.

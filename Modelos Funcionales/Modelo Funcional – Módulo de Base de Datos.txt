@@ -20,7 +20,11 @@ exportaciones	Historial de exportaciones
 copias_seguridad	Historial de backups
 estados	Catálogo centralizado de estados y tipos
 
-Total V1: 19 tablas.
+Total V1 base: 19 tablas.
+
+Para la migración controlada desde CLIENTES 2026(Actualizado).xlsx se añadirá una
+tabla técnica de staging de filas de importación. El modelo funcional completo de
+la V1 tendrá, por tanto, 20 tablas cuando se active la migración.
 
 1. usuarios
 Campo	Tipo	PK	FK	Nulo
@@ -258,3 +262,56 @@ Los tres ajustes propuestos han sido incorporados al diseño antes de comenzar e
 Renombrar licencias → suscripciones. ✅ Aplicado. Refleja mejor la naturaleza del servicio y facilita futuras ampliaciones.
 Catálogo de estados. ✅ Aplicado. Se ha creado la tabla estados (tabla 19) para centralizar todos los estados y tipos del sistema, eliminando los campos ENUM individuales y sustituyéndolos por claves foráneas.
 deleted_at en entidades principales. ✅ Aplicado. Añadido en: clientes (ya existía), suscripciones, productos, servidores, referencias y metodos_pago.
+
+ANEXO V1.1 — Modelo derivado del Excel CLIENTES 2026(Actualizado).xlsx
+
+El Excel fuente contiene 12 hojas mensuales (ENE a DIC) y 2.914 filas con nombre.
+Estas filas representan operaciones, periodos o apuntes históricos, no clientes
+únicos: existen 2.830 nombres distintos exactos y 60 nombres aparecen repetidos.
+La importación no creará un cliente por fila.
+
+Tabla técnica: importacion_filas
+
+Esta tabla conservará cada fila original antes de transformarla al modelo de
+negocio. Como mínimo tendrá:
+
+importacion_id, hoja_origen, fila_origen, hash_fila, datos_originales JSONB,
+datos_normalizados JSONB, estado, errores, advertencias, cliente_id,
+suscripcion_id, renovacion_id y movimiento_id.
+
+El hash de importación y la pareja hoja_origen/fila_origen permitirán repetir el
+proceso sin duplicar información. La fila original nunca se sobrescribirá.
+
+Adaptaciones necesarias del modelo de negocio:
+
+- Renovaciones deberá incluir estado, fecha de operación, origen y referencia a
+  la fila importada cuando proceda.
+- Importaciones deberá conservar estado, checksum del archivo, fechas de inicio
+  y fin, versión del mapeo y un informe de errores.
+- Las renovaciones y movimientos históricos deberán conservar snapshots del
+  producto, tarifa, servidor, referencia y método de pago vigentes en el
+  momento de la operación. No basta con enlazar únicamente la suscripción
+  actual.
+- Cliente necesitará un teléfono normalizado para detectar duplicados sin
+  eliminar el valor original introducido por el usuario.
+- La suscripción deberá conservar los datos operativos que actualmente aparecen
+  mezclados en APP: producto canónico, tipo de dispositivo e identificador o
+  dato de acceso. Los identificadores sensibles se almacenarán protegidos y se
+  mostrarán enmascarados.
+
+Calidad detectada en el archivo fuente:
+
+- SERVIDOR tiene 3 valores principales (DEAD, PROMAX y COBRA), además de una
+  fila sin valor.
+- APP tiene 315 variantes textuales; muchas combinan producto, dispositivo,
+  dirección MAC o identificadores. No se puede usar directamente como catálogo.
+- REFERENCIA tiene 1.411 valores distintos y requiere normalización y revisión.
+- TELEFONO solo aparece en JUL, AGO y SEP; hay que tratarlo como dato opcional.
+- Hay 535 filas sin PAGO, una sin TOTAL, dos sin APP, una sin SERVIDOR y una
+  sin REFERENCIA. También existen importes cero y una fecha potencialmente
+  anómala en MAY. Todo ello debe quedar en el informe de validación.
+
+Las columnas P.AÑO y TOTAL, así como las columnas de totales por entidad
+financiera de la cabecera, no se importarán automáticamente como movimientos
+distintos. Su significado contable debe confirmarse y reconciliarse antes de
+generar el libro financiero, para evitar doble contabilización.

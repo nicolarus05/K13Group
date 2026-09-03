@@ -311,3 +311,40 @@ Prepara la aplicación para futuras ampliaciones.
 Conclusión
 
 Con este diseño, el módulo de productos deja de ser una simple lista y se convierte en el catálogo comercial del negocio. Será el origen de toda la información utilizada en clientes, renovaciones, estadísticas y finanzas.
+
+ANEXO V1.1 — Catálogo derivado del Excel CLIENTES 2026(Actualizado).xlsx
+
+El campo APP del Excel no es un catálogo de productos fiable. En las 2.914 filas
+analizadas aparecen 315 textos diferentes y muchos combinan varias piezas de
+información, por ejemplo:
+
+- nombre de la aplicación o servicio;
+- tipo de dispositivo o soporte (BOX, MECOOL, SMART, etc.);
+- dirección MAC, código o identificador de activación;
+- combinaciones de varios productos en una misma celda;
+- errores tipográficos, guiones y espacios inconsistentes.
+
+Por tanto, la migración separará obligatoriamente:
+
+Producto canónico
+
+Identifica el servicio comercial y se relaciona con Producto/Tarifa. Solo podrá
+seleccionarse desde el catálogo.
+
+Datos operativos de la suscripción
+
+Conservarán el dispositivo, identificador, MAC o dato de acceso que existía en
+la celda original. Estos datos no se convertirán en nombres de productos ni se
+mostrarán completos en listados generales.
+
+Alias históricos
+
+Se conservará el valor APP original y una tabla de equivalencias permitirá
+mapear variantes como MAXPLAYER, K13PLAYER, K13TIVI, KDSPLAYER, K13IBO39,
+SMARTONE, VUPLAYER y sus variantes de dispositivo. Ningún alias se eliminará
+sin una decisión explícita.
+
+La primera importación deberá presentar una propuesta de productos canónicos y
+dejar en revisión las variantes que no puedan clasificarse con seguridad. Las
+estadísticas utilizarán únicamente el producto canónico; el valor original
+seguirá disponible para auditoría.

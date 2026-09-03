@@ -590,3 +590,35 @@ Backups.
 Sistema.
 
 En total, la primera versión tendría aproximadamente 25–30 pantallas, todas basadas en el mismo sistema de diseño y en componentes reutilizables.
+
+ANEXO V1.1 — Experiencia de migración desde Excel
+
+La migración de CLIENTES 2026(Actualizado).xlsx tendrá un asistente visible en
+cuatro pasos:
+
+1. Selección del archivo y comprobación de formato.
+2. Previsualización de hojas, columnas, filas y posibles duplicados.
+3. Revisión de mapeos de productos, servidores, referencias y métodos de pago.
+4. Confirmación y resultado de la importación.
+
+La pantalla de revisión mostrará como mínimo:
+
+- filas válidas, advertencias y errores;
+- clientes nuevos frente a clientes relacionados con uno existente;
+- operaciones históricas detectadas;
+- campos incompletos y fechas sospechosas;
+- variantes APP pendientes de clasificar;
+- códigos PAGO sin equivalencia confirmada.
+
+El usuario podrá resolver un conflicto seleccionando un cliente existente, crear
+uno nuevo o dejar la fila pendiente. No se permitirá una confirmación global si
+quedan errores bloqueantes sin resolver.
+
+Los datos de acceso, MAC e identificadores procedentes de APP se mostrarán
+enmascarados por defecto. La vista de detalle podrá revelarlos solo mediante una
+acción explícita y siempre deberá conservar el valor original para auditoría.
+
+La interfaz de clientes incorporará teléfono, producto canónico, dispositivo,
+servidor, referencia y fecha de vencimiento. La tabla seguirá siendo responsive:
+en móvil se transformará en tarjetas y el asistente deberá poder completarse
+sin depender de una tabla horizontal.

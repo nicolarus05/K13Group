@@ -276,3 +276,37 @@ clientes/
 Y lo mismo para suscripciones, finanzas, productos, etc.
 
 Esta organización hace que cada módulo sea casi independiente, facilita el mantenimiento y permite extraer funcionalidades a microservicios en el futuro si el proyecto creciera mucho.
+
+ANEXO V1.1 — Arquitectura de migración de datos
+
+CLIENTES 2026(Actualizado).xlsx será tratado como una fuente histórica externa,
+no como el modelo de datos definitivo. El flujo técnico será:
+
+Archivo Excel
+    ↓
+Almacenamiento temporal controlado
+    ↓
+Parser por hoja y versión de columnas
+    ↓
+Staging de filas originales
+    ↓
+Normalización y equivalencias
+    ↓
+Detección de duplicados y conflictos
+    ↓
+Previsualización para el usuario
+    ↓
+Confirmación idempotente y transaccional
+    ↓
+Clientes, suscripciones, renovaciones y movimientos
+    ↓
+Auditoría e informe de resultados
+
+El parser deberá soportar que TELEFONO solo aparezca en algunas hojas y que las
+columnas de pagos cambien entre periodos. Las filas de cabecera, fórmulas y
+totales agregados no se tratarán como registros de clientes.
+
+La importación se ejecutará como un caso de uso del backend, nunca como lógica
+exclusiva del frontend. Los datos originales se conservarán con acceso
+restringido y los logs no incluirán nombres completos, teléfonos, MAC ni datos
+de acceso.

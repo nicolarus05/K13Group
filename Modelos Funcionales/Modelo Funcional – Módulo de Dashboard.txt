@@ -317,6 +317,18 @@ Personalización futura
 
 Aunque inicialmente solo habrá un usuario, diseñaría el Dashboard para que en el futuro puedas decidir qué widgets mostrar u ocultar y en qué orden colocarlos. De este modo, la aplicación podrá adaptarse fácilmente si incorpora más usuarios o nuevos módulos.
 
+ANEXO V1.1 — Estado y calidad de la migración
+
+Mientras existan filas del Excel pendientes de revisar, el Dashboard mostrará
+un aviso de calidad de datos con el estado de la importación, filas bloqueadas,
+duplicados pendientes y movimientos financieros no conciliados.
+
+Los KPIs económicos se calcularán únicamente con movimientos reconciliados y
+según su estado contable. Las filas importadas pendientes no se mezclarán con
+los ingresos confirmados. El bloque de clientes distinguirá clientes únicos,
+operaciones históricas y suscripciones activas para evitar interpretar el
+número de filas del Excel como número de clientes.
+
 Una propuesta que creo que marcará la diferencia
 
 Hay una idea que considero especialmente valiosa para este proyecto: el Dashboard no debería ser una simple pantalla de bienvenida, sino una herramienta de trabajo.

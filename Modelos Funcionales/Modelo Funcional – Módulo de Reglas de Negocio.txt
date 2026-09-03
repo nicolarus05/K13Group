@@ -308,3 +308,61 @@ Todas las fechas se almacenarán en UTC y se mostrarán al usuario según su zon
 No se realizarán borrados físicos sobre entidades de negocio; se utilizará borrado lógico cuando corresponda.
 Todas las respuestas de la API seguirán un formato uniforme.
 Todas las validaciones se realizarán tanto en el frontend (mejora de experiencia) como en el backend (garantía de integridad).
+
+RN-018 — Importación desde CLIENTES 2026(Actualizado).xlsx
+
+RN-018.001 — La fila no equivale a un cliente
+
+Cada fila del Excel se tratará como un registro histórico u operativo. La
+identidad del cliente se resolverá por teléfono normalizado cuando exista y,
+como apoyo, por nombre normalizado y datos de la operación. Nunca se crearán
+2.914 clientes automáticamente por el hecho de existir 2.914 filas.
+
+RN-018.002 — Importación con previsualización
+
+Toda importación deberá pasar por análisis, normalización, detección de
+conflictos y confirmación explícita. Los errores bloqueantes impedirán la
+confirmación; las advertencias deberán quedar visibles y asociadas a la fila.
+
+RN-018.003 — Idempotencia y trazabilidad
+
+La misma combinación de archivo, checksum, hoja y fila no podrá producir dos
+veces el mismo cliente, suscripción, renovación o movimiento. Cada registro
+importado conservará hoja, fila, hash y datos originales.
+
+RN-018.004 — Normalización de catálogos
+
+Los valores de APP, SERVIDOR, REFERENCIA y PAGO se normalizarán mediante
+catálogos y equivalencias revisables. El valor original nunca se perderá.
+APP no se asignará directamente como producto porque puede contener dispositivo,
+MAC, identificadores, varias aplicaciones o errores tipográficos.
+
+RN-018.005 — Datos incompletos
+
+Las filas sin teléfono, pago, importe, producto, servidor o referencia no se
+descartarán silenciosamente. Se clasificarán como válidas, advertidas o
+bloqueadas según el campo y se podrán resolver desde la pantalla de revisión.
+
+RN-018.006 — Fechas e importes históricos
+
+Antes de importar se deberá confirmar el significado de FECHA, P.AÑO y TOTAL.
+Las fechas futuras, fechas fuera del periodo esperado, importes cero y valores
+anómalos no se interpretarán automáticamente como renovaciones o ingresos.
+
+RN-018.007 — No duplicar movimientos financieros
+
+Las cantidades de TOTAL, P.AÑO y los totales de las cabeceras del Excel no se
+sumarán entre sí. Solo se creará un movimiento cuando el importe, la fecha y el
+estado de pago estén identificados y reconciliados.
+
+RN-018.008 — Protección de datos operativos
+
+Los identificadores de dispositivos, MAC y datos de acceso se conservarán con
+acceso restringido y visualización enmascarada. No aparecerán completos en
+listados, estadísticas, logs ni exportaciones generales.
+
+RN-018.009 — Historial inmutable
+
+Una importación confirmada no modificará el valor histórico original. Las
+correcciones posteriores se realizarán mediante nuevos eventos, anulaciones o
+decisiones de vinculación auditadas.

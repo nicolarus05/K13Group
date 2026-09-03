@@ -198,3 +198,33 @@ Acciones automáticas.
 Registro de auditoría.
 
 De esta forma, cualquier cambio de estado seguiría siempre las mismas reglas, independientemente de si se produce desde la interfaz web, una futura aplicación móvil o una API externa.
+
+ANEXO V1.1 — Estados de la migración Excel y separación de estados derivados
+
+La importación de CLIENTES 2026(Actualizado).xlsx tendrá dos niveles de estado:
+
+Estado de la importación
+
+EN_PROCESO → EN_REVISION → COMPLETADA
+
+Desde EN_REVISION podrá pasar a COMPLETADA_CON_ERRORES cuando se permita
+confirmar con advertencias no bloqueantes, o a FALLIDA si no se puede completar.
+Una importación fallida podrá reintentarse sin duplicar filas ya confirmadas.
+
+Estado de cada fila
+
+PENDIENTE, VALIDADA, EN_CONFLICTO, IMPORTADA, OMITIDA o ERROR.
+
+La fila conservará el error, la advertencia o la decisión del usuario. El estado
+de la importación será el resultado agregado de sus filas.
+
+Decisión sobre renovaciones
+
+Los estados persistentes de una renovación serán PENDIENTE, COMPLETADA y
+ANULADA. Las etiquetas Programada, Próxima y Expirada describirán el seguimiento
+de una fecha prevista y se calcularán o derivarán de la fecha de vencimiento;
+no se mezclarán con el estado persistente de la operación histórica.
+
+El valor técnico canónico será PROXIMA_A_VENCER, sin tilde. La etiqueta visible
+para el usuario será “Próxima a vencer”. Los valores de estado se mantendrán
+constantes en base de datos, API, seed y frontend.

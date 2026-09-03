@@ -544,3 +544,35 @@ Conciliación bancaria.
 Cierres contables.
 Informes avanzados.
 Exportación de datos financieros.
+
+ANEXO V1.1 — Carga financiera desde el Excel
+
+El Excel contiene importes operativos en P.AÑO y TOTAL, códigos en PAGO y
+totales agregados en la cabecera de cada hoja. Estos valores no se considerarán
+automáticamente tres fuentes independientes de ingresos.
+
+Flujo de conciliación histórica:
+
+1. Leer cada fila como una posible operación de origen IMPORTACION.
+2. Conservar P.AÑO, TOTAL, PAGO y la hoja original en el staging.
+3. Confirmar qué columna representa el importe de la operación y cuál es un
+   acumulado o referencia histórica.
+4. Mapear el código PAGO a un método de pago y, cuando proceda, a su entidad.
+5. Crear un único movimiento por operación reconciliada.
+6. Marcar como PENDIENTE los pagos incompletos o ambiguos, nunca como
+   CONFIRMADO por defecto.
+
+En el archivo aparecen 19 códigos PAGO y 535 filas sin código. STR y EF pueden
+proponerse inicialmente como Stripe y Efectivo; los códigos con prefijos B/T y
+las abreviaturas de entidades deberán confirmarse mediante el catálogo de
+Configuración. FREE, GR, PA y los valores no reconocidos permanecerán en
+revisión.
+
+Las filas con importe cero se clasificarán como gratuitas o como error, pero no
+se convertirán automáticamente en ingresos. Los totales de las cabeceras solo
+se usarán para reconciliación, nunca como movimientos adicionales.
+
+Todos los movimientos importados conservarán el vínculo a la fila de origen,
+su producto, tarifa, servidor, referencia y método de pago históricos. La
+corrección de un importe se realizará mediante anulación y nuevo movimiento,
+no sobrescribiendo el histórico.

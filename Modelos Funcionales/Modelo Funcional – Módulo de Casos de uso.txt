@@ -102,3 +102,22 @@ Configuración	5
 Estadísticas	3
 Recordatorios	3
 TOTAL	51 casos de uso
+
+ANEXO V1.1 — Caso UC-013: migración desde Excel
+
+UC-013 no significa simplemente subir un archivo. Su flujo completo será:
+
+1. Seleccionar CLIENTES 2026(Actualizado).xlsx.
+2. Analizar las 12 hojas y mostrar el número de filas, columnas detectadas,
+   posibles clientes, operaciones y advertencias.
+3. Normalizar nombres, teléfonos, productos, servidores, referencias y pagos.
+4. Detectar duplicados por teléfono normalizado, coincidencia de nombre y
+   coincidencia de datos operativos.
+5. Permitir revisar y resolver conflictos antes de confirmar.
+6. Confirmar la importación con una operación idempotente y auditable.
+7. Mostrar un informe final con creados, relacionados, omitidos, errores y
+   advertencias.
+
+Ninguna fila con datos ambiguos se descartará silenciosamente. Las filas no
+resueltas permanecerán disponibles para revisión y la importación podrá
+reanudarse sin duplicar los registros ya confirmados.

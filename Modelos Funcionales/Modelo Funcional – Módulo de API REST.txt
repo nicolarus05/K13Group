@@ -458,3 +458,51 @@ Posibles errores.
 Esquemas de datos.
 
 Esto permitirá generar clientes para el frontend y una documentación interactiva con Swagger.
+
+ANEXO V1.1 — API de migración desde CLIENTES 2026(Actualizado).xlsx
+
+La importación del Excel será un proceso en dos fases y nunca insertará datos
+directamente desde el navegador:
+
+POST /importaciones/clientes/preview
+
+Recibe el archivo como multipart/form-data, calcula su checksum, detecta las
+hojas ENE-DIC, valida columnas y devuelve un resumen sin modificar datos:
+
+{
+  "success": true,
+  "data": {
+    "importacionId": "",
+    "filas": 2914,
+    "clientesNuevos": 0,
+    "posiblesDuplicados": 0,
+    "errores": 0,
+    "advertencias": 0,
+    "hojas": []
+  }
+}
+
+POST /importaciones/:id/confirmar
+
+Confirma una previsualización previamente revisada. Requiere autenticación,
+confirmación explícita y una clave de idempotencia. La operación creará o
+relacionará clientes, suscripciones, renovaciones y movimientos dentro de una
+transacción por lote, registrando auditoría y conservando cada fila original.
+
+GET /importaciones/:id
+GET /importaciones/:id/filas
+GET /importaciones/:id/errores
+
+Permiten consultar el progreso, las filas rechazadas, los conflictos de
+identidad y las decisiones tomadas durante la importación.
+
+Reglas adicionales para GET /clientes:
+
+Los filtros deberán incluir, cuando el módulo correspondiente esté disponible,
+productoId, servidorId, referenciaId, telefono y estadoId. El parámetro sort
+solo aceptará una lista blanca de campos y limit tendrá un máximo configurable.
+
+La respuesta de todos los listados usará una única convención: data y el objeto
+pagination con page, limit, total y totalPages. Las validaciones del backend
+devolverán el mismo formato de error independientemente de que procedan de un
+DTO, Prisma o una regla de negocio.

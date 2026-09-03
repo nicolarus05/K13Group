@@ -307,3 +307,38 @@ Posibilidad de reutilizar componentes tanto en el frontend como en el backend.
 Conclusión del módulo
 
 Con este diseño, Configuración deja de ser un simple menú de ajustes y se convierte en el centro de administración de la plataforma. Desde aquí podrás adaptar el comportamiento de la aplicación a medida que evolucione tu negocio, sin depender de cambios en el desarrollo.
+
+ANEXO V1.1 — Catálogos y parámetros derivados del Excel
+
+La configuración inicial deberá incluir una fase de revisión de catálogos antes
+de confirmar la migración. El Excel contiene como valores principales:
+
+- servidores: DEAD, PROMAX y COBRA;
+- productos: múltiples variantes textuales dentro de APP, que deben mapearse a
+  productos canónicos;
+- referencias: 1.411 valores distintos, muchos de aparición única;
+- pagos: 19 códigos diferentes en PAGO.
+
+Los códigos de pago se conservarán como valor original y se mapearán mediante
+un catálogo configurable. La interpretación provisional será:
+
+- STR: Stripe;
+- EF: efectivo;
+- prefijo B: Bizum;
+- prefijo T: transferencia;
+- sufijos SA, IM, RE, UN, MY, PR y WI: entidad o proveedor asociado cuando la
+  revisión confirme su significado;
+- FREE, GR, PA y RE: valores pendientes de confirmar.
+
+El sistema no debe convertir códigos dudosos en métodos de pago definitivos.
+Durante la previsualización se podrá aceptar, corregir o dejar en revisión cada
+equivalencia. Las nuevas opciones quedarán activas solo después de confirmar el
+mapeo.
+
+Se añadirá configuración para:
+
+- política de deduplicación de clientes;
+- tratamiento de filas sin teléfono, pago, importe o producto;
+- política de fechas históricas y zona horaria;
+- si un movimiento importado queda pendiente o confirmado;
+- versión del mapeo utilizado en cada importación.

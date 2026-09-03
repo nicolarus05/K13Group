@@ -13,6 +13,7 @@ Sprint 0	Preparación del proyecto	Proyecto listo para desarrollar             C
 Sprint 1	Infraestructura + Autenticación	Usuario puede iniciar sesión            Completado
 Sprint 2	Diseño base + Layout	Interfaz completa
 Sprint 3	Clientes	CRUD completo
+Sprint 3.5	Migración desde Excel	Datos históricos analizados, normalizados y revisados
 Sprint 4	Productos, Tarifas, Servidores y Referencias	Catálogos completos
 Sprint 5	Suscripciones	Gestión completa de suscripciones
 Sprint 6	Renovaciones	Renovaciones automáticas
@@ -107,6 +108,24 @@ Detalle.
 Historial.
 
 Resultado: gestión completa de clientes.
+
+SPRINT 3.5 — Migración de CLIENTES 2026(Actualizado).xlsx
+
+Antes de construir los catálogos y las renovaciones se realizará una migración
+controlada del archivo fuente. El sprint incluirá:
+
+- análisis de las 12 hojas mensuales;
+- staging de las 2.914 filas operativas;
+- detección de los 2.830 nombres distintos y posibles clientes repetidos;
+- normalización de teléfonos, productos, servidores, referencias y pagos;
+- catálogo de equivalencias para las 315 variantes de APP y los 19 códigos de
+  PAGO;
+- revisión de filas incompletas, importes cero, duplicados y fechas anómalas;
+- previsualización, confirmación idempotente y auditoría;
+- informe de reconciliación de clientes, operaciones y dinero.
+
+Resultado: los datos históricos estarán disponibles sin duplicar clientes ni
+contabilizar dos veces los importes.
 
 SPRINT 4 – Catálogos
 
@@ -230,6 +249,10 @@ Exportación
 Excel.
 CSV.
 PDF.
+
+La importación definida en este sprint reutilizará el staging y el mapeo creado
+en el Sprint 3.5. No se permitirá una carga directa que omita la revisión de
+duplicados o la reconciliación financiera.
 SPRINT 13 – Auditoría y Seguridad
 
 Implementación de:
