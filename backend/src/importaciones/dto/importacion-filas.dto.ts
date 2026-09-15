@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, Max, Min } from 'class-validator';
+import { IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 
 export class ImportacionFilasDto {
   @ApiProperty({ required: false, default: 1 })
@@ -17,4 +17,22 @@ export class ImportacionFilasDto {
   @Min(1)
   @Max(200)
   limit = 50;
+
+  @ApiProperty({ required: false, description: 'Filtrar por estado de la fila.' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(30)
+  estado?: string;
+
+  @ApiProperty({ required: false, description: 'Filtrar por hoja del Excel.' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  hoja?: string;
+
+  @ApiProperty({ required: false, description: 'Buscar en nombre, teléfono o valor original.' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  buscar?: string;
 }

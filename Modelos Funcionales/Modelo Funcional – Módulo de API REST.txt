@@ -467,7 +467,8 @@ directamente desde el navegador:
 POST /importaciones/clientes/preview
 
 Recibe el archivo como multipart/form-data, calcula su checksum, detecta las
-hojas ENE-DIC, valida columnas y devuelve un resumen sin modificar datos:
+hojas ENE-DIC, valida columnas y crea un staging inmutable para devolver un
+resumen sin crear todavía operaciones de negocio:
 
 {
   "success": true,
@@ -485,16 +486,32 @@ hojas ENE-DIC, valida columnas y devuelve un resumen sin modificar datos:
 POST /importaciones/:id/confirmar
 
 Confirma una previsualización previamente revisada. Requiere autenticación,
-confirmación explícita y una clave de idempotencia. La operación creará o
-relacionará clientes, suscripciones, renovaciones y movimientos dentro de una
-transacción por lote, registrando auditoría y conservando cada fila original.
+confirmación explícita y una clave de idempotencia. Esta fase crea o relaciona
+clientes y deja las filas en staging para la revisión operativa; no crea por sí
+sola renovaciones ni movimientos financieros.
 
 GET /importaciones/:id
 GET /importaciones/:id/filas
 GET /importaciones/:id/errores
+GET /importaciones/:id/catalogos
+GET /importaciones/:id/valores-pendientes
+POST /importaciones/:id/equivalencias
+PATCH /importaciones/:id/filas/:filaId/revisar
+POST /importaciones/:id/reconciliar
+
+Los catálogos gestionables disponen de operaciones protegidas de consulta,
+alta, edición y desactivación:
+
+GET/POST/PUT/DELETE /productos
+GET/POST/PUT/DELETE /tarifas
+GET/POST/PUT/DELETE /servidores
+GET/POST/PUT/DELETE /referencias
 
 Permiten consultar el progreso, las filas rechazadas, los conflictos de
-identidad y las decisiones tomadas durante la importación.
+identidad y las decisiones tomadas durante la importación. Las equivalencias y
+la revisión de cada fila quedan auditadas. La reconciliación solo procesa filas
+aceptadas; la creación de renovaciones y movimientos financieros requiere una
+confirmación adicional de las reglas contables.
 
 Reglas adicionales para GET /clientes:
 

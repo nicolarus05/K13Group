@@ -91,10 +91,12 @@ export class ClientesService {
       where: { tipo: 'cliente', valor: 'ACTIVO' },
     });
 
-    return this.prisma.cliente.create({
+    const cliente = await this.prisma.cliente.create({
       data: { ...dto, telefono, telefonoNormalizado, estadoId: estadoActivo.id },
       include: INCLUDE_ESTADO,
     });
+    await this.ensureReferencia(cliente.nombre);
+    return cliente;
   }
 
   async update(id: string, dto: UpdateClienteDto) {
@@ -116,11 +118,13 @@ export class ClientesService {
       if (existe) throw new ConflictException('Ya existe un cliente con ese teléfono');
     }
 
-    return this.prisma.cliente.update({
+    const cliente = await this.prisma.cliente.update({
       where: { id },
       data: { ...dto, ...(hasTelefono ? { telefono, telefonoNormalizado } : {}) },
       include: INCLUDE_ESTADO,
     });
+    if (dto.nombre) await this.ensureReferencia(cliente.nombre);
+    return cliente;
   }
 
   // RN-001.004: borrado lógico
@@ -129,6 +133,16 @@ export class ClientesService {
     return this.prisma.cliente.update({
       where: { id },
       data: { deletedAt: new Date() },
+    });
+  }
+
+  private async ensureReferencia(nombre: string) {
+    const value = nombre.trim();
+    if (!value) return;
+    await this.prisma.referencia.upsert({
+      where: { nombre: value },
+      update: { activo: true, deletedAt: null },
+      create: { nombre: value, activo: true },
     });
   }
 }

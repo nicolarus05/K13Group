@@ -555,18 +555,23 @@ Flujo de conciliación histórica:
 
 1. Leer cada fila como una posible operación de origen IMPORTACION.
 2. Conservar P.AÑO, TOTAL, PAGO y la hoja original en el staging.
-3. Confirmar qué columna representa el importe de la operación y cuál es un
-   acumulado o referencia histórica.
-4. Mapear el código PAGO a un método de pago y, cuando proceda, a su entidad.
+
+En el histórico, P.AÑO es el importe de cada pago anual y TOTAL es un
+acumulado de control. Los movimientos se fecharán un año antes de FECHA, que
+representa la próxima renovación. Los códigos PAGO se normalizan mediante las
+equivalencias revisadas del staging.
+3. Usar P.AÑO como importe de la operación y TOTAL como acumulado de control.
+4. Mapear el código PAGO mediante las equivalencias confirmadas: EF/Efectivo,
+   STR/Stripe, códigos B como Bizum, códigos T como transferencia, FREE y
+   GR/Gratis, PA/Obvialo y RE/Revolut.
 5. Crear un único movimiento por operación reconciliada.
 6. Marcar como PENDIENTE los pagos incompletos o ambiguos, nunca como
    CONFIRMADO por defecto.
 
-En el archivo aparecen 19 códigos PAGO y 535 filas sin código. STR y EF pueden
-proponerse inicialmente como Stripe y Efectivo; los códigos con prefijos B/T y
-las abreviaturas de entidades deberán confirmarse mediante el catálogo de
-Configuración. FREE, GR, PA y los valores no reconocidos permanecerán en
-revisión.
+En el archivo aparecen 19 códigos PAGO y 535 filas sin código. Las 19
+equivalencias conocidas quedan precargadas en el catálogo de importación. Las
+535 filas sin código permanecerán pendientes hasta que se les asigne un método
+válido.
 
 Las filas con importe cero se clasificarán como gratuitas o como error, pero no
 se convertirán automáticamente en ingresos. Los totales de las cabeceras solo

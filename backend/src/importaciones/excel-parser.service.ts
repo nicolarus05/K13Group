@@ -25,7 +25,7 @@ export interface NormalizedExcelRow {
   identificadorOperativoHash: string | null;
   referencia: string | null;
   referenciaClave: string | null;
-  periodoAnual: number | null;
+  importeAnual: number | null;
   total: number | null;
   observaciones: string | null;
   pago: string | null;
@@ -71,6 +71,46 @@ const PRODUCT_ALIASES = [
   'K13IBO39',
   'SMARTONE',
   'VUPLAYER',
+  'K13 PLAYER',
+  'K13`PLAYER',
+  'K13PLAUER',
+  'K13IB39',
+  'KSDPLAYER',
+  'VUPLER',
+  '0PLAYER',
+  'DUPLECAST',
+  'DUPELCAST',
+  'DUPLEXPLAY',
+  'DUPLEX',
+  'ARC PLAYER',
+  'IBOPLAYER',
+  'IBO PLAYER',
+  'BOBPLAYER',
+  'BOB PLAYER',
+  'DEADPLAYER',
+  'K13GROUP',
+  'K13YOUTIVI',
+  'K13TVPLAYER',
+  'K13TV3',
+  'K13TV2',
+  'K13TV1',
+  'K13TV',
+  'K13WIN',
+  'K13SMART',
+  'CASTORA',
+  'SET IPTV',
+  'IPTV EXTREME',
+  'VARPLAYER',
+  'VAR PLAYER',
+  '0 PLAYER',
+  '000 PLAYER',
+  'WEBPLAYER',
+  'SMARTERS',
+  'NEXT+',
+  'SPLAYER',
+  'S PLAYER',
+  'STB IBO',
+  'IBO',
 ];
 
 const MAC_PATTERN = /(?:[0-9A-F]{2}[:-]){5}[0-9A-F]{2}/i;
@@ -110,7 +150,9 @@ function dateFromSerial(value: number): string | null {
 
 function parseDate(value: unknown): string | null {
   if (value instanceof Date && !Number.isNaN(value.getTime())) {
-    return value.toISOString().slice(0, 10);
+    // Excel almacena la fecha en la zona horaria local. Usar ISO aquí puede
+    // desplazarla al día anterior en España por la conversión a UTC.
+    return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
   }
   if (typeof value === 'number') return dateFromSerial(value);
 
@@ -127,7 +169,25 @@ function parseDate(value: unknown): string | null {
 
 function extractProduct(value: string | null): string | null {
   if (!value) return null;
-  return PRODUCT_ALIASES.find((alias) => value.includes(alias)) ?? null;
+  const maxPlayerTypos = ['MAXAPLAYER', 'MAXLPAYER', 'MAXPLER', 'MAXPLEYER', 'MAAXPLAYER', 'MAPLXAYER'];
+  if (maxPlayerTypos.some((alias) => value.includes(alias))) return 'MAXPLAYER';
+  if (value.includes('K13 PLAYER') || value.includes('K13-PLAYER') || value.includes('K13`PLAYER') || value.includes('K13PLAUER')) return 'K13PLAYER';
+  if (value.includes('K13IB39')) return 'K13IBO39';
+  if (value.includes('KSDPLAYER')) return 'KDSPLAYER';
+  if (value.includes('VUPLER')) return 'VUPLAYER';
+  if (value.includes('0PLAYER')) return '0 PLAYER';
+  const known = PRODUCT_ALIASES.find((alias) => value.includes(alias));
+  if (known) return known;
+  const cleaned = value
+    .replace(/\[ID\]/g, ' ')
+    .replace(/\b\d{5,}\b/g, ' ')
+    .replace(/[|:]/g, ' ')
+    .replace(/\s*-\s*/g, ' ')
+    .replace(/\b(ANDROID|APPLE|SMART) TV\b/g, ' ')
+    .replace(/\b(BOX|TV|FIRESTICK|MEECOOL)\b/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return cleaned || null;
 }
 
 function sanitizeApp(value: string | null): string | null {
@@ -216,7 +276,7 @@ export class ExcelParserService {
       const pago = cleanOptionalText(getValue(row, indexes, 'PAGO'));
       const fecha = parseDate(getValue(row, indexes, 'FECHA'));
       const total = parseAmount(getValue(row, indexes, 'TOTAL'));
-      const periodoAnual = parseAmount(getValue(row, indexes, 'PANO'));
+      const importeAnual = parseAmount(getValue(row, indexes, 'PANO'));
       const appClave = sanitizeApp(normalizeComparable(app)) || null;
       const normalized: NormalizedExcelRow = {
         fecha,
@@ -232,7 +292,7 @@ export class ExcelParserService {
         identificadorOperativoHash: extractIdentifierHash(app),
         referencia,
         referenciaClave: referencia ? normalizeComparable(referencia) : null,
-        periodoAnual,
+        importeAnual,
         total,
         observaciones: cleanOptionalText(getValue(row, indexes, 'OBSERV')),
         pago,
@@ -246,8 +306,8 @@ export class ExcelParserService {
       if (!app) advertencias.push('APP ausente.');
       if (!referencia) advertencias.push('REFERENCIA ausente.');
       if (!pago) advertencias.push('PAGO ausente: movimiento financiero pendiente.');
-      if (total === null) advertencias.push('TOTAL ausente: movimiento financiero pendiente.');
-      if (total === 0) advertencias.push('TOTAL es cero: no se contabilizará automáticamente.');
+      if (importeAnual === null) advertencias.push('P.AÑO ausente: pago anual pendiente.');
+      if (total === null) advertencias.push('TOTAL ausente: no se podrá validar el acumulado histórico.');
       if (fecha && (Number(fecha.slice(0, 4)) < 2020 || Number(fecha.slice(0, 4)) > new Date().getFullYear() + 1)) {
         advertencias.push('Fecha fuera del periodo operativo habitual: revisar.');
       }

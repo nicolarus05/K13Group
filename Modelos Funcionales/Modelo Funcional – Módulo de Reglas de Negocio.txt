@@ -334,8 +334,10 @@ RN-018.004 — Normalización de catálogos
 
 Los valores de APP, SERVIDOR, REFERENCIA y PAGO se normalizarán mediante
 catálogos y equivalencias revisables. El valor original nunca se perderá.
-APP no se asignará directamente como producto porque puede contener dispositivo,
-MAC, identificadores, varias aplicaciones o errores tipográficos.
+APP se limpiará de dispositivo, MAC e identificadores cuando sea posible.
+Las variantes de MAXPLAYER se agruparán bajo MAXPLAYER. Las demás aplicaciones
+identificables se registrarán como productos independientes y las variantes no
+resueltas quedarán pendientes de revisión.
 
 RN-018.005 — Datos incompletos
 
@@ -345,15 +347,33 @@ bloqueadas según el campo y se podrán resolver desde la pantalla de revisión.
 
 RN-018.006 — Fechas e importes históricos
 
-Antes de importar se deberá confirmar el significado de FECHA, P.AÑO y TOTAL.
-Las fechas futuras, fechas fuera del periodo esperado, importes cero y valores
-anómalos no se interpretarán automáticamente como renovaciones o ingresos.
+FECHA representa la próxima fecha de renovación. Para una fila con FECHA
+15/09/2027, la suscripción anual tendrá fecha de inicio 15/09/2026 y fecha de
+fin/próxima renovación 15/09/2027. La fecha de operación y cobro será
+15/09/2026.
+
+P.AÑO representa el importe pagado por la suscripción anual y es el único
+importe que podrá generar el movimiento de esa operación. TOTAL representa el
+acumulado histórico del cliente y solo se utilizará para validaciones de
+coherencia; nunca se sumará ni se registrará como un movimiento adicional.
+
+Todas las suscripciones del histórico tienen duración de 12 meses. Las fechas
+anómalas, importes anuales ausentes o acumulados decrecientes quedarán visibles
+para revisión y no se contabilizarán automáticamente.
+
+RN-018.006.1 — Referentes
+
+Cada cliente tendrá un registro independiente en el catálogo de referencias.
+Que el nombre de una referencia coincida con el de un cliente no implica que
+ambos registros sean la misma entidad.
 
 RN-018.007 — No duplicar movimientos financieros
 
-Las cantidades de TOTAL, P.AÑO y los totales de las cabeceras del Excel no se
-sumarán entre sí. Solo se creará un movimiento cuando el importe, la fecha y el
-estado de pago estén identificados y reconciliados.
+Las cantidades de TOTAL y los totales de las cabeceras del Excel no se sumarán
+al importe P.AÑO. Solo se creará un movimiento por operación cuando P.AÑO, la
+fecha de cobro y el método de pago estén identificados y reconciliados. Los
+métodos gratuitos generan la operación de renovación, pero no un movimiento
+monetario.
 
 RN-018.008 — Protección de datos operativos
 

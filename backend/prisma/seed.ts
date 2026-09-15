@@ -1,7 +1,62 @@
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { ExcelParserService } from '../src/importaciones/excel-parser.service';
 
 const prisma = new PrismaClient();
+
+const METODOS_PAGO = [
+  ['EF', 'Efectivo'],
+  ['STR', 'Stripe'],
+  ['B-RE', 'Bizum Revolut'],
+  ['T-IM', 'Transferencia Imagin'],
+  ['B-SA', 'Bizum Santander'],
+  ['T-SA', 'Transferencia Santander'],
+  ['T-RE', 'Transferencia Revolut'],
+  ['B-UN', 'Bizum Unicaja'],
+  ['B-IM', 'Bizum Imagin'],
+  ['B-MY', 'Bizum Myinvest'],
+  ['B-PR', 'Bizum Privado'],
+  ['FREE', 'Gratis'],
+  ['GR', 'Gratis'],
+  ['PA', 'Obvialo'],
+  ['RE', 'Revolut'],
+  ['T-MY', 'Transferencia Myinvest'],
+  ['T-PR', 'Transferencia Privada'],
+  ['T-UN', 'Transferencia Unicaja'],
+  ['T-WI', 'Transferencia Wise'],
+] as const;
+
+const PRODUCTOS_BASE = ['K13IBO39', 'K13PLAYER', 'K13TIVI', 'KDSPLAYER', 'MAXPLAYER', 'SMARTONE', 'VUPLAYER'] as const;
+const SERVIDORES_BASE = [
+  ['DEAD', true],
+  ['COBRA', false],
+  ['PROMAX', false],
+] as const;
+const TARIFAS_MAS_VENDIDAS = [
+  ['MAXPLAYER', 75],
+  ['K13PLAYER', 75],
+  ['K13TIVI', 75],
+  ['KDSPLAYER', 75],
+  ['K13IBO39', 75],
+  ['MAXPLAYER', 140],
+  ['VUPLAYER', 75],
+  ['K13TIVI', 150],
+  ['KDSPLAYER', 150],
+  ['SMARTONE', 75],
+] as const;
+
+const PRODUCTOS_LEGACY = [
+  ['K13IB39', 'K13IBO39'],
+  ['K13`PLAYER', 'K13PLAYER'],
+  ['K13 PLAYER', 'K13PLAYER'],
+  ['K13PLAUER', 'K13PLAYER'],
+  ['KSDPLAYER', 'KDSPLAYER'],
+  ['VUPLER', 'VUPLAYER'],
+  ['0PLAYER', '0 PLAYER'],
+  ['ARC PLAYER CJ C1 74 DD F5 7E', 'ARC PLAYER'],
+] as const;
 
 const ESTADOS = [
   // Clientes
@@ -41,6 +96,23 @@ const ESTADOS = [
   { tipo: 'copia_seguridad', valor: 'RESTAURADA',  etiqueta: 'Restaurada',  orden: 4 },
 ];
 
+async function mergeLegacyProducts() {
+  for (const [legacyName, canonicalName] of PRODUCTOS_LEGACY) {
+    const legacy = await prisma.producto.findUnique({ where: { nombre: legacyName } });
+    if (!legacy) continue;
+    const canonical = await prisma.producto.upsert({
+      where: { nombre: canonicalName },
+      update: { activo: true, deletedAt: null },
+      create: { nombre: canonicalName, activo: true },
+    });
+    if (legacy.id === canonical.id) continue;
+    await prisma.tarifa.updateMany({ where: { productoId: legacy.id }, data: { productoId: canonical.id } });
+    await prisma.suscripcion.updateMany({ where: { productoId: legacy.id }, data: { productoId: canonical.id } });
+    await prisma.importacionEquivalencia.updateMany({ where: { tipo: 'PRODUCTO', entidadId: legacy.id }, data: { entidadId: canonical.id, valorCanonico: canonicalName } });
+    await prisma.producto.update({ where: { id: legacy.id }, data: { activo: false, deletedAt: new Date() } });
+  }
+}
+
 async function main() {
   // Estados del sistema
   for (const e of ESTADOS) {
@@ -66,6 +138,71 @@ async function main() {
   });
 
   console.log(`✓ Usuario creado: ${admin.username}`);
+
+  const paymentMethods = new Map<string, string>();
+  for (const [, name] of METODOS_PAGO) {
+    const method = await prisma.metodoPago.upsert({
+      where: { nombre: name },
+      update: { activo: true, deletedAt: null },
+      create: { nombre: name, activo: true },
+    });
+    paymentMethods.set(name, method.id);
+  }
+  for (const [code, name] of METODOS_PAGO) {
+    await prisma.importacionEquivalencia.upsert({
+      where: { tipo_valorClave: { tipo: 'PAGO', valorClave: code } },
+      update: { valorOrigen: code, valorCanonico: name, entidadId: paymentMethods.get(name), activo: true },
+      create: { tipo: 'PAGO', valorOrigen: code, valorClave: code, valorCanonico: name, entidadId: paymentMethods.get(name) },
+    });
+  }
+  console.log(`✓ ${METODOS_PAGO.length} códigos PAGO mapeados`);
+
+  const products = new Map<string, string>();
+  for (const nombre of PRODUCTOS_BASE) {
+    const product = await prisma.producto.upsert({ where: { nombre }, update: { activo: true, deletedAt: null }, create: { nombre, activo: true } });
+    products.set(nombre, product.id);
+    await prisma.importacionEquivalencia.upsert({
+      where: { tipo_valorClave: { tipo: 'PRODUCTO', valorClave: nombre } },
+      update: { valorOrigen: nombre, valorCanonico: nombre, entidadId: product.id, activo: true },
+      create: { tipo: 'PRODUCTO', valorOrigen: nombre, valorClave: nombre, valorCanonico: nombre, entidadId: product.id },
+    });
+  }
+  for (const [nombre, activo] of SERVIDORES_BASE) {
+    const server = await prisma.servidor.upsert({ where: { nombre }, update: { activo, deletedAt: null }, create: { nombre, activo } });
+    await prisma.importacionEquivalencia.upsert({
+      where: { tipo_valorClave: { tipo: 'SERVIDOR', valorClave: nombre } },
+      update: { valorOrigen: nombre, valorCanonico: nombre, entidadId: server.id, activo: true },
+      create: { tipo: 'SERVIDOR', valorOrigen: nombre, valorClave: nombre, valorCanonico: nombre, entidadId: server.id },
+    });
+  }
+  for (const [productName, price] of TARIFAS_MAS_VENDIDAS) {
+    const productId = products.get(productName)!;
+    const name = `${productName} - ${price}€/año`;
+    const existing = await prisma.tarifa.findFirst({ where: { productoId: productId, nombre: name } });
+    const tariff = existing ?? await prisma.tarifa.create({ data: { productoId: productId, nombre: name, duracionMeses: 12, precio: price, activo: true } });
+    const key = `${productName}|${price}`;
+    await prisma.importacionEquivalencia.upsert({
+      where: { tipo_valorClave: { tipo: 'TARIFA', valorClave: key } },
+      update: { valorOrigen: `P.AÑO ${price}`, valorCanonico: name, entidadId: tariff.id, activo: true },
+      create: { tipo: 'TARIFA', valorOrigen: `P.AÑO ${price}`, valorClave: key, valorCanonico: name, entidadId: tariff.id },
+    });
+  }
+  const workbookPath = resolve(__dirname, '../../Modelos Funcionales/CLIENTES 2026(Actualizado).xlsx');
+  if (existsSync(workbookPath)) {
+    const parsedRows = new ExcelParserService().parse(readFileSync(workbookPath)).flatMap((sheet) => sheet.filas);
+    const discoveredProducts = new Set(parsedRows.map((row) => row.datosNormalizados.productoClave).filter((value): value is string => Boolean(value)));
+    for (const nombre of discoveredProducts) {
+      const product = await prisma.producto.upsert({ where: { nombre }, update: { activo: true, deletedAt: null }, create: { nombre, activo: true } });
+      await prisma.importacionEquivalencia.upsert({
+        where: { tipo_valorClave: { tipo: 'PRODUCTO', valorClave: nombre } },
+        update: { valorOrigen: nombre, valorCanonico: nombre, entidadId: product.id, activo: true },
+        create: { tipo: 'PRODUCTO', valorOrigen: nombre, valorClave: nombre, valorCanonico: nombre, entidadId: product.id },
+      });
+    }
+    console.log(`✓ ${discoveredProducts.size} aplicaciones detectadas como productos`);
+  }
+  await mergeLegacyProducts();
+  console.log(`✓ ${PRODUCTOS_BASE.length} productos y ${TARIFAS_MAS_VENDIDAS.length} tarifas iniciales creados`);
 }
 
 main()

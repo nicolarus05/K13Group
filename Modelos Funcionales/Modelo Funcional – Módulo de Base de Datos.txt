@@ -8,7 +8,7 @@ renovaciones	Historial de renovaciones
 productos	Catálogo de aplicaciones
 tarifas	Precios y duraciones de cada producto
 servidores	Servidores disponibles
-referencias	Referencias o distribuidores
+referencias	Clientes que pueden actuar como referentes
 movimientos_financieros	Todos los ingresos y gastos
 metodos_pago	Métodos de cobro/pago
 categorias_gasto	Clasificación de gastos
@@ -23,8 +23,9 @@ estados	Catálogo centralizado de estados y tipos
 Total V1 base: 19 tablas.
 
 Para la migración controlada desde CLIENTES 2026(Actualizado).xlsx se añadirá una
-tabla técnica de staging de filas de importación. El modelo funcional completo de
-la V1 tendrá, por tanto, 20 tablas cuando se active la migración.
+tabla técnica de staging de filas de importación y una tabla de equivalencias
+revisables. El modelo funcional completo de la V1 tendrá, por tanto, 21 tablas
+cuando se active la migración.
 
 1. usuarios
 Campo	Tipo	PK	FK	Nulo
@@ -277,10 +278,19 @@ negocio. Como mínimo tendrá:
 
 importacion_id, hoja_origen, fila_origen, hash_fila, datos_originales JSONB,
 datos_normalizados JSONB, estado, errores, advertencias, cliente_id,
-suscripcion_id, renovacion_id y movimiento_id.
+suscripcion_id, renovacion_id, movimiento_id, decisión, mapeo, usuario y fecha
+de revisión, además de la observación de revisión.
 
 El hash de importación y la pareja hoja_origen/fila_origen permitirán repetir el
 proceso sin duplicar información. La fila original nunca se sobrescribirá.
+
+Tabla técnica: importacion_equivalencias
+
+Conservará los mapeos entre los valores originales del Excel y los catálogos
+canónicos. Sus campos principales son tipo, valor_origen, valor_clave,
+valor_canonico, entidad_id, activo y las fechas de auditoría. entidad_id es
+polimórfico y se valida contra productos, tarifas, servidores, referencias o
+métodos de pago según el tipo de equivalencia.
 
 Adaptaciones necesarias del modelo de negocio:
 
@@ -305,7 +315,12 @@ Calidad detectada en el archivo fuente:
   fila sin valor.
 - APP tiene 315 variantes textuales; muchas combinan producto, dispositivo,
   dirección MAC o identificadores. No se puede usar directamente como catálogo.
+- La normalización inicial detecta 41 nombres de aplicación/producto. Las
+  variantes no identificables quedan pendientes y los productos nuevos pueden
+  crearse manualmente.
 - REFERENCIA tiene 1.411 valores distintos y requiere normalización y revisión.
+  Además, cada cliente tendrá un registro independiente en este catálogo para
+  poder recomendar servicios, aunque coincida nominalmente con un cliente.
 - TELEFONO solo aparece en JUL, AGO y SEP; hay que tratarlo como dato opcional.
 - Hay 535 filas sin PAGO, una sin TOTAL, dos sin APP, una sin SERVIDOR y una
   sin REFERENCIA. También existen importes cero y una fecha potencialmente

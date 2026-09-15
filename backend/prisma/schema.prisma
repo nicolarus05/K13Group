@@ -19,10 +19,11 @@ model Usuario {
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
-  sesiones      Sesion[]
-  actividad     Actividad[]
-  importaciones Importacion[]
-  exportaciones Exportacion[]
+  sesiones       Sesion[]
+  actividad      Actividad[]
+  importaciones  Importacion[]
+  exportaciones  Exportacion[]
+  filasRevisadas ImportacionFila[] @relation("RevisionImportacionFila")
 
   @@map("usuarios")
 }
@@ -315,33 +316,59 @@ model Importacion {
 
 // ─── 20. importacion_filas ─────────────────────────────────────────────────
 model ImportacionFila {
-  id                String   @id @default(uuid()) @db.Uuid
-  importacionId     String   @map("importacion_id") @db.Uuid
-  hojaOrigen        String   @map("hoja_origen") @db.VarChar(20)
-  filaOrigen        Int      @map("fila_origen")
-  hashFila          String   @map("hash_fila") @db.VarChar(64)
-  datosOriginales   Json     @map("datos_originales")
-  datosNormalizados Json?    @map("datos_normalizados")
-  estado            String   @default("PENDIENTE") @db.VarChar(30)
-  errores           Json?
-  advertencias      Json?
-  clienteId         String?  @map("cliente_id") @db.Uuid
-  suscripcionId     String?  @map("suscripcion_id") @db.Uuid
-  renovacionId      String?  @unique @map("renovacion_id") @db.Uuid
-  movimientoId      String?  @unique @map("movimiento_id") @db.Uuid
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
+  id                  String    @id @default(uuid()) @db.Uuid
+  importacionId       String    @map("importacion_id") @db.Uuid
+  hojaOrigen          String    @map("hoja_origen") @db.VarChar(20)
+  filaOrigen          Int       @map("fila_origen")
+  hashFila            String    @map("hash_fila") @db.VarChar(64)
+  datosOriginales     Json      @map("datos_originales")
+  datosNormalizados   Json?     @map("datos_normalizados")
+  mapeo               Json?
+  estado              String    @default("PENDIENTE") @db.VarChar(30)
+  errores             Json?
+  advertencias        Json?
+  clienteId           String?   @map("cliente_id") @db.Uuid
+  suscripcionId       String?   @map("suscripcion_id") @db.Uuid
+  renovacionId        String?   @unique @map("renovacion_id") @db.Uuid
+  movimientoId        String?   @unique @map("movimiento_id") @db.Uuid
+  decision            String?   @db.VarChar(30)
+  revisadaPorId       String?   @map("revisada_por_id") @db.Uuid
+  revisadaAt          DateTime? @map("revisada_at")
+  observacionRevision String?   @map("observacion_revision")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
 
   importacion Importacion           @relation(fields: [importacionId], references: [id], onDelete: Cascade)
   cliente     Cliente?              @relation(fields: [clienteId], references: [id])
   suscripcion Suscripcion?          @relation(fields: [suscripcionId], references: [id])
   renovacion  Renovacion?           @relation("ImportacionFilaRenovacion", fields: [renovacionId], references: [id])
   movimiento  MovimientoFinanciero? @relation("ImportacionFilaMovimiento", fields: [movimientoId], references: [id])
+  revisadaPor Usuario?              @relation("RevisionImportacionFila", fields: [revisadaPorId], references: [id])
 
   @@unique([importacionId, hojaOrigen, filaOrigen])
   @@index([importacionId, estado])
+  @@index([importacionId, decision])
   @@index([hashFila])
   @@map("importacion_filas")
+}
+
+// ─── 21. importacion_equivalencias ─────────────────────────────────────────
+// Mapeos revisables entre valores históricos y catálogos del modelo de negocio.
+// entidadId es polimórfico y se valida en el servicio según el tipo.
+model ImportacionEquivalencia {
+  id            String   @id @default(uuid()) @db.Uuid
+  tipo          String   @db.VarChar(30)
+  valorOrigen   String   @map("valor_origen") @db.VarChar(255)
+  valorClave    String   @map("valor_clave") @db.VarChar(255)
+  valorCanonico String   @map("valor_canonico") @db.VarChar(150)
+  entidadId     String?  @map("entidad_id") @db.Uuid
+  activo        Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@unique([tipo, valorClave])
+  @@index([tipo, activo])
+  @@map("importacion_equivalencias")
 }
 
 // ─── 17. exportaciones ──────────────────────────────────────────────────────

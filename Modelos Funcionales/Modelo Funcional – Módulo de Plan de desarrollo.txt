@@ -111,6 +111,11 @@ Resultado: gestión completa de clientes.
 
 SPRINT 3.5 — Migración de CLIENTES 2026(Actualizado).xlsx
 
+Estado de implementación: EN VALIDACIÓN. El flujo técnico y la interfaz de
+revisión están implementados y ya están confirmadas las reglas contables de
+FECHA, P.AÑO, TOTAL y PAGO. El sprint no se cerrará hasta cargar los catálogos
+operativos y reconciliar el Excel completo.
+
 Antes de construir los catálogos y las renovaciones se realizará una migración
 controlada del archivo fuente. El sprint incluirá:
 
@@ -122,10 +127,31 @@ controlada del archivo fuente. El sprint incluirá:
   PAGO;
 - revisión de filas incompletas, importes cero, duplicados y fechas anómalas;
 - previsualización, confirmación idempotente y auditoría;
+- revisión individual con decisión ACEPTAR, RECHAZAR o PENDIENTE;
+- equivalencias persistentes para producto, tarifa, servidor, referencia y pago;
+- reconciliación separada de suscripciones y movimientos financieros, con
+  confirmación explícita y trazabilidad hasta la fila original;
 - informe de reconciliación de clientes, operaciones y dinero.
 
-Resultado: los datos históricos estarán disponibles sin duplicar clientes ni
-contabilizar dos veces los importes.
+Resultado de cierre: los datos históricos estarán disponibles sin duplicar
+clientes ni contabilizar dos veces los importes. Las filas no resueltas
+permanecerán pendientes y auditadas; no se considerarán importadas por el mero
+hecho de haber confirmado el staging.
+
+Pendientes para cerrar el sprint:
+
+- validar los 41 productos normalizados detectados y las correcciones de
+  MAXPLAYER;
+- validar las 10 tarifas iniciales más vendidas y permitir ampliarlas desde
+  Catálogos;
+- mantener DEAD como único servidor activo y conservar COBRA/PROMAX como
+  históricos inactivos;
+- crear una referencia independiente por cada cliente y resolver las
+  variantes de REFERENCIA;
+- revisar las filas con conflictos de identidad, importe cero, fecha anómala o
+  ausencia de datos;
+- ejecutar la reconciliación financiera usando P.AÑO, sin contabilizar TOTAL;
+- ejecutar la reconciliación sobre el Excel completo y conservar el informe.
 
 SPRINT 4 – Catálogos
 
