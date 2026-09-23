@@ -1,25 +1,55 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  UseGuards,
+  ParseUUIDPipe,
+} from '@nestjs/common';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Usuario } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { CatalogQueryDto, CreateCatalogDto, UpdateCatalogDto } from '../catalogos/catalogo.dto';
 import { TarifasService } from './tarifas.service';
-import { CreateTarifaDto, UpdateTarifaDto } from './dto/tarifa.dto';
 
 @ApiTags('tarifas')
 @UseGuards(JwtAuthGuard)
 @Controller('tarifas')
 export class TarifasController {
-  constructor(private readonly tarifasService: TarifasService) {}
-
+  constructor(private readonly service: TarifasService) {}
   @Get()
-  @ApiOperation({ summary: 'Listar tarifas activas' })
-  findAll(@Query('productoId') productoId?: string) { return this.tarifasService.findAll(productoId).then((data) => ({ success: true, data })); }
-
+  @ApiOperation({ summary: 'Listar tarifas con filtros y paginación' })
+  list(@Query() query: CatalogQueryDto) {
+    return this.service.findAll(query);
+  }
+  @Get(':id')
+  async get(@Param('id', ParseUUIDPipe) id: string) {
+    return { success: true, data: await this.service.findOne(id) };
+  }
   @Post()
-  create(@Body() dto: CreateTarifaDto) { return this.tarifasService.create(dto).then((data) => ({ success: true, data })); }
-
+  async create(@Body() dto: CreateCatalogDto, @CurrentUser() user: Usuario) {
+    return { success: true, data: await this.service.create(dto, user.id) };
+  }
   @Put(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateTarifaDto) { return this.tarifasService.update(id, dto).then((data) => ({ success: true, data })); }
-
+  async update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateCatalogDto,
+    @CurrentUser() user: Usuario,
+  ) {
+    return { success: true, data: await this.service.update(id, dto, user.id) };
+  }
   @Delete(':id')
-  remove(@Param('id') id: string) { return this.tarifasService.remove(id).then((data) => ({ success: true, data })); }
+  @ApiOperation({ summary: 'Desactivar conservando las relaciones históricas' })
+  async remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: Usuario) {
+    return { success: true, data: await this.service.remove(id, user.id) };
+  }
+  @Post(':id/reactivar')
+  async reactivate(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: Usuario) {
+    return { success: true, data: await this.service.reactivate(id, user.id) };
+  }
 }

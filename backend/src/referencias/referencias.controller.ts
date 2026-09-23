@@ -1,21 +1,55 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  UseGuards,
+  ParseUUIDPipe,
+} from '@nestjs/common';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Usuario } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { CatalogQueryDto, CreateCatalogDto, UpdateCatalogDto } from '../catalogos/catalogo.dto';
 import { ReferenciasService } from './referencias.service';
-import { CreateReferenciaDto, UpdateReferenciaDto } from './dto/referencia.dto';
 
 @ApiTags('referencias')
 @UseGuards(JwtAuthGuard)
 @Controller('referencias')
 export class ReferenciasController {
-  constructor(private readonly referenciasService: ReferenciasService) {}
-
+  constructor(private readonly service: ReferenciasService) {}
   @Get()
-  findAll(@Query('search') search?: string) { return this.referenciasService.findAll(search).then((data) => ({ success: true, data })); }
+  @ApiOperation({ summary: 'Listar referencias con filtros y paginación' })
+  list(@Query() query: CatalogQueryDto) {
+    return this.service.findAll(query);
+  }
+  @Get(':id')
+  async get(@Param('id', ParseUUIDPipe) id: string) {
+    return { success: true, data: await this.service.findOne(id) };
+  }
   @Post()
-  create(@Body() dto: CreateReferenciaDto) { return this.referenciasService.create(dto).then((data) => ({ success: true, data })); }
+  async create(@Body() dto: CreateCatalogDto, @CurrentUser() user: Usuario) {
+    return { success: true, data: await this.service.create(dto, user.id) };
+  }
   @Put(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateReferenciaDto) { return this.referenciasService.update(id, dto).then((data) => ({ success: true, data })); }
+  async update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateCatalogDto,
+    @CurrentUser() user: Usuario,
+  ) {
+    return { success: true, data: await this.service.update(id, dto, user.id) };
+  }
   @Delete(':id')
-  remove(@Param('id') id: string) { return this.referenciasService.remove(id).then((data) => ({ success: true, data })); }
+  @ApiOperation({ summary: 'Desactivar conservando las relaciones históricas' })
+  async remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: Usuario) {
+    return { success: true, data: await this.service.remove(id, user.id) };
+  }
+  @Post(':id/reactivar')
+  async reactivate(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: Usuario) {
+    return { success: true, data: await this.service.reactivate(id, user.id) };
+  }
 }

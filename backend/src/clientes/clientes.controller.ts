@@ -17,6 +17,8 @@ import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
 import { FindClientesDto } from './dto/find-clientes.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { Usuario } from '@prisma/client';
 
 @ApiTags('clientes')
 @UseGuards(JwtAuthGuard)
@@ -40,15 +42,19 @@ export class ClientesController {
 
   @Post()
   @ApiOperation({ summary: 'Crear cliente' })
-  async create(@Body() dto: CreateClienteDto) {
-    const data = await this.clientesService.create(dto);
+  async create(@Body() dto: CreateClienteDto, @CurrentUser() user: Usuario) {
+    const data = await this.clientesService.create(dto, user.id);
     return { success: true, message: 'Cliente creado correctamente.', data };
   }
 
   @Put(':id')
   @ApiOperation({ summary: 'Editar cliente' })
-  async update(@Param('id') id: string, @Body() dto: UpdateClienteDto) {
-    const data = await this.clientesService.update(id, dto);
+  async update(
+    @Param('id') id: string,
+    @Body() dto: UpdateClienteDto,
+    @CurrentUser() user: Usuario,
+  ) {
+    const data = await this.clientesService.update(id, dto, user.id);
     return { success: true, message: 'Cliente actualizado correctamente.', data };
   }
 

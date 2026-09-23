@@ -18,6 +18,8 @@ import { ConfiguracionModule } from './configuracion/configuracion.module';
 import { AuditoriaModule } from './auditoria/auditoria.module';
 import { RecordatoriosModule } from './recordatorios/recordatorios.module';
 import { ImportacionesModule } from './importaciones/importaciones.module';
+import { MetodosPagoModule } from './metodos-pago/metodos-pago.module';
+import { CategoriasGastoModule } from './categorias-gasto/categorias-gasto.module';
 
 @Module({
   imports: [
@@ -40,6 +42,8 @@ import { ImportacionesModule } from './importaciones/importaciones.module';
     AuditoriaModule,
     RecordatoriosModule,
     ImportacionesModule,
+    MetodosPagoModule,
+    CategoriasGastoModule,
   ],
 })
 export class AppModule {}

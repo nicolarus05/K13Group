@@ -114,7 +114,7 @@ deleted_at	TIMESTAMP
 9. referencias
 Campo	Tipo	PK
 id	UUID	✅
-nombre	VARCHAR(100)	
+nombre	VARCHAR(150)
 activo	BOOLEAN	
 observaciones	TEXT	
 created_at	TIMESTAMP	
@@ -138,8 +138,9 @@ created_at	TIMESTAMP
 11. metodos_pago
 Campo	Tipo	PK
 id	UUID	✅
-nombre	VARCHAR(100)	
-activo	BOOLEAN	
+nombre	VARCHAR(100)
+activo	BOOLEAN
+es_gratuito	BOOLEAN DEFAULT false
 created_at	TIMESTAMP	
 deleted_at	TIMESTAMP	
 12. categorias_gasto
@@ -330,3 +331,22 @@ Las columnas P.AÑO y TOTAL, así como las columnas de totales por entidad
 financiera de la cabecera, no se importarán automáticamente como movimientos
 distintos. Su significado contable debe confirmarse y reconciliarse antes de
 generar el libro financiero, para evitar doble contabilización.
+
+Actualización sprint 4 — 15/09/2026
+
+Migración 20260915193000_catalogos_gratuitos:
+- metodos_pago.es_gratuito BOOLEAN NOT NULL DEFAULT false. Los métodos existentes
+  llamados Gratis (sin distinguir mayúsculas ni espacios extremos) se marcan true.
+  Las operaciones posteriores usan este indicador, no el nombre del método.
+- referencias.nombre y referencia_nombre_snapshot de renovaciones y
+  movimientos_financieros se amplían a VARCHAR(150), como clientes.nombre.
+- No se eliminan filas ni relaciones históricas y no se ejecuta ninguna importación.
+
+La desactivación de los seis catálogos usa activo=false. La reactivación usa
+activo=true y limpia deleted_at si existía; ninguna de estas operaciones borra
+suscripciones, renovaciones ni movimientos. Mutación y auditoría son atómicas.
+El alta manual de cliente y su referencia independiente también es transaccional.
+
+configuracion contiene el marcador seed.catalogos.v1 tras la primera ejecución
+del seed básico. Evita recrear o sobrescribir catálogos renombrados o desactivados.
+El seed no lee el XLSX ni crea registros en importaciones o importacion_filas.

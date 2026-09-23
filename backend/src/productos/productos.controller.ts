@@ -1,26 +1,55 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  UseGuards,
+  ParseUUIDPipe,
+} from '@nestjs/common';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Usuario } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { CatalogQueryDto, CreateCatalogDto, UpdateCatalogDto } from '../catalogos/catalogo.dto';
 import { ProductosService } from './productos.service';
-import { CreateProductoDto, UpdateProductoDto } from './dto/producto.dto';
 
 @ApiTags('productos')
 @UseGuards(JwtAuthGuard)
 @Controller('productos')
 export class ProductosController {
-  constructor(private readonly productosService: ProductosService) {}
-
+  constructor(private readonly service: ProductosService) {}
   @Get()
-  @ApiOperation({ summary: 'Listar productos activos' })
-  findAll(@Query('search') search?: string) { return this.productosService.findAll(search).then((data) => ({ success: true, data })); }
-
+  @ApiOperation({ summary: 'Listar productos con filtros y paginación' })
+  list(@Query() query: CatalogQueryDto) {
+    return this.service.findAll(query);
+  }
+  @Get(':id')
+  async get(@Param('id', ParseUUIDPipe) id: string) {
+    return { success: true, data: await this.service.findOne(id) };
+  }
   @Post()
-  @ApiOperation({ summary: 'Crear producto' })
-  create(@Body() dto: CreateProductoDto) { return this.productosService.create(dto).then((data) => ({ success: true, data })); }
-
+  async create(@Body() dto: CreateCatalogDto, @CurrentUser() user: Usuario) {
+    return { success: true, data: await this.service.create(dto, user.id) };
+  }
   @Put(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateProductoDto) { return this.productosService.update(id, dto).then((data) => ({ success: true, data })); }
-
+  async update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateCatalogDto,
+    @CurrentUser() user: Usuario,
+  ) {
+    return { success: true, data: await this.service.update(id, dto, user.id) };
+  }
   @Delete(':id')
-  remove(@Param('id') id: string) { return this.productosService.remove(id).then((data) => ({ success: true, data })); }
+  @ApiOperation({ summary: 'Desactivar conservando las relaciones históricas' })
+  async remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: Usuario) {
+    return { success: true, data: await this.service.remove(id, user.id) };
+  }
+  @Post(':id/reactivar')
+  async reactivate(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: Usuario) {
+    return { success: true, data: await this.service.reactivate(id, user.id) };
+  }
 }

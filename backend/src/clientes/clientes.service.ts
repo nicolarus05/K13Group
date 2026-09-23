@@ -4,7 +4,8 @@ import { PrismaService } from '../database/prisma.service';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
 import { FindClientesDto } from './dto/find-clientes.dto';
-import { normalizePhone } from '../common/helpers/normalization';
+import { normalizeComparable, normalizePhone } from '../common/helpers/normalization';
+import { lockCatalog } from '../catalogos/catalogos.service';
 
 const INCLUDE_ESTADO = { estado: true } satisfies Prisma.ClienteInclude;
 
@@ -72,7 +73,7 @@ export class ClientesService {
     return cliente;
   }
 
-  async create(dto: CreateClienteDto) {
+  async create(dto: CreateClienteDto, usuarioId: string) {
     const telefono = dto.telefono?.trim() || null;
     const telefonoNormalizado = normalizePhone(telefono);
 
@@ -91,15 +92,20 @@ export class ClientesService {
       where: { tipo: 'cliente', valor: 'ACTIVO' },
     });
 
-    const cliente = await this.prisma.cliente.create({
-      data: { ...dto, telefono, telefonoNormalizado, estadoId: estadoActivo.id },
-      include: INCLUDE_ESTADO,
+    return this.prisma.$transaction(async (tx) => {
+      const cliente = await tx.cliente.create({
+        data: { ...dto, telefono, telefonoNormalizado, estadoId: estadoActivo.id },
+        include: INCLUDE_ESTADO,
+      });
+      await this.ensureReferencia(tx, cliente.nombre, usuarioId);
+      await tx.actividad.create({
+        data: { usuarioId, tabla: 'clientes', registroId: cliente.id, accion: 'CREAR' },
+      });
+      return cliente;
     });
-    await this.ensureReferencia(cliente.nombre);
-    return cliente;
   }
 
-  async update(id: string, dto: UpdateClienteDto) {
+  async update(id: string, dto: UpdateClienteDto, usuarioId: string) {
     await this.findOne(id);
 
     const hasTelefono = dto.telefono !== undefined;
@@ -118,13 +124,18 @@ export class ClientesService {
       if (existe) throw new ConflictException('Ya existe un cliente con ese teléfono');
     }
 
-    const cliente = await this.prisma.cliente.update({
-      where: { id },
-      data: { ...dto, ...(hasTelefono ? { telefono, telefonoNormalizado } : {}) },
-      include: INCLUDE_ESTADO,
+    return this.prisma.$transaction(async (tx) => {
+      const cliente = await tx.cliente.update({
+        where: { id },
+        data: { ...dto, ...(hasTelefono ? { telefono, telefonoNormalizado } : {}) },
+        include: INCLUDE_ESTADO,
+      });
+      if (dto.nombre) await this.ensureReferencia(tx, cliente.nombre, usuarioId);
+      await tx.actividad.create({
+        data: { usuarioId, tabla: 'clientes', registroId: id, accion: 'EDITAR' },
+      });
+      return cliente;
     });
-    if (dto.nombre) await this.ensureReferencia(cliente.nombre);
-    return cliente;
   }
 
   // RN-001.004: borrado lógico
@@ -136,13 +147,21 @@ export class ClientesService {
     });
   }
 
-  private async ensureReferencia(nombre: string) {
-    const value = nombre.trim();
-    if (!value) return;
-    await this.prisma.referencia.upsert({
-      where: { nombre: value },
-      update: { activo: true, deletedAt: null },
-      create: { nombre: value, activo: true },
+  private async ensureReferencia(tx: Prisma.TransactionClient, nombre: string, usuarioId: string) {
+    await lockCatalog(tx, 'referencias');
+    const value = nombre.trim().replace(/\s+/g, ' ');
+    const references = await tx.referencia.findMany({ select: { id: true, nombre: true } });
+    if (references.some((item) => normalizeComparable(item.nombre) === normalizeComparable(value)))
+      return;
+    const reference = await tx.referencia.create({ data: { nombre: value, activo: true } });
+    await tx.actividad.create({
+      data: {
+        usuarioId,
+        tabla: 'referencias',
+        registroId: reference.id,
+        accion: 'CREAR',
+        datosNuevos: { nombre: value, origen: 'CLIENTE' },
+      },
     });
   }
 }

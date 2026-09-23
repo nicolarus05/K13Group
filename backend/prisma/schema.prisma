@@ -113,7 +113,7 @@ model Renovacion {
   productoNombreSnapshot   String?   @map("producto_nombre_snapshot") @db.VarChar(100)
   tarifaNombreSnapshot     String?   @map("tarifa_nombre_snapshot") @db.VarChar(100)
   servidorNombreSnapshot   String?   @map("servidor_nombre_snapshot") @db.VarChar(100)
-  referenciaNombreSnapshot String?   @map("referencia_nombre_snapshot") @db.VarChar(100)
+  referenciaNombreSnapshot String?   @map("referencia_nombre_snapshot") @db.VarChar(150)
   metodoPagoNombreSnapshot String?   @map("metodo_pago_nombre_snapshot") @db.VarChar(100)
   observaciones            String?
   createdAt                DateTime  @default(now()) @map("created_at")
@@ -178,7 +178,7 @@ model Servidor {
 // ─── 9. referencias ─────────────────────────────────────────────────────────
 model Referencia {
   id            String    @id @default(uuid()) @db.Uuid
-  nombre        String    @unique @db.VarChar(100)
+  nombre        String    @unique @db.VarChar(150)
   activo        Boolean   @default(true)
   observaciones String?
   createdAt     DateTime  @default(now()) @map("created_at")
@@ -204,7 +204,7 @@ model MovimientoFinanciero {
   productoNombreSnapshot   String?  @map("producto_nombre_snapshot") @db.VarChar(100)
   tarifaNombreSnapshot     String?  @map("tarifa_nombre_snapshot") @db.VarChar(100)
   servidorNombreSnapshot   String?  @map("servidor_nombre_snapshot") @db.VarChar(100)
-  referenciaNombreSnapshot String?  @map("referencia_nombre_snapshot") @db.VarChar(100)
+  referenciaNombreSnapshot String?  @map("referencia_nombre_snapshot") @db.VarChar(150)
   metodoPagoNombreSnapshot String?  @map("metodo_pago_nombre_snapshot") @db.VarChar(100)
   descripcion              String?
   createdAt                DateTime @default(now()) @map("created_at")
@@ -226,6 +226,7 @@ model MetodoPago {
   id        String    @id @default(uuid()) @db.Uuid
   nombre    String    @unique @db.VarChar(100)
   activo    Boolean   @default(true)
+  esGratuito Boolean  @default(false) @map("es_gratuito")
   createdAt DateTime  @default(now()) @map("created_at")
   deletedAt DateTime? @map("deleted_at")
 

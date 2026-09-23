@@ -123,16 +123,20 @@ Toda tarifa pertenece a un producto.
 
 RN-005.002
 
-Duraciones permitidas inicialmente:
-
-1 mes
-12 meses
+Duración permitida en el alcance actual: 12 meses (suscripciones anuales).
 
 La arquitectura permitirá añadir nuevas duraciones sin cambios estructurales.
 
 RN-005.003
 
-El precio debe ser mayor que cero.
+El precio debe estar entre 0,01 y 99.999.999,99 euros, con un máximo de dos decimales.
+
+RN-005.004
+
+Una tarifa existente no puede cambiar de producto. Para otra aplicación se crea
+otra tarifa. Las nuevas tarifas y las reactivaciones requieren producto activo.
+Desactivar un producto no cambia sus tarifas ni suscripciones históricas, pero
+sus tarifas dejan de estar disponibles para nuevas asignaciones.
 
 RN-006 — Servidores
 RN-006.001
@@ -168,6 +172,33 @@ Solo podrán marcarse como inactivos.
 RN-008.003
 
 Los métodos inactivos no aparecerán en nuevos formularios.
+
+RN-008.004
+
+El campo esGratuito, no el nombre, identifica los métodos gratuitos. Renombrar
+Gratis no cambia su significado. Un método utilizado en renovaciones o
+movimientos no puede cambiar entre gratuito y monetario; se debe crear otro.
+
+RN-CAT — Gestión de catálogos (sprint 4)
+
+Los seis catálogos permiten altas, edición, desactivación y reactivación con
+sesión autenticada y auditoría transaccional. No hay borrado físico ni cambios
+retroactivos en suscripciones, renovaciones, movimientos o sus snapshots.
+
+Los nombres se limpian de espacios extremos y repetidos. Se rechazan duplicados
+equivalentes sin distinguir mayúsculas ni tildes, incluidos los inactivos. En
+tarifas la unicidad se aplica dentro del producto. No se fusionan automáticamente
+errores tipográficos dudosos. Máximo 100 caracteres, salvo referencias (150).
+
+El alta manual de cliente crea o reutiliza una referencia nominal independiente
+en la misma transacción, sin reactivar referencias inactivas. Al renombrar un
+cliente se crea o reutiliza la nueva referencia y se conserva la anterior.
+Cliente y referencia siguen siendo entidades distintas, sin identidad compartida.
+
+El seed básico es independiente del XLSX: no lee ni reconcilia el histórico.
+Repetirlo conserva nombres, precios, estados y equivalencias editados. En una
+instalación nueva DEAD es el único servidor precargado activo; COBRA y PROMAX
+son históricos inactivos. PA no recibe una nueva equivalencia automática.
 
 RN-009 — Movimientos financieros
 RN-009.001

@@ -264,29 +264,73 @@ GET /productos/:id
 POST /productos
 PUT /productos/:id
 DELETE /productos/:id
+POST /productos/:id/reactivar
 
-(Borrado lógico).
+(Desactivación lógica: conserva registros y relaciones históricas).
 
 MÓDULO TARIFAS
 GET /tarifas
+GET /tarifas/:id
 POST /tarifas
 PUT /tarifas/:id
 DELETE /tarifas/:id
+POST /tarifas/:id/reactivar
 MÓDULO SERVIDORES
 GET /servidores
+GET /servidores/:id
 POST /servidores
 PUT /servidores/:id
 DELETE /servidores/:id
+POST /servidores/:id/reactivar
 MÓDULO REFERENCIAS
 GET /referencias
+GET /referencias/:id
 POST /referencias
 PUT /referencias/:id
 DELETE /referencias/:id
+POST /referencias/:id/reactivar
 MÓDULO MÉTODOS DE PAGO
 GET /metodos-pago
+GET /metodos-pago/:id
 POST /metodos-pago
 PUT /metodos-pago/:id
 DELETE /metodos-pago/:id
+POST /metodos-pago/:id/reactivar
+MÓDULO CATEGORÍAS DE GASTO
+GET /categorias-gasto
+GET /categorias-gasto/:id
+POST /categorias-gasto
+PUT /categorias-gasto/:id
+DELETE /categorias-gasto/:id
+POST /categorias-gasto/:id/reactivar
+
+CONTRATO COMÚN DE CATÁLOGOS — Implementado en sprint 4
+
+Todas las rutas anteriores llevan prefijo /api/v1 y requieren sesión JWT.
+GET listado: search (hasta 100 caracteres), page (>=1, defecto 1), limit (1–100,
+defecto 25), estado (activo/inactivo/todos, defecto activo), sort (nombre/createdAt,
+defecto nombre), order (asc/desc, defecto asc). Solo tarifas admite productoId UUID.
+El filtro activo de tarifas exige también un producto activo y no borrado.
+Las tarifas de productos inactivos pueden administrarse usando estado=todos.
+
+Respuesta del listado: { success: true, data: [...], pagination: { page, limit,
+total, totalPages } }. Consulta individual y mutaciones: { success: true, data: {...} }.
+GET, PUT y DELETE devuelven 200; POST de alta y reactivación devuelve 201.
+Errores: 400 validación, 401 sin sesión, 404 registro inexistente, 409 conflicto.
+
+Cuerpo de alta: nombre obligatorio. Campos específicos: descripcion en productos;
+observaciones en referencias; productoId y precio obligatorios en tarifas,
+duracionMeses opcional con valor 12; esGratuito opcional (defecto false) en métodos.
+PUT admite los mismos campos opcionales y activo. No se aceptan campos ajenos al
+catálogo ni valores null. Nombre máximo 100 caracteres, salvo referencias (150);
+descripcion y observaciones hasta 2000. Precio entre 0,01 y 99.999.999,99, máximo
+dos decimales; producto de una tarifa existente inmutable.
+
+DELETE establece activo=false, nunca borra físicamente. Reactivar establece
+activo=true y limpia un deletedAt anterior cuando existe. Altas, cambios y estados
+se auditan en la misma transacción. Renombrar un método gratuito conserva su tipo;
+un método utilizado no admite cambiar esGratuito.
+
 MÓDULO FINANZAS
 GET /finanzas
 
@@ -433,7 +477,7 @@ Las operaciones críticas, especialmente las renovaciones y los movimientos fina
 Los endpoints DELETE realizarán siempre borrado lógico. Para restaurar registros, es preferible disponer de endpoints específicos como:
 
 POST /clientes/{id}/restaurar
-POST /productos/{id}/restaurar
+POST /productos/{id}/reactivar
 3. Auditoría automática
 
 Las operaciones de creación, modificación, anulación y restauración registrarán automáticamente:
@@ -499,13 +543,9 @@ POST /importaciones/:id/equivalencias
 PATCH /importaciones/:id/filas/:filaId/revisar
 POST /importaciones/:id/reconciliar
 
-Los catálogos gestionables disponen de operaciones protegidas de consulta,
-alta, edición y desactivación:
-
-GET/POST/PUT/DELETE /productos
-GET/POST/PUT/DELETE /tarifas
-GET/POST/PUT/DELETE /servidores
-GET/POST/PUT/DELETE /referencias
+Los seis catálogos gestionables disponen de consulta, alta, edición,
+desactivación y reactivación protegidas. Sus rutas y cuerpos están definidos en
+CONTRATO COMÚN DE CATÁLOGOS (sprint 4); no requieren cargar una importación.
 
 Permiten consultar el progreso, las filas rechazadas, los conflictos de
 identidad y las decisiones tomadas durante la importación. Las equivalencias y

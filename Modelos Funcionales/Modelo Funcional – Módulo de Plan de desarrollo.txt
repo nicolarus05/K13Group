@@ -111,13 +111,20 @@ Resultado: gestión completa de clientes.
 
 SPRINT 3.5 — Migración de CLIENTES 2026(Actualizado).xlsx
 
-Estado de implementación: EN VALIDACIÓN. El flujo técnico y la interfaz de
-revisión están implementados y ya están confirmadas las reglas contables de
-FECHA, P.AÑO, TOTAL y PAGO. El sprint no se cerrará hasta cargar los catálogos
-operativos y reconciliar el Excel completo.
+Estado: APLAZADO por decisión del usuario (15/09/2026), pendiente de corregir
+el XLSX. El flujo técnico y la interfaz de revisión están implementados y las
+reglas de FECHA, P.AÑO, TOTAL y PAGO están confirmadas. La validación integral
+y la carga del histórico siguen pendientes; el sprint no se considera cerrado.
 
-Antes de construir los catálogos y las renovaciones se realizará una migración
-controlada del archivo fuente. El sprint incluirá:
+La importación no bloquea los sprints 4 y posteriores. El desarrollo continuará
+con catálogos manuales y datos ficticios de prueba aislados del histórico real.
+Ya existen catálogos precargados derivados del Excel; esto no equivale a haber
+importado sus clientes, suscripciones ni movimientos.
+
+La migración se retomará cuando el usuario indique que el archivo corregido
+está listo. Se repetirá entonces el análisis y la revisión de equivalencias:
+los recuentos siguientes corresponden a la versión actual y pueden cambiar.
+El sprint incluirá:
 
 - análisis de las 12 hojas mensuales;
 - staging de las 2.914 filas operativas;
@@ -155,23 +162,96 @@ Pendientes para cerrar el sprint:
 
 SPRINT 4 – Catálogos
 
-Incluye:
+Estado: IMPLEMENTADO Y VALIDADO (15/09/2026), sin importar el XLSX.
+Objetivo: gestionar los seis catálogos desde la web y preparar las relaciones
+necesarias para el sprint 5, sin depender de la importación del XLSX.
 
-Productos.
-Tarifas.
-Servidores.
-Referencias.
-Métodos de pago.
-Categorías de gasto.
+Punto de partida anterior al sprint:
+- Productos, tarifas, servidores y referencias disponen de endpoints básicos
+  de creación, consulta, edición y desactivación/borrado lógico.
+- La pantalla actual permite crear y listar esos cuatro catálogos. Faltan la
+  edición, gestión de estados, búsquedas y filtros completos en la interfaz.
+- Métodos de pago y categorías de gasto existen en el modelo de datos;
+  falta completar su gestión desde API y web.
 
-Todos con:
+Alcance implementado:
 
-CRUD.
-Filtros.
-Búsquedas.
-Desactivación.
+4.1 — Independencia del Excel y datos de desarrollo
+- Separar el seed básico del procesamiento del XLSX y de la migración de alias.
+  Ejecutar el seed habitual no deberá leer el archivo ni migrar datos históricos.
+- Conservar los catálogos existentes. Repetir el seed no deberá sobrescribir
+  ediciones manuales ni reactivar registros desactivados por el usuario.
+- Preparar datos ficticios en un entorno de pruebas aislado y estados vacíos
+  utilizables cuando no haya clientes ni operaciones.
 
-Resultado: todos los datos maestros disponibles.
+4.2 — Completar y unificar la API de catálogos
+- Crear, listar, consultar, editar, desactivar y reactivar productos, tarifas,
+  servidores, referencias, métodos de pago y categorías de gasto.
+- Añadir búsqueda por nombre, filtro activo/inactivo/todos, ordenación y
+  paginación; en tarifas, filtro adicional por producto.
+- Validar nombres no vacíos después de limpiar espacios, duplicados equivalentes,
+  identificadores y límites de campos. Resolver conflictos con mensajes claros.
+- Mantener autenticación y registrar altas, cambios y desactivaciones en auditoría.
+- Conservar relaciones históricas; desactivar impedirá nuevas asignaciones,
+  pero no eliminará ni alterará operaciones existentes.
+
+4.3 — Interfaz completa de los seis catálogos
+- Ampliar las pestañas actuales con métodos de pago y categorías de gasto.
+- Añadir formularios de edición, controles de desactivación/reactivación,
+  buscador, filtros y paginación.
+- Mostrar estado, errores de validación, carga, ausencia de datos y resultado
+  de cada operación. Evitar envíos repetidos mientras se guarda.
+- Sincronizar listados y selectores después de cada cambio.
+
+4.4 — Reglas específicas
+- Productos: permitir añadir aplicaciones manualmente y gestionar nombres
+  canónicos; las coincidencias dudosas se revisarán sin fusionar automáticamente.
+- Tarifas: producto obligatorio, duración anual de 12 meses para el alcance
+  actual y precio positivo con dos decimales como máximo. Ofrecer solo productos
+  activos para nuevas tarifas y mantener coherencia producto/tarifa.
+- Servidores: DEAD sigue siendo el único activo de los precargados; conservar
+  COBRA y PROMAX como históricos inactivos. Permitir altas futuras manuales.
+- Referencias: mantener registros independientes de clientes y crear la referencia
+  correspondiente al alta manual de cliente de forma consistente y sin duplicados
+  por formato. Una coincidencia nominal no fusionará ambas entidades.
+- Métodos de pago: distinguir Gratis de los cobros monetarios; conservar las
+  equivalencias ya confirmadas para la futura importación. PA queda fuera de
+  nuevas interpretaciones automáticas hasta revisar el archivo corregido.
+- Categorías de gasto: permitir clasificación manual y desactivación conservando
+  los gastos asociados.
+
+4.5 — Validación y criterios de cierre
+- Gestionar los seis catálogos completamente desde la web sin cargar un XLSX.
+- Arrancar y ejecutar el seed básico aunque el archivo no exista.
+- Probar con datos ficticios altas, edición, duplicados, importes inválidos,
+  filtros, paginación, desactivación/reactivación y conservación de relaciones.
+- Verificar autenticación y auditoría de las mutaciones.
+- Comprobar compilación, tipos y migraciones; configurar el lint del backend
+  pendiente y ejecutar pruebas de las reglas críticas.
+- Actualizar documentación de API y reglas que cambien durante la implementación.
+
+Fuera de alcance: importar el histórico real, corregir el XLSX y ejecutar su
+reconciliación financiera. La gestión de suscripciones, renovaciones y finanzas
+se desarrolla en sus sprints correspondientes.
+
+Resultado: catálogos operativos y ampliables manualmente, preparados para crear
+suscripciones en el sprint 5 y recibir el histórico revisado más adelante.
+
+Validación de cierre:
+- 19 pruebas de integración API/PostgreSQL superadas en un esquema temporal con
+  datos ficticios: seis catálogos, autenticación, auditoría, duplicados concurrentes,
+  tarifas, clientes/referencias, reversión transaccional y seed repetible.
+- 2 pruebas existentes del parser superadas (fixtures sintéticos; sin importar el XLSX).
+- Comprobación en Chrome de los seis formularios con API simulada: 24 mutaciones,
+  búsquedas, estados vacíos y rechazo de precio cero, sin errores JavaScript.
+- Tipos y compilación de backend y frontend correctos. Lint sin errores;
+  quedan 9 avisos previos de imports no utilizados en backend y 3 de any en clientes.
+- Migraciones verificadas desde cero en pruebas y migración del sprint aplicada
+  al entorno local. No se ha ejecutado la migración/importación del histórico.
+- API, reglas de negocio y base de datos actualizadas; comandos en backend/SPRINT4.md.
+
+El cierre técnico del sprint 4 no cierra la validación operativa del histórico
+del sprint 3.5, que sigue aplazada hasta disponer del Excel corregido.
 
 SPRINT 5 – Suscripciones
 

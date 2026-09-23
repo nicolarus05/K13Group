@@ -165,7 +165,7 @@ export class ImportacionesService {
     await this.ensureImportacion(id);
     const [productos, tarifas, servidores, referencias, metodosPago, equivalencias] = await Promise.all([
       this.prisma.producto.findMany({ where: { activo: true, deletedAt: null }, orderBy: { nombre: 'asc' } }),
-      this.prisma.tarifa.findMany({ where: { activo: true }, include: { producto: true }, orderBy: { nombre: 'asc' } }),
+      this.prisma.tarifa.findMany({ where: { activo: true, producto: { activo: true, deletedAt: null } }, include: { producto: true }, orderBy: { nombre: 'asc' } }),
       this.prisma.servidor.findMany({ where: { activo: true, deletedAt: null }, orderBy: { nombre: 'asc' } }),
       this.prisma.referencia.findMany({ where: { activo: true, deletedAt: null }, orderBy: { nombre: 'asc' } }),
       this.prisma.metodoPago.findMany({ where: { activo: true, deletedAt: null }, orderBy: { nombre: 'asc' } }),
@@ -257,7 +257,7 @@ export class ImportacionesService {
           if (!existingSubscription) subscriptionsCreated += 1;
           const payment = mapping.metodoPagoId ? await tx.metodoPago.findUnique({ where: { id: mapping.metodoPagoId } }) : null;
           if (!payment) { pending += 1; await this.markPending(tx, row, 'Método de pago no reconciliado; no se contabiliza la operación.'); continue; }
-          const isFree = this.isFreePayment(payment.nombre);
+          const isFree = payment.esGratuito;
           // Los pagos gratuitos sí generan la renovación, aunque no haya
           // confirmación financiera, porque no crean ningún movimiento monetario.
           if (!options.confirmarFinanzas && !isFree) { pending += 1; await tx.importacionFila.update({ where: { id: row.id }, data: { clienteId: mapping.clienteId, suscripcionId: subscription.id, mapeo: mapping as unknown as Prisma.InputJsonValue, estado: ROW_STATUS.FINANCIAL_PENDING } }); continue; }
@@ -319,7 +319,6 @@ export class ImportacionesService {
   private tariffSource(row: NormalizedExcelRow) { return `${row.app ?? 'APP SIN VALOR'} · P.AÑO ${row.importeAnual ?? '—'}`; }
   private utcDate(value: string) { const date = new Date(`${value}T00:00:00.000Z`); if (Number.isNaN(date.getTime())) throw new BadRequestException(`Fecha inválida: ${value}`); return date; }
   private shiftMonths(date: Date, months: number) { const result = new Date(date); result.setUTCMonth(result.getUTCMonth() + months); return result; }
-  private isFreePayment(name: string) { return normalizeComparable(name) === 'GRATIS'; }
   private async ensureImportacion(id: string) { const exists = await this.prisma.importacion.findUnique({ where: { id }, select: { id: true } }); if (!exists) throw new NotFoundException(`Importación ${id} no encontrada.`); }
   private validateFile(file: Express.Multer.File) { if (!file?.buffer?.length) throw new BadRequestException('Debes adjuntar un archivo Excel.'); if (file.buffer.length > MAX_FILE_SIZE) throw new BadRequestException('El Excel supera el límite de 10 MB.'); const filename = file.originalname.toLowerCase(); if (!filename.endsWith('.xlsx') && !filename.endsWith('.xls')) throw new BadRequestException('Solo se admiten archivos .xlsx o .xls.'); }
   private identityKey(row: NormalizedIdentity): string { return row.telefonoNormalizado ? `phone:${row.telefonoNormalizado}` : `name:${row.nombreClave}`; }
