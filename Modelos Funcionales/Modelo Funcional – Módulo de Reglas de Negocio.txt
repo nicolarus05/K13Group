@@ -65,6 +65,53 @@ Solo afectará a futuras operaciones.
 
 Nunca modificará datos históricos.
 
+RN-002.011 — Alta anual y correcciones (sprint 5)
+
+El alta manual requiere cliente activo y catálogos activos, y permite varias
+suscripciones por cliente. Cliente y producto no cambian después del alta.
+La referencia es opcional; se puede retirar sin alterar operaciones anteriores.
+Las relaciones ya existentes se conservan aunque se desactive el catálogo.
+
+El inicio no puede ser futuro. El fin se calcula a un año, limitando el 29 de
+febrero al último día de febrero siguiente si es necesario. Las fechas se tratan
+como días, no como horas. El día actual se determina en Europe/Madrid.
+Corregir el inicio exige motivo y recalcula el fin anual. Si ya hay renovaciones,
+la corrección se rechaza y debe resolverse mediante el módulo de renovaciones.
+Ninguna de estas operaciones crea cobros, ingresos o renovaciones.
+
+RN-002.012 — Suspensión, reactivación y cancelación
+
+ACTIVA, PROXIMA_A_VENCER y VENCIDA admiten suspensión y cancelación.
+SUSPENDIDA admite reactivación o cancelación. Las acciones requieren motivo.
+Reactivar nunca amplía las fechas: vuelve al estado correspondiente al vencimiento.
+CANCELADA es definitiva y de solo lectura; para un regreso se crea otra suscripción.
+
+RN-002.013 — Estado automático
+
+VENCIDA cuando fechaFin es hoy o anterior; PROXIMA_A_VENCER cuando faltan de 1 al
+umbral configurado de días; ACTIVA cuando faltan más. El umbral por defecto es 7
+(configuración suscripciones.dias_proxima, entero 1–365; inválido → 7).
+El proceso de fondo revisa al arrancar y cada minuto, confirmando lotes de hasta
+100 suscripciones. Un fallo revierte solo el lote actual, sin perder los anteriores.
+Las lecturas y filtros calculan el estado efectivo por fecha, sin escribir ni
+esperar al proceso de fondo. Las mutaciones sincronizan únicamente su registro
+dentro de la misma transacción, tras validar la versión recibida.
+No modifica los estados manuales SUSPENDIDA/CANCELADA ni el reservado BORRADOR.
+Cada cambio efectivo se audita una sola vez como SISTEMA, sin usuario humano.
+
+RN-002.014 — Concurrencia y trazabilidad
+
+El alta requiere solicitudId UUID: misma clave, usuario y datos devuelve la
+suscripción existente; reutilizarla con otros datos da 409. Otra clave permite
+otra suscripción intencionada. No se fusionan servicios por coincidencias nominales.
+Editar o cambiar estado requiere la versión leída. Una versión desactualizada da
+409 y no sobrescribe datos. Mutación y auditoría pertenecen a la misma transacción.
+No se exponen hashes, claves de solicitud ni identificadores operativos sensibles.
+
+Al abrir una edición o confirmación, la interfaz conserva una copia de los datos
+y su versión. Una respuesta tardía no puede sustituirla ni borrar el borrador.
+Cancelar la edición descarta ese borrador y vuelve al detalle sin enviar cambios.
+
 RN-003 — Renovaciones
 RN-003.001
 

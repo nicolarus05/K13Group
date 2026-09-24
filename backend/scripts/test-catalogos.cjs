@@ -20,7 +20,7 @@ async function main() {
     };
     for (const [bin, args] of [
       ['prisma', ['migrate', 'deploy']],
-      ['jest', ['--runInBand', '--testPathPattern=catalogos.integration.spec.ts']],
+      ['jest', ['--runInBand', '--testPathPattern=\\.integration\\.spec\\.ts$']],
     ]) {
       const result = spawnSync(path.resolve('node_modules/.bin', bin), args, {
         env,

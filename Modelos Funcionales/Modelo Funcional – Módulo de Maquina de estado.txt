@@ -46,7 +46,10 @@ ACTIVA	PRÓXIMA_A_VENCER	✅
 PRÓXIMA_A_VENCER	VENCIDA	✅
 VENCIDA	ACTIVA (mediante renovación)	✅
 ACTIVA	SUSPENDIDA	✅
-SUSPENDIDA	ACTIVA	✅
+SUSPENDIDA	ACTIVA / PROXIMA_A_VENCER / VENCIDA según fechaFin	✅
+PROXIMA_A_VENCER	SUSPENDIDA	✅
+VENCIDA	SUSPENDIDA	✅
+SUSPENDIDA	CANCELADA	✅
 ACTIVA	CANCELADA	✅
 PRÓXIMA_A_VENCER	CANCELADA	✅
 VENCIDA	CANCELADA	✅
@@ -62,7 +65,8 @@ Una suscripción cancelada nunca volverá a activarse. Si un cliente regresa, se
 Eventos automáticos
 Al pasar a ACTIVA
 Registrar auditoría.
-Calcular nueva fecha de vencimiento.
+Calcular nueva fecha de vencimiento solo por alta o renovación.
+Reactivar una suspendida no modifica las fechas.
 Cerrar recordatorios pendientes.
 Actualizar Dashboard.
 Al pasar a PRÓXIMA_A_VENCER
@@ -198,6 +202,30 @@ Acciones automáticas.
 Registro de auditoría.
 
 De esta forma, cualquier cambio de estado seguiría siempre las mismas reglas, independientemente de si se produce desde la interfaz web, una futura aplicación móvil o una API externa.
+
+Alcance implementado en sprint 5 (23/09/2026)
+
+La lógica de suscripciones está centralizada en SuscripcionesService.
+El estado persistente y su auditoría se actualizan al arrancar y cada minuto, en
+lotes transaccionales de hasta 100 registros. Las lecturas y filtros usan el
+estado efectivo por fecha y no realizan escrituras ni esperan al recálculo.
+Una mutación sincroniza solo su registro dentro de su transacción; si falla,
+se revierte junto con su auditoría. La comparación usa días
+Europe/Madrid: fechaFin <= hoy → VENCIDA; 1–7 días restantes → PROXIMA_A_VENCER;
+el resto → ACTIVA. El umbral admite configuración suscripciones.dias_proxima.
+Se permite recuperar saltos de días directamente (por ejemplo ACTIVA → VENCIDA
+si el servidor estuvo apagado); no se inventan transiciones intermedias.
+
+Los estados manuales tienen prioridad. SUSPENDIDA y CANCELADA nunca cambian por
+el reloj; BORRADOR no se crea desde el formulario. Reactivar recalcula el estado
+sin alterar el periodo y puede resultar en VENCIDA. Toda acción manual exige
+motivo; cancelar es definitivo. Los cambios se auditan con versión optimista.
+La versión devuelta corresponde al registro persistido; la interfaz conserva
+la versión con la que el usuario abrió la edición aunque lleguen respuestas tardías.
+
+Los efectos sobre recordatorios, dashboard, cobros y bloqueo del servicio externo
+descritos arriba siguen reservados a sus sprints. El sprint 5 solo gestiona
+suscripciones y su auditoría, no realiza esas acciones externas.
 
 ANEXO V1.1 — Estados de la migración Excel y separación de estados derivados
 

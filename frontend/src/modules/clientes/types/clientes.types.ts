@@ -1,4 +1,5 @@
 import type { Estado } from '@/types';
+import type { Subscription } from '@/modules/suscripciones/suscripciones.service';
 
 export interface Cliente {
   id: string;
@@ -11,6 +12,7 @@ export interface Cliente {
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
+  suscripciones?: Subscription[];
 }
 
 export interface ClientesResponse {

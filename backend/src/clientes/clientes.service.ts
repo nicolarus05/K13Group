@@ -6,12 +6,17 @@ import { UpdateClienteDto } from './dto/update-cliente.dto';
 import { FindClientesDto } from './dto/find-clientes.dto';
 import { normalizeComparable, normalizePhone } from '../common/helpers/normalization';
 import { lockCatalog } from '../catalogos/catalogos.service';
+import { SuscripcionesService } from '../suscripciones/suscripciones.service';
+import { subscriptionSelect } from '../suscripciones/subscription.select';
 
 const INCLUDE_ESTADO = { estado: true } satisfies Prisma.ClienteInclude;
 
 @Injectable()
 export class ClientesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly subscriptions: SuscripcionesService,
+  ) {}
 
   async findAll(query: FindClientesDto) {
     const { page = 1, search, estadoId } = query;
@@ -57,20 +62,17 @@ export class ClientesService {
         ...INCLUDE_ESTADO,
         suscripciones: {
           where: { deletedAt: null },
-          include: {
-            producto: true,
-            tarifa: true,
-            servidor: true,
-            referencia: true,
-            estado: true,
-          },
+          select: subscriptionSelect,
           orderBy: { createdAt: 'desc' },
         },
       },
     });
 
     if (!cliente) throw new NotFoundException(`Cliente ${id} no encontrado`);
-    return cliente;
+    return {
+      ...cliente,
+      suscripciones: await this.subscriptions.currentStates(cliente.suscripciones),
+    };
   }
 
   async create(dto: CreateClienteDto, usuarioId: string) {

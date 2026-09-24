@@ -194,11 +194,14 @@ Crear.
 Body
 
 {
+    "solicitudId": "UUID único por alta; reutilizar en reintentos",
     "clienteId": "",
     "productoId": "",
     "tarifaId": "",
     "servidorId": "",
-    "referenciaId": ""
+    "referenciaId": null,
+    "fechaInicio": "2026-09-23",
+    "tipoDispositivo": "TV"
 }
 PUT /suscripciones/:id
 
@@ -229,6 +232,46 @@ Suspender.
 POST /suscripciones/:id/reactivar
 
 Reactivar.
+
+CONTRATO SUSCRIPCIONES — Sprint 5 (23/09/2026)
+
+Prefijo /api/v1, sesión JWT obligatoria en todas las rutas.
+GET /suscripciones: page >=1 (defecto 1), limit 1–100 (defecto 25), search hasta
+150 caracteres (cliente/teléfono/producto), clienteId, productoId, servidorId,
+referenciaId UUID, estado ACTIVA/PROXIMA_A_VENCER/VENCIDA/SUSPENDIDA/CANCELADA.
+sort fechaFin/createdAt (defecto fechaFin), order asc/desc (defecto asc).
+GET /suscripciones/:id/historial: page y limit, orden más reciente primero.
+Los listados responden {success:true,data:[...],pagination:{page,limit,total,totalPages}}.
+Detalle y mutaciones responden {success:true,data:{...}}.
+
+POST requiere solicitudId UUID, clienteId, productoId, tarifaId, servidorId y
+fechaInicio YYYY-MM-DD no futura. referenciaId y tipoDispositivo son opcionales.
+fechaFin se calcula a un año; no se aceptan estadoId ni fechaFin del navegador.
+Reintentar la misma solicitud con mismo usuario/datos no duplica el alta.
+
+PUT /suscripciones/:id requiere version >=1. Admite tarifaId (mismo producto),
+servidorId, referenciaId (null para retirar), tipoDispositivo hasta 80 caracteres
+y fechaInicio. Una fecha distinta exige motivoCorreccion de 3–1000 caracteres y
+ausencia de renovaciones. Cliente y producto son inmutables.
+POST /:id/suspender, /:id/reactivar, /:id/cancelar requieren version y motivo de
+3–1000 caracteres. Una cancelada no se edita ni reactiva.
+
+200 consulta/edición, 201 alta/acciones; 400 validación, 401 sin sesión,
+404 inexistente y 409 conflicto de versión, clave de solicitud o transición.
+La respuesta incluye version, relaciones públicas, fechas y estado; excluye
+solicitudId/Hash e identificadores operativos. Historial devuelve antes/después,
+motivo, acción, fecha y nombre del usuario; usuario=null significa Sistema.
+
+Corrección 24/09/2026: GET de suscripciones, historial y ficha de cliente no
+escriben ni esperan a un recálculo global. El estado devuelto y el filtro estado
+se calculan por fecha, respetando estados manuales, aunque el proceso de fondo
+tenga trabajo pendiente. La versión sigue siendo la última persistida.
+El worker confirma lotes de hasta 100 registros y audita cada cambio efectivo.
+Editar/cambiar estado valida la versión y sincroniza solo ese registro en su
+transacción, conservando las reglas de conflicto 409.
+
+Reactivar no renueva ni cobra. El endpoint /:id/renovar descrito anteriormente
+permanece pendiente del sprint 6; no está implementado en el sprint 5.
 
 MÓDULO RENOVACIONES
 GET /renovaciones

@@ -350,3 +350,19 @@ El alta manual de cliente y su referencia independiente también es transacciona
 configuracion contiene el marcador seed.catalogos.v1 tras la primera ejecución
 del seed básico. Evita recrear o sobrescribir catálogos renombrados o desactivados.
 El seed no lee el XLSX ni crea registros en importaciones o importacion_filas.
+
+Actualización sprint 5 — 23/09/2026
+
+Migración 20260923120000_suscripciones_gestion:
+- suscripciones.version INTEGER NOT NULL DEFAULT 1, incrementado en cambios
+  manuales y automáticos. Protege frente a ediciones concurrentes.
+- suscripciones.solicitud_id UUID UNIQUE nullable para compatibilidad histórica.
+- suscripciones.solicitud_hash VARCHAR(64) nullable: huella de datos y usuario
+  de la solicitud de alta para reintentos idempotentes. No se expone por API.
+- actividad.usuario_id pasa a nullable para eventos automáticos del sistema.
+  Se mantiene FK ON DELETE RESTRICT; acciones manuales conservan usuario.
+
+La API usa selecciones explícitas y no expone identificadores operativos
+cifrados/hashes ni claves de solicitud en suscripciones o fichas de clientes.
+Los snapshots de actividad contienen datos públicos antes/después y motivo.
+No se modifica retroactivamente ninguna renovación o movimiento.

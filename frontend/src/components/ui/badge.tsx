@@ -39,7 +39,8 @@ export function EstadoBadge({ estado }: { estado: string }) {
     COMPLETADA: 'success',
     CONFIRMADO: 'success',
     PENDIENTE: 'warning',
-    'PRÓXIMA_A_VENCER': 'warning',
+    PROXIMA_A_VENCER: 'warning',
+    PRÓXIMA_A_VENCER: 'warning',
     POSPUESTO: 'warning',
     VENCIDA: 'danger',
     CANCELADA: 'danger',
@@ -53,7 +54,8 @@ export function EstadoBadge({ estado }: { estado: string }) {
   };
 
   const labels: Record<string, string> = {
-    'PRÓXIMA_A_VENCER': 'Próxima a vencer',
+    PROXIMA_A_VENCER: 'Próxima a vencer',
+    PRÓXIMA_A_VENCER: 'Próxima a vencer',
   };
 
   return (

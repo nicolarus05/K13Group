@@ -255,21 +255,73 @@ del sprint 3.5, que sigue aplazada hasta disponer del Excel corregido.
 
 SPRINT 5 – Suscripciones
 
-Este será probablemente el sprint más importante.
+Estado: IMPLEMENTADO Y VALIDADO (23/09/2026), sin importar el XLSX.
+Objetivo: gestionar suscripciones manualmente sin importar el XLSX ni generar
+cobros o renovaciones. El histórico del sprint 3.5 continúa aplazado.
 
-Incluye:
+5.1 — Reglas y datos
+- Cliente activo, producto, tarifa anual y servidor obligatorios; referencia opcional.
+- Nuevas asignaciones requieren catálogos activos; se mantienen vínculos históricos
+  a catálogos que se desactiven. La tarifa debe pertenecer al producto.
+- Varias suscripciones por cliente; cliente y producto inmutables tras el alta.
+- Inicio no futuro y fin calculado a un año (29/02 → 28/02 cuando corresponda).
+- Corrección de fecha solo con motivo y sin renovaciones existentes. No equivale
+  a renovar; no se permite editar fechaFin de forma independiente.
+- Migración con versión optimista y clave de solicitud para altas idempotentes.
+  Los datos operativos sensibles no se devuelven en las respuestas ni snapshots.
 
-Crear suscripción.
-Editar.
-Cambiar servidor.
-Cambiar referencia.
-Suspender.
-Reactivar.
-Cancelar.
-Estados automáticos.
-Historial.
+5.2 — API y estados
+- Alta, consulta, edición y listado con filtros, búsqueda, orden y paginación.
+- Suspensión, reactivación y cancelación con motivo y versión obligatorios.
+- Reactivar conserva fechas y determina el estado según el vencimiento actual.
+  CANCELADA es definitiva y de solo lectura. BORRADOR sigue fuera del alta manual.
+- Estados por día de negocio Europe/Madrid: VENCIDA desde fechaFin, PROXIMA_A_VENCER
+  entre 1 y 7 días restantes (umbral configurable), ACTIVA fuera de ese intervalo.
+- Persistir estados al arrancar y cada minuto en lotes de hasta 100 registros,
+  conservando progreso ante fallos. Lecturas y filtros calculan el estado efectivo
+  sin escrituras; cada mutación sincroniza solo su registro. Nunca sobrescribir
+  SUSPENDIDA o CANCELADA con un estado automático.
+- Auditoría y escritura atómicas; sistema identificado sin usuario humano.
+  Conflictos de edición devuelven 409 y requieren recargar.
 
-Resultado: sistema completo de gestión de suscripciones.
+5.3 — Interfaz
+- /suscripciones: filtros por cliente, producto, servidor, referencia y estado.
+- /suscripciones/nueva: alta también accesible desde la ficha del cliente.
+- /suscripciones/:id: datos, edición, acciones confirmadas e historial paginado.
+- Selectores de tarifas por producto, opciones activas y conservación de valores
+  históricos; errores, carga, estados vacíos y prevención de doble envío.
+- Ficha del cliente conectada y tipada, sin exponer identificadores operativos.
+- Ediciones y confirmaciones conservan su copia/versión ante respuestas tardías.
+  Cancelar descarta el borrador; el aviso PROXIMA_A_VENCER usa etiqueta y color correctos.
+
+5.4 — Verificación y cierre
+- Pruebas aisladas de fechas, años bisiestos, estados, autenticación, relaciones,
+  idempotencia, concurrencia, reversión de auditoría e historial conservado.
+- Regresión del sprint 4 y comprobación real navegador/API/PostgreSQL ficticio.
+- Tipos, lint, compilación y migración local antes de la entrega.
+- Documentación de operación y resultados en backend/SPRINT5.md.
+
+Resultado de cierre:
+- Revisión corregida el 24/09/2026: 39 pruebas de integración superadas (19 de
+  catálogos, 19 de suscripciones y 1 de carga con 10.000 registros).
+- 10 pruebas unitarias superadas (8 de fechas y 2 del parser con fixtures).
+- 4 regresiones reproducibles en Chrome con API simulada: aviso, cancelación,
+  borrador y versión conservados ante respuestas tardías de consulta.
+- Prueba de carga: 10.000 actualizaciones confirmadas sin duplicar auditoría.
+  Lectura concurrente del cliente: 815 ms; procesamiento total: 36,6 s en este
+  entorno, repartido en lotes. No se supera el timeout por transacción.
+- Flujo en Chrome contra API real y PostgreSQL temporal: alta desde cliente,
+  edición, suspensión, reactivación, cancelación, filtros y estados vacíos.
+  Sin errores JavaScript ni operaciones financieras/importaciones generadas.
+- Backend y frontend compilados. Frontend sin avisos; backend sin errores de lint,
+  con 8 avisos previos de imports sin usar en otros módulos.
+- Siete migraciones verificadas desde cero; migración del sprint aplicada en local.
+- Los esquemas temporales de pruebas se eliminan al terminar. No hay clientes
+  ficticios añadidos a los datos locales ni importación del histórico real.
+
+Fuera de alcance: importar Excel, generar renovaciones o ingresos, recordatorios,
+integraciones de bloqueo externo y gestión de credenciales operativas.
+El siguiente sprint (6) implementará la renovación y su registro financiero.
 
 SPRINT 6 – Renovaciones
 

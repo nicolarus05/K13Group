@@ -68,6 +68,9 @@ model Cliente {
 // ─── 4. suscripciones ───────────────────────────────────────────────────────
 model Suscripcion {
   id                            String    @id @default(uuid()) @db.Uuid
+  version                       Int       @default(1)
+  solicitudId                   String?   @unique @map("solicitud_id") @db.Uuid
+  solicitudHash                 String?   @map("solicitud_hash") @db.VarChar(64)
   clienteId                     String    @map("cliente_id") @db.Uuid
   productoId                    String    @map("producto_id") @db.Uuid
   tarifaId                      String    @map("tarifa_id") @db.Uuid
@@ -270,7 +273,7 @@ model Recordatorio {
 // ─── 14. actividad ──────────────────────────────────────────────────────────
 model Actividad {
   id              String   @id @default(uuid()) @db.Uuid
-  usuarioId       String   @map("usuario_id") @db.Uuid
+  usuarioId       String?  @map("usuario_id") @db.Uuid
   tabla           String   @db.VarChar(100)
   registroId      String?  @map("registro_id") @db.Uuid
   accion          String   @db.VarChar(50)
@@ -278,7 +281,7 @@ model Actividad {
   datosNuevos     Json?    @map("datos_nuevos")
   createdAt       DateTime @default(now()) @map("created_at")
 
-  usuario Usuario @relation(fields: [usuarioId], references: [id])
+  usuario Usuario? @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
 
   @@map("actividad")
 }
