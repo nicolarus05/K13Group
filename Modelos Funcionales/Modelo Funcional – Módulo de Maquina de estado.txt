@@ -282,3 +282,14 @@ PENDIENTE → CANCELADO cuando deja de aplicar. Si vuelve a ser necesario se
 crea otro aviso, sin reabrir el anterior. No generan movimientos al vencer.
 La revisión de avisos usa lotes de hasta 100 y no ocurre en consultas GET.
 Bloqueo externo, Telegram, calendario y otras automatizaciones siguen pendientes.
+
+Actualización sprint 7 — gastos pagados
+
+Alta de gasto general GASTO_MANUAL → CONFIRMADO.
+Editar gasto confirmado → CONFIRMADO (incremento de versión y auditoría).
+CONFIRMADO → ANULADO con motivo y versión. ANULADO es terminal y de solo lectura.
+No existe alta de gasto PENDIENTE ni transición de gasto para registrar su pago.
+El gasto se incorpora cuando ya está pagado, con su fecha real.
+Anular no borra el registro ni ejecuta reembolso bancario. Reintentos idénticos
+de anulación no generan nuevas transiciones ni entradas de auditoría.
+Los ingresos mantienen las transiciones del sprint 6; Finanzas no las sustituye.

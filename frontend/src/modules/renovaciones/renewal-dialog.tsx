@@ -94,7 +94,7 @@ export function RenewalDialog({ action, onClose }: { action: RenewalAction; onCl
         await renewals.create(sub.id, initial, { ...dto, solicitudId: attempt.current.key });
       }
       await Promise.all(
-        ['renovaciones', 'suscripciones', 'clientes'].map((key) =>
+        ['renovaciones', 'suscripciones', 'clientes', 'finanzas'].map((key) =>
           cache.invalidateQueries({ queryKey: [key] }),
         ),
       );

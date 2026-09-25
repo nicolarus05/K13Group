@@ -372,16 +372,48 @@ historial trazable y avisos internos, sin dependencia del Excel.
 
 SPRINT 7 – Finanzas
 
-Incluye:
+Estado: IMPLEMENTADO; validación y cierre en backend/SPRINT7.md (25/09/2026).
+Sin importar el XLSX y sin generar cobros históricos.
 
-Ingresos.
-Gastos.
-Balance.
-Categorías.
-Métodos de pago.
-Informes financieros.
+7.1 — Decisiones confirmadas
+- Solo gastos pagados, generales y en euros. No registrar gastos pendientes.
+- Sin asociación a productos/servidores en este sprint; ampliable posteriormente.
+- Ingresos brutos: 75 € cobrados son 75 € de ingreso. Sin comisiones automáticas.
 
-Resultado: control económico del negocio.
+7.2 — Libro e integración
+- Listado paginado de ingresos/gastos; detalle, snapshots e historial.
+- Filtros por fechas, tipo, estado, categoría, método, cliente y concepto/notas.
+- Reutiliza movimientos del sprint 6, sin duplicarlos ni crear ingresos manuales.
+- Cobro/anulación de ingresos sigue el flujo seguro de renovaciones.
+
+7.3 — Gastos
+- Alta confirmada, edición con motivo/versión y anulación terminal sin borrado.
+- Concepto, categoría, fecha real del pago, importe, método y observaciones.
+- Catálogos reutilizados del sprint 4; no se admiten métodos Gratis ni fecha futura.
+- Reintentos idempotentes, snapshots, bloqueo de escrituras y auditoría atómica.
+
+7.4 — Balances e informes básicos
+- Ingresos, gastos y resultado confirmados; pendientes separados y anulados excluidos.
+- Recuento de operaciones y ticket medio de ingresos confirmados.
+- Hoy, semana (lunes–domingo), mes, trimestre, año, todo el histórico y personalizado.
+- Fecha de cobro para dinero recibido; fecha original en históricos sin fechaCobro.
+- Agregaciones decimales sobre todo el filtro, no sobre la página visible.
+- Sin tabla de balances ni totales de cliente almacenados.
+
+7.5 — Interfaz y validación
+- /finanzas, detalle/historial, formularios de gasto y acceso a renovaciones.
+- Reintentos conservan borrador/clave; ediciones conservan versión original.
+- Pruebas de autenticación, validaciones, concurrencia, rollback, filtros y carga.
+- Regresión de catálogos, clientes, suscripciones y renovaciones.
+- Chrome con API simulada y flujo real con Nest/PostgreSQL temporal.
+- Migración aditiva, modelos funcionales actualizados y documentación de cierre.
+
+Fuera de alcance: XLSX, facturación/impuestos, comisiones automáticas, gastos
+pendientes/recurrentes, pagos parciales, conciliación bancaria, cierres contables,
+rentabilidad por producto/servidor, exportaciones y dashboard/gráficas avanzadas.
+
+Resultado: control económico operativo. Dashboard general en sprint 8 y
+estadísticas/gráficas avanzadas en sprint 9.
 
 SPRINT 8 – Dashboard
 

@@ -205,6 +205,14 @@ model Referencia {
 // ─── 10. movimientos_financieros ────────────────────────────────────────────
 model MovimientoFinanciero {
   id                       String   @id @default(uuid()) @db.Uuid
+  version                  Int      @default(1)
+  solicitudHash            String?  @map("solicitud_hash") @db.VarChar(64)
+  concepto                 String?  @db.VarChar(200)
+  observaciones            String?  @db.VarChar(1000)
+  categoriaNombreSnapshot  String?  @map("categoria_nombre_snapshot") @db.VarChar(100)
+  anuladaAt                DateTime? @map("anulada_at")
+  motivoAnulacion          String?  @map("motivo_anulacion") @db.VarChar(1000)
+  updatedAt                DateTime @default(now()) @updatedAt @map("updated_at")
   operacionClave           String?  @unique @map("operacion_clave") @db.Uuid
   fechaCobro               DateTime? @map("fecha_cobro") @db.Date
   fechaPrevistaCobro       DateTime? @map("fecha_prevista_cobro") @db.Date
@@ -234,6 +242,10 @@ model MovimientoFinanciero {
   importacionFila ImportacionFila? @relation("ImportacionFilaMovimiento")
 
   @@index([fecha])
+  @@index([fechaCobro])
+  @@index([tipoId, estadoId, fecha])
+  @@index([categoriaGastoId, fecha])
+  @@index([metodoPagoId, fecha])
   @@map("movimientos_financieros")
 }
 

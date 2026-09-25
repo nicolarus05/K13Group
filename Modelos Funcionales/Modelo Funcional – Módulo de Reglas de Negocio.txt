@@ -501,3 +501,21 @@ RN-018.009 — Historial inmutable
 Una importación confirmada no modificará el valor histórico original. Las
 correcciones posteriores se realizarán mediante nuevos eventos, anulaciones o
 decisiones de vinculación auditadas.
+
+ACTUALIZACIÓN SPRINT 7 — Reglas financieras vigentes
+
+- Solo gastos generales ya pagados, positivos y en euros; se crean CONFIRMADO.
+- Sin gastos pendientes ni asociación a producto/servidor en esta versión.
+- Ingresos brutos. No descontar ni generar automáticamente comisiones bancarias.
+- Finanzas no crea ingresos: los consulta del libro y remite a renovaciones para
+  cobrar/anular, sin cambiar periodos ni duplicar movimientos.
+- Crear gasto exige clave idempotente; editar exige versión/motivo; anular exige
+  versión/motivo y no admite reapertura ni borrado físico.
+- Métodos gratuitos y fechas de gasto futuras se rechazan. Catálogos nuevos
+  deben estar activos; referencias históricas inactivas pueden conservarse.
+- Solo CONFIRMADO suma al resultado ingresos menos gastos. Pendiente por cobrar
+  es una magnitud separada. ANULADO nunca suma. No guardar totales derivados.
+- Fecha de cobro decide el periodo confirmado; históricos sin fechaCobro usan
+  fecha original. No inventar fechas ni importar el Excel para iniciar el módulo.
+- Decimales exactos, agregación completa del filtro, auditoría y mutación atómicas.
+- Cambios de catálogo no reescriben los nombres históricos de los movimientos.

@@ -377,38 +377,53 @@ se auditan en la misma transacción. Renombrar un método gratuito conserva su t
 un método utilizado no admite cambiar esGratuito.
 
 MÓDULO FINANZAS
-GET /finanzas
+Sprint 7 — todas las rutas requieren sesión JWT; prefijo /api/v1.
 
-Listado.
+GET /finanzas — listado paginado.
+GET /finanzas/balance — ingresos, gastos, resultado, pendienteCobro,
+numeroIngresos, numeroGastos, numeroPendientes, numeroOperaciones y ticketMedio.
+Totales monetarios como cadenas decimales de dos posiciones; agregados sobre
+todos los movimientos filtrados, no solo la página. Solo confirmados suman al
+resultado; pendienteCobro es independiente y ANULADO no suma.
 
-Filtros
+Filtros compartidos: desde/hasta YYYY-MM-DD inclusivos, tipo INGRESO/GASTO,
+estado CONFIRMADO/PENDIENTE/ANULADO, categoriaGastoId, metodoPagoId, clienteId,
+search (concepto, descripción y observaciones). page>=1, limit entre 1 y 100.
+fechaCobro determina el periodo si existe; en históricos sin ella se usa fecha.
+Los pendientes se filtran por fecha de operación, no por plazo previsto.
 
-fecha
+GET /finanzas/:id — detalle con snapshots, enlaces y estado; sin datos operativos
+de dispositivos ni hashes de solicitud.
+GET /finanzas/:id/historial — auditoría paginada con usuario y antes/después.
 
-tipo
+POST /finanzas/gasto — gasto general ya pagado; body:
+solicitudId UUID, concepto (1–200), categoriaGastoId UUID, metodoPagoId UUID,
+importe (cadena entre 0,01 y 99.999.999,99; hasta dos decimales), fecha YYYY-MM-DD
+no futura y observaciones opcionales (hasta 1000). Estado CONFIRMADO y tipo GASTO
+los establece el servidor. No admite clientes, suscripciones ni servidores.
+Misma solicitud y datos devuelve el gasto existente; otros datos con esa clave: 409.
 
-categoria
+PUT /finanzas/:id — solo gastos GASTO_MANUAL confirmados. Todos los campos del
+gasto, sin solicitudId, más version entera>=1 y motivo de 3–1000 caracteres.
+Mantiene snapshots de catálogos no cambiados, incluso si ya están inactivos.
+Si cambia categoría/método, el nuevo registro debe estar activo y ser monetario.
 
-metodoPago
-POST /finanzas/ingreso
+POST /finanzas/:id/anular — version y motivo de 3–1000 caracteres. Terminal,
+sin borrado ni devolución bancaria; un reintento idéntico no duplica auditoría.
+Conflictos de versión o intento de modificar ingresos: 409.
 
-Registrar ingreso.
+No existe POST /finanzas/ingreso. Cobrar/anular ingresos utiliza los endpoints
+de renovaciones del sprint 6, con sus mismas validaciones. No hay gastos pendientes,
+descuentos de comisiones, impuestos, devoluciones bancarias ni exportaciones.
+Importe inválido, fecha imposible/futura, campos extra o catálogo no válido: 400.
+Registro inexistente: 404. Mutación y auditoría son una transacción atómica.
 
-POST /finanzas/gasto
-
-Registrar gasto.
-
-PUT /finanzas/:id
-
-Editar.
-
-POST /finanzas/:id/anular
-
-Anular.
-
-GET /finanzas/balance
-
-Balance completo.
+Correcciones de revisión del sprint 7:
+- Listado ordenado por fechaCobro o, si falta, fecha original, descendente;
+  desempate por id descendente y paginación posterior al orden global.
+- Motivo/fecha de anulación del ingreso se resuelven desde la renovación anulada
+  vinculada cuando faltan en el movimiento. No se escriben datos durante la consulta.
+- Listado, total y balance comparten exactamente los mismos filtros parametrizados.
 
 MÓDULO ESTADÍSTICAS
 GET /estadisticas

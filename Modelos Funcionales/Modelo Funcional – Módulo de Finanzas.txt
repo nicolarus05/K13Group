@@ -611,3 +611,54 @@ La anulación segura del módulo de renovaciones anula también ingreso/deuda y
 conserva toda la trazabilidad. No realiza una devolución bancaria real.
 La gestión de gastos, balances e informes completos sigue en el sprint 7.
 No se ha importado ni conciliado el XLSX durante este sprint.
+
+ACTUALIZACIÓN SPRINT 7 — Finanzas operativas (25/09/2026)
+
+Esta sección prevalece sobre las propuestas anteriores de conciliación de gastos,
+altas automáticas de ingresos y estadísticas avanzadas para la versión actual.
+
+Decisiones del usuario: únicamente gastos ya pagados; gastos generales sin
+producto/servidor; ingresos brutos sin descontar ni crear comisiones de Stripe.
+No hay gastos pendientes, recurrentes, devolución bancaria ni cálculo de impuestos.
+
+Pantallas: /finanzas y /finanzas/:id. Libro paginado, filtros, detalle e historial.
+Filtros: periodo, tipo, estado, categoría, método, cliente y concepto/observaciones.
+Periodos predefinidos: hoy, semana lunes–domingo, mes, trimestre, año e histórico;
+también rango personalizado. El día de negocio se determina en Europe/Madrid.
+
+Alta de gasto: concepto, categoría, fecha real del pago, importe positivo en euros,
+método monetario y observaciones. Siempre CONFIRMADO. Sin fechas futuras.
+Crear requiere solicitud única y tolera reintentos sin duplicar. Editar requiere
+versión y motivo. Anular requiere versión/motivo, conserva el registro y es terminal.
+Edición/anulación solo de GASTO_MANUAL; cambios y auditoría son atómicos.
+Catálogos activos para nuevas asignaciones. Un gasto conserva su categoría/método
+inactivos y nombres históricos si estos campos no se cambian al corregirlo.
+
+Ingresos: consulta de los movimientos ya generados por altas/renovaciones, sin
+duplicación ni alta manual. Cobrar o anular se hace desde la renovación vinculada.
+No se convierte una renovación de servicio en cobro por mostrarla en Finanzas.
+
+Balance: ingresos CONFIRMADO menos gastos CONFIRMADO, en el periodo filtrado.
+PENDIENTE solo aparece separado como deuda por cobrar. ANULADO no suma.
+No es un balance fiscal ni bancario; no incluye comisiones o gastos no registrados.
+Ticket medio = ingresos confirmados / número de ingresos confirmados; cero si
+no existen. Operaciones = ingresos confirmados + gastos confirmados.
+Los importes se agregan con Decimal en la base; no se suman números binarios JS.
+No se almacenan balances ni acumulados independientes del libro.
+
+Fecha financiera = fechaCobro si está informada, o fecha original si falta.
+En pendientes, fecha es el registro de deuda y fechaPrevistaCobro es seguimiento.
+Un cobro del 1 de octubre de una renovación de septiembre suma a octubre.
+Filtros hasta inclusivos; los resúmenes usan todos los registros, no la página.
+Las consultas son de solo lectura. Cambiar catálogos no modifica snapshots.
+
+Informes básicos son resúmenes y libro filtrado dentro de Finanzas. El dashboard
+principal pertenece al sprint 8 y las comparativas/gráficas avanzadas al sprint 9.
+Exportaciones en sprint 12. XLSX continúa aplazado sin bloquear esta funcionalidad.
+
+Correcciones de revisión del sprint 7:
+El orden del libro usa la misma fecha financiera que se muestra y filtra, antes
+de paginar, con desempate estable por id. No se ordena solo la página visible.
+La ficha de un ingreso anulado muestra el motivo conservado en su renovación
+si no está copiado al movimiento; también funciona para anulaciones anteriores.
+La consulta no modifica el histórico ni genera auditorías o movimientos nuevos.

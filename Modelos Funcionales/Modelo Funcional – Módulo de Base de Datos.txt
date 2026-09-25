@@ -394,3 +394,25 @@ es la fecha de registro de la deuda. No incluir pendientes/anulados en ingresos.
 No se necesita una tabla de balance ni se almacena el total gastado del cliente.
 TOTAL del Excel sigue siendo control histórico, no una entrada de dinero.
 Periodo, pago, avisos y auditoría se escriben en una transacción.
+
+Actualización sprint 7 — 25/09/2026
+
+Migración aditiva 20260925100000_finanzas_gastos en movimientos_financieros:
+- version INTEGER DEFAULT 1; solicitud_hash VARCHAR(64) nullable.
+- concepto VARCHAR(200), observaciones VARCHAR(1000) nullable.
+- categoria_nombre_snapshot VARCHAR(100) nullable.
+- anulada_at y motivo_anulacion VARCHAR(1000) nullable.
+- updated_at con valor por defecto y actualización automática en Prisma.
+- Índices de fecha_cobro, tipo/estado/fecha, categoría/fecha y método/fecha.
+
+operacion_clave UNIQUE se reutiliza como UUID de solicitud para nuevos gastos;
+para ingresos web conserva el UUID de renovación. La huella incluye usuario y
+datos normalizados y solo se usa para idempotencia de gastos, sin exponerse.
+No se modifican importes/fechas históricos ni se generan movimientos por migrar.
+
+Gastos nuevos: origen GASTO_MANUAL, tipo GASTO, estado CONFIRMADO, fecha y
+fecha_cobro iguales al día de pago. Sin suscripción/renovación/producto/servidor.
+Snapshots de categoría/método; correcciones preservan nombres si el vínculo
+no cambia. Gastos anulados conservan registro, importe e historial.
+Los ingresos siguen bajo gestión exclusiva del proceso de renovaciones.
+Balances derivados mediante agregación SQL/Decimal, sin tablas de totales.
