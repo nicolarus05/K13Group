@@ -58,6 +58,7 @@ export default function Page() {
       await Promise.all([
         cache.invalidateQueries({ queryKey: ['suscripciones'] }),
         cache.invalidateQueries({ queryKey: ['clientes'] }),
+        cache.invalidateQueries({ queryKey: ['dashboard'] }),
       ]);
     } catch (error) {
       setError(catalogError(error));

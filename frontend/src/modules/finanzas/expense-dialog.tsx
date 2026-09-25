@@ -51,7 +51,10 @@ export function ExpenseDialog({ action, onClose }: { action: ExpenseAction; onCl
           request.current = { fingerprint, id: crypto.randomUUID() };
         await finances.create(input, request.current.id);
       }
-      await cache.invalidateQueries({ queryKey: ['finanzas'] });
+      await Promise.all([
+        cache.invalidateQueries({ queryKey: ['finanzas'] }),
+        cache.invalidateQueries({ queryKey: ['dashboard'] }),
+      ]);
       onClose();
     } catch (err) {
       setError(catalogError(err));

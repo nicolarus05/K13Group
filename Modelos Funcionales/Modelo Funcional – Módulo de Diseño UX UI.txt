@@ -1,4 +1,26 @@
 Documento de Diseño UX/UI
+Entrega visual Sprint 8 — 25/09/2026
+
+Referencia aprobada: dashboard K13GROUP adjunto. “Usuarios” equivale a clientes.
+Alcance actual: dashboard, sidebar y cabecera. El resto conserva sus pantallas;
+la nueva base de estilos está aislada con prefijo k13 para extenderla después.
+Logo original LogoK13GROUP.jpg, copia sin modificar en frontend/public.
+
+Tokens: fondo #020711, panel #061121, sidebar #020917, cabecera #02060f,
+texto #f5f7ff, secundario #b2bfd1, acentos cian #16cfff y rosa #ef1685.
+Tarjetas con gradientes azul, rosa, naranja, verde, violeta, cian y dorado;
+bordes luminosos discretos, iconos lineales, tabla oscura y botón degradado.
+Datos reales, sin simular tendencias donde no existe una serie histórica.
+
+Escritorio: sidebar 208px plegable a 76px, cabecera 64px, tarjetas en 4 columnas.
+Tablet: 2 columnas; móvil: 1. Por debajo de 1024px, navegación mediante dialog
+modal con Escape y devolución del foco. Tabla con desplazamiento horizontal local.
+Enlace para saltar al contenido, foco visible, etiquetas de formulario,
+preferencia de movimiento reducido y tabla accesible para los gráficos.
+Los destinos futuros se rotulan Próximamente, sin enlaces inoperativos.
+
+La paleta y propuestas siguientes siguen vigentes en los módulos aún no migrados.
+
 Objetivos
 
 La interfaz debe transmitir cuatro sensaciones:

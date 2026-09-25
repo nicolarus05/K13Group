@@ -114,6 +114,7 @@ export function SubscriptionForm({
       await Promise.all([
         cache.invalidateQueries({ queryKey: ['suscripciones'] }),
         cache.invalidateQueries({ queryKey: ['clientes'] }),
+        cache.invalidateQueries({ queryKey: ['dashboard'] }),
       ]);
       onSaved?.();
       router.push('/suscripciones/' + saved.id);

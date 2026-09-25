@@ -15,6 +15,7 @@
     "test:integration": "node scripts/test-catalogos.cjs",
     "test:e2e:renovaciones": "node scripts/test-renovaciones-e2e.cjs",
     "test:e2e:finanzas": "node scripts/test-finanzas-e2e.cjs",
+    "test:e2e:dashboard": "node scripts/test-dashboard-e2e.cjs",
     "type-check": "tsc --noEmit",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",

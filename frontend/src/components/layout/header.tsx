@@ -1,37 +1,53 @@
 'use client';
-
-import { LogOut, User } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { Bell, LogOut, Menu, UserCircle } from 'lucide-react';
 import { useMe, useLogout } from '@/modules/auth/hooks/use-auth';
-
-export function Header() {
+const labels: Record<string, string> = {
+  dashboard: 'Dashboard',
+  clientes: 'Clientes',
+  suscripciones: 'Suscripciones',
+  renovaciones: 'Renovaciones',
+  finanzas: 'Finanzas',
+  catalogos: 'Catálogos',
+  importaciones: 'Importaciones',
+};
+export function Header({ onMenu }: { onMenu: () => void }) {
+  const path = usePathname();
   const { data: user } = useMe();
   const { mutate: logout, isPending } = useLogout();
-
   return (
-    <header className="flex h-[70px] shrink-0 items-center justify-between border-b border-hover bg-panel px-6">
-      {/* Saludo contextual */}
-      <p className="text-sm text-text-secondary">
-        Bienvenido,{' '}
-        <span className="font-medium text-text-main">{user?.nombre ?? '…'}</span>
-      </p>
-
-      {/* Menú de usuario */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 text-sm text-text-secondary">
-          <User className="h-4 w-4" />
-          <span>{user?.username}</span>
-        </div>
-
-        <div className="h-4 w-px bg-hover" />
-
+    <header className="k13-header">
+      <div className="k13-header-title">
+        <button className="k13-icon-button" onClick={onMenu} aria-label="Abrir o contraer menú">
+          <Menu size={21} />
+        </button>
+        <span>{labels[path.split('/')[1]] ?? 'K13Group'}</span>
+      </div>
+      <div className="k13-header-actions">
+        <Link
+          className="k13-icon-button"
+          href="/dashboard#trabajo-pendiente"
+          aria-label="Ver trabajo pendiente"
+          title="Ver trabajo pendiente"
+        >
+          <Bell size={20} />
+        </Link>
+        <span className="k13-user">
+          <UserCircle size={28} />
+          <span>
+            {user?.username ?? '…'}
+            <small>{user?.nombre ?? 'Sesión iniciada'}</small>
+          </span>
+        </span>
         <button
+          className="k13-icon-button"
           onClick={() => logout()}
           disabled={isPending}
-          className="flex items-center gap-1.5 rounded-button px-2 py-1.5 text-sm text-text-secondary transition-colors hover:bg-hover hover:text-text-main disabled:opacity-50"
+          aria-label="Cerrar sesión"
           title="Cerrar sesión"
         >
-          <LogOut className="h-4 w-4" />
-          <span>Salir</span>
+          <LogOut size={18} />
         </button>
       </div>
     </header>

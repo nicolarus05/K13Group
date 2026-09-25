@@ -95,26 +95,23 @@ Información del usuario autenticado.
 MÓDULO DASHBOARD
 GET /dashboard
 
-Obtiene todos los indicadores.
+Implementado en sprint 8 bajo /api/v1 y protegido con JWT.
+Consulta: desde y hasta YYYY-MM-DD, ambas o ninguna; inclusivas, 1–366 días.
+Por defecto mes actual hasta hoy de Madrid. Fechas imposibles/invertidas: 400.
+Respuesta {success,data}: hoy, actualizado, periodo (y ventana anterior),
+indicadores, variacion, serie diaria, trabajo, actividad y calidadImportacion.
+Dinero como cadenas decimales; variación null si la base anterior es cero.
+Las métricas de estado actual y deuda global no se filtran por periodo.
+Serie y finanzas comparten snapshot; consultar no escribe estados ni avisos.
 
-Respuesta
+GET /dashboard/clientes
+Consulta: page >= 1 (máximo 1000000), limit 1–100 (defecto 10), search hasta
+150 caracteres y estado ACTIVO/INACTIVO. Búsqueda por nombre o teléfono.
+Respuesta paginada: id, nombre, telefono, createdAt, estado, numeroSuscripciones,
+proximaRenovacion {id,fechaFin} o null. Sin datos operativos sensibles.
 
-Clientes
-
-Renovaciones
-
-Ingresos
-
-Gastos
-
-Beneficio
-
-Próximos vencimientos
-
-Actividad reciente
-GET /dashboard/charts
-
-Datos de las gráficas.
+GET /dashboard/charts no se implementa como endpoint separado en sprint 8:
+la serie se incluye en el resumen para evitar discrepancias entre consultas.
 
 MÓDULO CLIENTES
 GET /clientes

@@ -417,17 +417,23 @@ estadísticas/gráficas avanzadas en sprint 9.
 
 SPRINT 8 – Dashboard
 
-Implementación de:
+Implementado el 25/09/2026, pendiente de revisión del usuario y commit.
 
-KPIs.
-Tarjetas resumen.
-Gráficas.
-Actividad reciente.
-Próximas renovaciones.
-Recordatorios.
-Acciones rápidas.
+- Dashboard oscuro inspirado en referencia K13GROUP y logo original; sidebar
+  responsive/plegable y cabecera compartida. No se rediseñan los otros módulos.
+- Ocho KPIs: clientes únicos con servicio, suscripciones vigentes, renovaciones,
+  ingresos brutos, altas de clientes, gastos pagados, resultado y deuda global.
+- Periodos de 1–366 días, comparación homogénea y fechas de Madrid; sin datos ficticios.
+- Listado de clientes paginado, búsqueda por nombre/teléfono y filtro de estado.
+- Vencimientos, deudas, avisos internos, actividad reciente y estado del staging.
+- Evolución diaria ingresos/gastos, tabla accesible y acciones de módulos existentes.
+- API JWT de solo lectura, agregados SQL, snapshot compartido con Finanzas y
+  respuestas sin identificadores operativos ni JSON de auditoría.
+- Refresco automático e invalidación tras cambios. Sin importación del XLSX,
+  sin nuevas migraciones, sin calendario/envíos ni estadísticas avanzadas.
 
-Resultado: panel principal completamente funcional.
+Ver reglas concretas en Modelo Funcional – Módulo de Dashboard.txt y verificación
+reproducible en backend/SPRINT8.md. Siguiente sprint: 9, Estadísticas.
 
 SPRINT 9 – Estadísticas
 

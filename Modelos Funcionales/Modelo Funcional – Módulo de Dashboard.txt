@@ -1,4 +1,72 @@
 Modelo Funcional – Dashboard
+ALCANCE IMPLEMENTADO — SPRINT 8 (25/09/2026)
+
+Esta sección concreta la primera entrega y prevalece sobre las propuestas
+generales de las secciones siguientes, que se conservan como evolución futura.
+No requiere importar el XLSX ni modifica la base de datos al consultar.
+
+Diseño: referencia K13GROUP facilitada por el usuario, fondo azul noche,
+tarjetas de colores, tabla de clientes, logo original LogoK13GROUP.jpg,
+sidebar plegable en escritorio y menú modal accesible en móvil. Los “usuarios”
+de la referencia representan clientes, nunca cuentas de administración.
+Solo se rediseñan dashboard, sidebar y cabecera compartida en este sprint.
+
+Orden: encabezado y periodo; ocho KPIs; listado de clientes; acciones rápidas;
+trabajo pendiente; evolución económica y avisos; actividad y calidad del staging.
+
+KPIs y reglas:
+- Clientes con servicio: clientes ACTIVO no eliminados con alguna suscripción
+  vigente no eliminada. Un cliente con varias suscripciones se cuenta una vez.
+- Suscripciones vigentes: estados operativos ACTIVA/PROXIMA_A_VENCER/VENCIDA,
+  comprobados por fechaFin > hoy de Madrid. Borradores, suspendidas y canceladas
+  no cuentan. No renovar no interrumpe el periodo contratado vigente.
+- Renovaciones realizadas: RENOVACION COMPLETADA no eliminada, por fechaOperacion
+  (fechaInicio si falta). Excluye ALTA y ANULADA; incluye gratuitas y cobro pendiente.
+- Ingresos brutos: ingresos CONFIRMADO del periodo, sin descuento de comisiones.
+- Nuevos clientes: altas no eliminadas por fecha de creación en Europe/Madrid.
+- Gastos pagados: gastos CONFIRMADO del periodo.
+- Resultado operativo: ingresos confirmados menos gastos pagados registrados.
+- Pendiente de cobro: ingresos PENDIENTE de todo el histórico, fuera del resultado.
+
+Periodo por defecto: inicio de mes hasta hoy. Opciones: hoy, semana desde lunes,
+mes y año hasta hoy, y personalizado inclusivo de 1 a 366 días. Se compara con
+la ventana inmediatamente anterior de igual longitud. Base cero: sin comparación.
+La variación usa el valor absoluto de la base para resultados negativos.
+Clientes/suscripciones vigentes y deuda global muestran “situación actual”; no
+se inventan variaciones históricas ni se someten al filtro de fechas.
+Importes exactos calculados con Decimal/SQL, misma lógica de Finanzas y snapshot
+RepeatableRead. Fecha financiera: fechaCobro o fecha original si no existe.
+
+Listado: nombre, teléfono, número de suscripciones no eliminadas, estado de cliente,
+próxima renovación gestionable (incluye vencidas), registro y enlace a ficha.
+Paginación de 10, búsqueda por nombre/teléfono y filtro ACTIVO/INACTIVO,
+independientes del periodo. No incluye credenciales ni observaciones privadas.
+
+Trabajo: conteos separados de vencidas, hoy y próximos días (umbral configurable);
+hasta 5 renovaciones, 5 deudas y 5 avisos internos pendientes. Se excluyen
+suscripciones No renovar de los vencimientos a gestionar. Los enlaces reutilizan
+fichas, renovaciones/cobros y Finanzas. Nuevo cliente y gasto usan formularios existentes.
+Gráfica diaria de ingresos/gastos y series de KPIs del periodo, días vacíos a cero,
+con tabla accesible de datos exactos. Actividad: últimos 8 cambios, sin JSON de auditoría.
+
+Actualización: cada minuto y tras operaciones exitosas; se pausa el refresco del
+resumen mientras se completa un formulario del dashboard. Las consultas son GET
+de solo lectura y los vencimientos no dependen del worker de actualización diaria.
+Los periodos relativos siguen el día de Madrid (comprobación cada 30 segundos
+y al recuperar foco/visibilidad); no se sobrescriben periodos personalizados
+ni borradores. Si desaparece la última página de clientes, el listado vuelve
+a la última válida; un listado vacío siempre se presenta en la página 1.
+Sin lotes XLSX se informa de que la importación está aplazada. Si existe staging,
+se muestra último estado y totales de filas sin conciliar, bloqueadas/en conflicto
+y pendientes financieras, con acceso a la revisión de importaciones y duplicados.
+El resumen no presume que un conflicto equivale necesariamente a un duplicado.
+
+Fuera de esta entrega: estadísticas por producto/método/categoría (sprint 9),
+calendario y envíos externos (sprint 10), objetivos, exportaciones y personalización.
+No hay badges ficticios, rutas sin implementar ni contadores de administradores.
+
+PROPUESTA GENERAL Y EVOLUCIÓN FUTURA
+
 1. Objetivo
 
 El Dashboard será la pantalla principal de la aplicación y el punto de entrada tras iniciar sesión.

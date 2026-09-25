@@ -124,55 +124,57 @@ export class FinanzasService {
       { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
     );
   }
-  async balance(q: FinanceQueryDto) {
+  async balance(q: FinanceQueryDto, client?: Prisma.TransactionClient) {
     const where = this.where(q);
-    return this.prisma.$transaction(
-      async (tx) => {
-        const groups = await tx.$queryRaw<
-          { tipoId: string; estadoId: string; importe: Prisma.Decimal; total: number }[]
-        >(Prisma.sql`
+    const read = async (tx: Prisma.TransactionClient) => {
+      const groups = await tx.$queryRaw<
+        { tipoId: string; estadoId: string; importe: Prisma.Decimal; total: number }[]
+      >(Prisma.sql`
           SELECT m.tipo_id AS "tipoId", m.estado_id AS "estadoId",
             SUM(m.importe) AS importe, COUNT(*)::int AS total
           FROM movimientos_financieros m ${where} GROUP BY m.tipo_id, m.estado_id`);
-        const states = await tx.estado.findMany({
-          where: { tipo: { in: ['movimiento_tipo', 'movimiento_estado'] } },
-        });
-        const code = (id: string) => states.find((s) => s.id === id)?.valor;
-        let income = new Prisma.Decimal(0),
-          expenses = new Prisma.Decimal(0),
-          pending = new Prisma.Decimal(0);
-        let incomeCount = 0,
-          expenseCount = 0,
-          pendingCount = 0;
-        for (const group of groups) {
-          const amount = group.importe;
-          if (code(group.tipoId) === 'INGRESO' && code(group.estadoId) === 'CONFIRMADO') {
-            income = income.plus(amount);
-            incomeCount += group.total;
-          }
-          if (code(group.tipoId) === 'GASTO' && code(group.estadoId) === 'CONFIRMADO') {
-            expenses = expenses.plus(amount);
-            expenseCount += group.total;
-          }
-          if (code(group.tipoId) === 'INGRESO' && code(group.estadoId) === 'PENDIENTE') {
-            pending = pending.plus(amount);
-            pendingCount += group.total;
-          }
+      const states = await tx.estado.findMany({
+        where: { tipo: { in: ['movimiento_tipo', 'movimiento_estado'] } },
+      });
+      const code = (id: string) => states.find((s) => s.id === id)?.valor;
+      let income = new Prisma.Decimal(0),
+        expenses = new Prisma.Decimal(0),
+        pending = new Prisma.Decimal(0);
+      let incomeCount = 0,
+        expenseCount = 0,
+        pendingCount = 0;
+      for (const group of groups) {
+        const amount = group.importe;
+        if (code(group.tipoId) === 'INGRESO' && code(group.estadoId) === 'CONFIRMADO') {
+          income = income.plus(amount);
+          incomeCount += group.total;
         }
-        return {
-          ingresos: income.toFixed(2),
-          gastos: expenses.toFixed(2),
-          resultado: income.minus(expenses).toFixed(2),
-          pendienteCobro: pending.toFixed(2),
-          numeroIngresos: incomeCount,
-          numeroGastos: expenseCount,
-          numeroPendientes: pendingCount,
-          numeroOperaciones: incomeCount + expenseCount,
-          ticketMedio: (incomeCount ? income.div(incomeCount) : new Prisma.Decimal(0)).toFixed(2),
-        };
-      },
-      { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
-    );
+        if (code(group.tipoId) === 'GASTO' && code(group.estadoId) === 'CONFIRMADO') {
+          expenses = expenses.plus(amount);
+          expenseCount += group.total;
+        }
+        if (code(group.tipoId) === 'INGRESO' && code(group.estadoId) === 'PENDIENTE') {
+          pending = pending.plus(amount);
+          pendingCount += group.total;
+        }
+      }
+      return {
+        ingresos: income.toFixed(2),
+        gastos: expenses.toFixed(2),
+        resultado: income.minus(expenses).toFixed(2),
+        pendienteCobro: pending.toFixed(2),
+        numeroIngresos: incomeCount,
+        numeroGastos: expenseCount,
+        numeroPendientes: pendingCount,
+        numeroOperaciones: incomeCount + expenseCount,
+        ticketMedio: (incomeCount ? income.div(incomeCount) : new Prisma.Decimal(0)).toFixed(2),
+      };
+    };
+    return client
+      ? read(client)
+      : this.prisma.$transaction(read, {
+          isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+        });
   }
   private normalize(dto: ExpenseFieldsDto) {
     const fecha = parseDay(dto.fecha);

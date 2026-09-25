@@ -15,6 +15,7 @@ interface ClienteFormModalProps {
   onSubmit: (data: ClienteFormData) => void;
   cliente?: Cliente;
   isLoading?: boolean;
+  error?: string;
 }
 
 export function ClienteFormModal({
@@ -23,6 +24,7 @@ export function ClienteFormModal({
   onSubmit,
   cliente,
   isLoading,
+  error,
 }: ClienteFormModalProps) {
   const isEditing = !!cliente;
   const {
@@ -56,6 +58,11 @@ export function ClienteFormModal({
       size="md"
     >
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
+        {error && (
+          <p role="alert" className="text-red-500">
+            {error}
+          </p>
+        )}
         <Input
           label="Nombre *"
           error={errors.nombre?.message}
