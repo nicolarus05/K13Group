@@ -19,6 +19,7 @@ import {
   UpdateSubscriptionDto,
 } from './suscripciones.dto';
 import { subscriptionSelect, SubscriptionView } from './subscription.select';
+import { RecordatoriosService } from '../recordatorios/recordatorios.service';
 
 export const STATE_SYNC_BATCH_SIZE = 100;
 type StateContext = {
@@ -35,7 +36,10 @@ export class SuscripcionesService implements OnApplicationBootstrap, OnModuleDes
   private running = false;
   private stopping = false;
   private readonly logger = new Logger(SuscripcionesService.name);
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly reminders: RecordatoriosService,
+  ) {}
 
   onApplicationBootstrap() {
     if (process.env.NODE_ENV === 'test') return;
@@ -364,6 +368,7 @@ export class SuscripcionesService implements OnApplicationBootstrap, OnModuleDes
           select: subscriptionSelect,
         });
         await this.audit(tx, actor, 'CREAR', null, row);
+        await this.reminders.syncSubscription(tx, row.id, actor);
         return row;
       },
       { timeout: 30_000 },
@@ -419,6 +424,7 @@ export class SuscripcionesService implements OnApplicationBootstrap, OnModuleDes
           after,
           motivoCorreccion,
         );
+        await this.reminders.syncSubscription(tx, id, actor);
         return after;
       },
       { timeout: 30_000 },
@@ -461,6 +467,7 @@ export class SuscripcionesService implements OnApplicationBootstrap, OnModuleDes
         select: subscriptionSelect,
       });
       await this.audit(tx, actor, action.toUpperCase(), before, after, dto.motivo);
+      await this.reminders.syncSubscription(tx, id, actor);
       return after;
     });
   }

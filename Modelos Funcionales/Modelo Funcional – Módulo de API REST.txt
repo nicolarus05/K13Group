@@ -295,7 +295,9 @@ Detalle.
 
 POST /renovaciones
 
-Crear manualmente (casos excepcionales).
+Reservado para correcciones históricas futuras; no implementado en sprint 6.
+Las altas y renovaciones normales usan los endpoints de suscripción descritos
+en la actualización sprint 6 al final de este documento.
 
 POST /renovaciones/:id/anular
 
@@ -606,3 +608,69 @@ La respuesta de todos los listados usará una única convención: data y el obje
 pagination con page, limit, total y totalPages. Las validaciones del backend
 devolverán el mismo formato de error independientemente de que procedan de un
 DTO, Prisma o una regla de negocio.
+
+CONTRATO IMPLEMENTADO — SPRINT 6 (24/09/2026)
+
+Todos los endpoints requieren JWT y usan el prefijo /api/v1.
+Este contrato sustituye los ejemplos antiguos de mensualidades y cobros
+automáticos. No se ejecuta ninguna importación.
+
+POST /suscripciones/:id/renovar
+POST /suscripciones/:id/primer-pago
+Body: solicitudId UUID, version de suscripción, importe como cadena decimal,
+metodoPagoId, cobro (CONFIRMADO o PENDIENTE), observaciones opcionales.
+Si importe difiere de tarifa, motivoImporte obligatorio (3–1000 caracteres).
+PENDIENTE exige fechaPrevistaCobro YYYY-MM-DD >= hoy y prohíbe fechaCobro.
+CONFIRMADO monetario admite fechaCobro: hoy en renovación, entre inicio y hoy
+en primer pago; si se omite, hoy. Gratis: importe "0", CONFIRMADO y sin fechas
+de cobro. La gratuidad se determina por esGratuito, no por el nombre.
+
+La renovación amplía un año desde max(vencimiento actual, hoy). El primer pago
+mantiene las fechas y no admite operaciones previas vigentes. La renovación
+de servicio se registra COMPLETADA, aunque su movimiento esté PENDIENTE.
+Repetir solicitudId con la misma carga/usuario devuelve la operación existente;
+otra carga o versión desactualizada produce 409. No se devuelven solicitudHash,
+solicitudId ni datos operativos sensibles.
+
+GET /renovaciones/seguimiento
+Query: page >= 1, limit 1–100, search, clienteId, productoId, suscripcionId,
+vista = hoy | manana | proximas | vencidas | no-renovar | todas.
+Orden: fechaFin/id ascendente. Solo clientes activos y suscripciones en estados
+por fecha; "todas" excluye No renovar, que tiene su vista propia.
+Hoy es fechaFin=hoy; vencidas son anteriores a hoy. Próximas excluye hoy y usa
+suscripciones.dias_proxima. Consulta sin escrituras ni barrido global.
+
+GET /renovaciones
+Query: page, limit, search (nombre cliente), clienteId, productoId, suscripcionId,
+estado = COMPLETADA | ANULADA, cobro = CONFIRMADO | PENDIENTE | GRATIS,
+desde/hasta YYYY-MM-DD sobre fechaOperacion, ambos inclusive.
+Orden: createdAt/id descendente. Devuelve data y pagination.
+
+GET /renovaciones/:id
+Devuelve operación, snapshots, suscripción pública y movimientos con estado,
+fechaCobro y fechaPrevistaCobro. Nulos históricos no se inventan.
+
+POST /renovaciones/:id/cobrar
+Body: version de operación, metodoPagoId monetario activo, fechaCobro.
+Fecha entre fechaOperacion y hoy. Confirma el mismo movimiento pendiente,
+actualiza su fecha económica/método real, incrementa versión de operación,
+cierra aviso y audita. No modifica la suscripción. Repetir mismo método/fecha
+ya confirmados es idempotente; otra confirmación incompatible produce 409.
+Se permite liquidar la deuda de una suscripción cancelada sin reactivarla.
+
+POST /renovaciones/:id/anular
+Body: version de operación, motivo (3–1000 caracteres).
+Solo GESTION_WEB completada con periodo anterior conocido, sin operaciones
+posteriores completadas ni cambios incompatibles. No reabre CANCELADA.
+Anula movimiento, restaura periodo preservando suspensión, incrementa versiones,
+reconcilia avisos y audita en una transacción. Repetir misma anulación/motivo
+no añade efectos. No ejecuta devolución bancaria ni borra registros.
+
+POST /suscripciones/:id/preferencia-renovacion
+Body: version de suscripción, noRenovar boolean, motivo (3–1000 caracteres).
+Preferencia reversible, independiente de cancelar. No altera fechas ni deudas.
+
+Errores: 400 validación; 401 sin sesión; 404 inexistente; 409 conflicto de
+versión, duplicidad lógica, estado incompatible o corrección insegura.
+Creación y acciones devuelven success/data. Los cambios y su auditoría son
+atómicos. El módulo completo /finanzas sigue reservado al sprint 7.

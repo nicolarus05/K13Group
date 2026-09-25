@@ -1,0 +1,36 @@
+import { Prisma } from '@prisma/client';
+import { subscriptionSelect } from '../suscripciones/subscription.select';
+export const renewalSelect = {
+  id: true,
+  version: true,
+  tipoOperacion: true,
+  suscripcionId: true,
+  fechaInicio: true,
+  fechaFin: true,
+  fechaOperacion: true,
+  importe: true,
+  origen: true,
+  observaciones: true,
+  createdAt: true,
+  anuladaAt: true,
+  motivoAnulacion: true,
+  productoNombreSnapshot: true,
+  tarifaNombreSnapshot: true,
+  servidorNombreSnapshot: true,
+  referenciaNombreSnapshot: true,
+  metodoPagoNombreSnapshot: true,
+  metodoPago: { select: { id: true, nombre: true, esGratuito: true } },
+  estado: { select: { valor: true, etiqueta: true } },
+  suscripcion: { select: subscriptionSelect },
+  movimientos: {
+    select: {
+      id: true,
+      importe: true,
+      fecha: true,
+      fechaCobro: true,
+      fechaPrevistaCobro: true,
+      metodoPagoNombreSnapshot: true,
+      estado: { select: { valor: true, etiqueta: true } },
+    },
+  },
+} satisfies Prisma.RenovacionSelect;

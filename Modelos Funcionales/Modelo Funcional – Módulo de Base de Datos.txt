@@ -366,3 +366,31 @@ La API usa selecciones explícitas y no expone identificadores operativos
 cifrados/hashes ni claves de solicitud en suscripciones o fichas de clientes.
 Los snapshots de actividad contienen datos públicos antes/después y motivo.
 No se modifica retroactivamente ninguna renovación o movimiento.
+
+Actualización sprint 6 — 24/09/2026
+
+Migración 20260924150000_renovaciones_cobros (aditiva):
+- suscripciones.no_renovar BOOLEAN NOT NULL DEFAULT false e índice fecha_fin/id.
+- renovaciones.version; solicitud_id UUID UNIQUE nullable y solicitud_hash
+  nullable para nuevas operaciones idempotentes.
+- renovaciones.tipo_operacion (ALTA/RENOVACION); inicio_anterior/fin_anterior
+  nullable para anulación segura; anulada_at y motivo_anulacion.
+- movimientos_financieros.operacion_clave UUID UNIQUE nullable: una única
+  operación monetaria por renovación/alta GESTION_WEB.
+- movimientos_financieros.fecha_cobro y fecha_prevista_cobro DATE nullable.
+- recordatorios.clave_automatica UNIQUE nullable e índice suscripcion_id/estado_id.
+  La clave se libera al cerrar; los terminales nunca se reabren.
+
+La migración clasifica como ALTA los eventos existentes con origen
+IMPORTACION_EXCEL_ALTA. No altera importes, fechas, snapshots ni genera pagos.
+Campos nuevos nulos en históricos no se completan inventando datos.
+El importador futuro asignará también tipo_operacion al crear nuevas filas.
+
+Cobrar cambia el estado/fecha/método del movimiento pendiente; no crea otro
+movimiento ni altera fechas del servicio. Su cambio queda auditado.
+fecha de un movimiento confirmado representa el cobro real; en pendientes
+es la fecha de registro de la deuda. No incluir pendientes/anulados en ingresos.
+
+No se necesita una tabla de balance ni se almacena el total gastado del cliente.
+TOTAL del Excel sigue siendo control histórico, no una entrada de dinero.
+Periodo, pago, avisos y auditoría se escriben en una transacción.

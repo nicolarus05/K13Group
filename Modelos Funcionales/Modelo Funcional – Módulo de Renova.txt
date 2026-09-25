@@ -1,390 +1,163 @@
 Modelo Funcional – Módulo de Renovaciones
-1. Objetivo del módulo
-
-El módulo de renovaciones será el encargado de gestionar todo el ciclo de renovación de los servicios contratados por los clientes.
-
-Su objetivo principal será automatizar el proceso completo para que el usuario nunca tenga que calcular fechas, revisar el Excel o recordar manualmente qué clientes deben renovar.
-
-El sistema controlará automáticamente:
-
-Fechas de renovación.
-Estados de las renovaciones.
-Historial.
-Cobros asociados.
-Actualización del cliente.
-Actualización de estadísticas.
-Actualización financiera.
-2. Filosofía del módulo
-
-Es importante entender una diferencia respecto al Excel actual.
-
-En Excel, una renovación consiste en editar el mismo registro del cliente.
-
-En la nueva plataforma, una renovación será un evento independiente.
-
-Es decir:
-
-El cliente nunca se modifica históricamente.
-Cada renovación genera un nuevo registro.
-El historial permanece intacto.
-
-Esto permitirá reconstruir toda la vida del cliente en cualquier momento.
-
-3. Ciclo de una renovación
-
-El flujo completo será el siguiente:
-
-Cliente Activo
-      │
-      ▼
-Se calcula automáticamente la fecha de renovación
-      │
-      ▼
-La renovación entra en seguimiento
-      │
-      ▼
-Llega la fecha
-      │
-      ▼
-Pendiente de renovar
-      │
-      ├──────────────► Renovar
-      │                     │
-      │                     ▼
-      │           Se registra la renovación
-      │                     │
-      │                     ▼
-      │           Nuevo periodo activo
-      │
-      └──────────────► No renovar
-                            │
-                            ▼
-                     Cliente caducado
-4. Estados de una renovación
-
-La renovación tendrá sus propios estados, independientes del estado del cliente.
-
-Programada
-
-La renovación existe.
-
-Todavía falta tiempo.
-
-No requiere ninguna acción.
-
-Próxima
-
-Quedan pocos días.
-
-Por defecto:
-
-7 días.
-
-Configurables.
-
-Pendiente
-
-La fecha ha llegado.
-
-Debe gestionarse.
-
-Renovada
-
-La renovación ya se ha realizado correctamente.
-
-Quedará registrada permanentemente.
-
-Cancelada
-
-El cliente decide no renovar.
-
-La renovación se marca como cancelada.
-
-No se elimina.
-
-Expirada
-
-Ha pasado un tiempo determinado sin renovar.
-
-Queda registrada como expirada.
-
-5. Pantalla de renovaciones
-
-La aplicación tendrá una sección exclusiva.
-
-No será necesario entrar cliente por cliente.
-
-Existirán vistas rápidas.
-
-Renovan hoy
-
-Lista de todos los clientes cuya fecha coincide con hoy.
-
-Renovan mañana
-
-Vista preventiva.
-
-Próximos 7 días
-
-Lista ordenada por fecha.
-
-Caducados
-
-Clientes que no han renovado.
-
-No renovar
-
-Clientes excluidos.
-
-Todas
-
-Histórico completo.
-
-6. Tarjeta de renovación
-
-Cada renovación mostrará información suficiente para gestionarla sin abrir la ficha del cliente.
-
-Ejemplo:
-
-Juan Pérez
-
-K13 Player
-
-Servidor Dead
-
-Inicio:
-01/08/2026
-
-Renueva:
-01/09/2026
-
-Duración:
-1 mes
-
-Importe:
-15 €
-
-Método pago:
-Bizum
-
-Estado:
-Pendiente
-
-Desde esta tarjeta se podrá renovar directamente.
-
-7. Proceso de renovación
-
-Al pulsar el botón "Renovar", la aplicación abrirá un cuadro de diálogo con la información necesaria.
-
-Campos:
-
-Duración (1 o 12 meses).
-Importe.
-Método de pago.
-Observaciones (opcionales).
-
-No será necesario introducir fechas.
-
-Al confirmar:
-
-La aplicación realizará automáticamente:
-
-Crear un registro de renovación.
-Crear un registro financiero.
-Actualizar la fecha de inicio del cliente.
-Calcular la nueva fecha de renovación.
-Cambiar el estado del cliente.
-Actualizar Dashboard.
-Actualizar estadísticas.
-Actualizar ingresos.
-Registrar la acción en el historial.
-
-Todo esto ocurrirá en una única operación para garantizar la integridad de los datos.
-
-8. Renovación anticipada
-
-Este es un caso que conviene definir desde el principio.
-
-Escenario
-
-Cliente:
-
-Renueva el 20 de agosto.
-
-Su suscripción vence:
-
-1 de septiembre.
-
-La nueva renovación no debe perder los días restantes.
-
-Por tanto:
-
-Antes:
-
-Inicio
-
-01/08
-
-Fin
-
-01/09
-
-Renueva:
-
-20/08
-
-La nueva suscripción finalizará:
-
-01/10
-
-No el 20/09.
-
-Esta regla será obligatoria.
-
-Nunca se perderán días ya pagados.
-
-9. Renovación tardía
-
-Otro caso importante.
-
-Ejemplo.
-
-Caduca:
-
-1 septiembre.
-
-Renueva:
-
-10 septiembre.
-
-Aquí propondría que el sistema permita dos modos, configurables desde los ajustes:
-
-Opción A (recomendada)
-
-La nueva suscripción comienza el día de la renovación.
-
-Caduca:
-
-10 octubre.
-
-Opción B
-
-La nueva suscripción comienza desde la fecha original de vencimiento.
-
-Caduca:
-
-1 octubre.
-
-Mi recomendación es utilizar la Opción A, ya que refleja mejor cuándo se ha prestado realmente el servicio. No obstante, dejar esta política configurable hará que la aplicación pueda adaptarse si el negocio cambia en el futuro.
-
-10. Historial de renovaciones
-
-Cada cliente tendrá un historial completo.
-
-Ejemplo:
-
-Fecha	Tipo	Duración	Importe	Pago
-01/08/2026	Alta	1 mes	15 €	Bizum
-01/09/2026	Renovación	1 mes	15 €	Transferencia
-01/10/2026	Renovación	12 meses	120 €	Stripe
-
-Nunca se eliminarán estos registros.
-
-11. Automatizaciones
-
-El sistema comprobará diariamente:
-
-Clientes que renuevan hoy.
-Clientes próximos a renovar.
-Clientes caducados.
-Clientes marcados como "No renovar".
-
-Estos cálculos serán automáticos y no dependerán de acciones del usuario.
-
-12. Integración con otros módulos
-
-El módulo de renovaciones no funcionará de forma aislada.
-
-Cada renovación impactará directamente en:
-
-Clientes
-Actualiza fechas.
-Cambia estados.
-Finanzas
-Registra el ingreso.
-Dashboard
-Incrementa la facturación.
-Estadísticas
-Actualiza métricas.
-Historial
-Añade un nuevo evento.
-13. Reglas de negocio
-
-Las siguientes reglas serán obligatorias:
-
-Una renovación nunca sobrescribe una anterior.
-Toda renovación genera un registro histórico.
-La fecha de renovación siempre se calcula automáticamente.
-No es posible renovar un cliente marcado como "No renovar" sin reactivarlo primero.
-Toda renovación genera un ingreso asociado.
-Las renovaciones modifican automáticamente las estadísticas.
-No se permite eliminar una renovación registrada; en caso de error, deberá anularse mediante un proceso de corrección para mantener la trazabilidad.
-14. Mejoras funcionales propuestas
-
-Además de los requisitos iniciales, propongo incorporar estas funcionalidades desde el diseño del sistema:
-
-Renovación masiva
-
-Permitir seleccionar varios clientes y renovarlos uno tras otro desde una misma pantalla. Esto ahorrará mucho tiempo cuando haya muchas renovaciones diarias.
-
-Cola de trabajo
-
-Una vista priorizada con secciones como:
-
-Renovan hoy.
-Renovan mañana.
-Retrasadas.
-No gestionadas.
-
-De esta forma, al entrar en la aplicación, sabrás exactamente qué tareas requieren atención inmediata.
-
-Indicadores visuales
-
-Utilizar colores e iconos para identificar rápidamente el estado de cada renovación:
-
-🟢 Activa
-🟡 Próxima
-🟠 Pendiente
-🔴 Caducada
-⚫ No renovar
-Registro de auditoría
-
-Cada acción relacionada con una renovación quedará registrada con:
-
-Fecha y hora.
-Acción realizada.
-Usuario (aunque inicialmente solo exista uno).
-Datos anteriores y posteriores cuando corresponda.
-
-Esto facilitará la resolución de incidencias y aportará una trazabilidad completa.
-
-ANEXO V1.1 — Renovaciones históricas del Excel
-
-Las hojas mensuales del Excel contienen filas repetidas para algunos clientes y
-fechas que abarcan más de un año. Por ello, durante la migración:
-
-- una fila no se transformará directamente en un cliente;
-- una coincidencia de nombre se revisará junto con teléfono, producto,
-  referencia, fecha e importe;
-- las filas repetidas o idénticas se detectarán antes de crear renovaciones;
-- la fecha FECHA se conservará como fecha de origen hasta confirmar si significa
-  alta, vencimiento, cobro o renovación;
-- P.AÑO y TOTAL no se usarán para calcular automáticamente la duración o el
-  importe de una renovación mientras su semántica no esté validada;
-- las renovaciones históricas importadas quedarán con origen IMPORTACION y
-  mantendrán sus datos operativos originales.
-
-Las renovaciones procedentes del Excel no deberán alterar las fechas actuales
-de una suscripción sin una regla de reconstrucción aprobada. Primero se cargará
-el histórico y después se calculará el estado actual a partir del último evento
-válido.
+Versión sprint 6 — 24/09/2026
+
+1. Objetivo
+
+Gestionar renovaciones anuales y el primer pago de una suscripción sin depender
+del XLSX. Una operación de servicio y su cobro son conceptos independientes.
+Cada operación conserva su historial y no sobrescribe las anteriores.
+
+La automatización calcula fechas y ejecuta las consecuencias de una confirmación
+humana. No cobra en bancos/pasarelas, no amplía servicios por el reloj y no
+activa ni bloquea cuentas en proveedores externos.
+
+2. Reglas confirmadas por el usuario
+
+- Todas las suscripciones son anuales: 12 meses.
+- Anticipada: el periodo adicional empieza en el vencimiento vigente, sin perder
+  días pagados. El periodo registrado puede empezar en el futuro; el servicio
+  sigue activo durante los días restantes del periodo ya contratado.
+- Puntual o tardía: el periodo comienza el día en que se renueva el servicio.
+- Si vence el 15, se renueva el 25 y se paga el 30, vence el 25 del año siguiente.
+- Cobrar una operación pendiente no modifica las fechas ni la versión de la
+  suscripción, ni crea una segunda renovación o un segundo ingreso.
+- Las fechas son días de negocio Europe/Madrid. El 29/02 se ajusta al 28/02
+  cuando el año siguiente no sea bisiesto.
+
+3. Primer pago
+
+Crear una suscripción sigue sin generar operaciones financieras.
+Desde su detalle se puede registrar el primer pago explícitamente:
+
+- crea una operación ALTA, confirmada o con cobro pendiente;
+- mantiene el periodo original, sin añadir otro año;
+- solo se permite si no hay operaciones previas no anuladas ni movimientos
+  vigentes que hagan ambiguo su registro;
+- no se inventan cobros iniciales para las suscripciones existentes;
+- un primer pago anulado puede corregirse mediante una operación nueva.
+
+4. Estados separados
+
+La renovación/alta queda COMPLETADA cuando se registra el periodo de servicio,
+aunque el dinero todavía no se haya recibido. ANULADA conserva el historial.
+PENDIENTE de renovación queda reservado para otros flujos; no se crean filas
+históricas ficticias para representar suscripciones próximas a vencer.
+
+El movimiento financiero puede quedar PENDIENTE, CONFIRMADO o ANULADO.
+Solo CONFIRMADO se considera ingreso realizado.
+Gratis se identifica con esGratuito: importe cero, sin ingreso ni deuda.
+Una operación gratuita no admite fecha de cobro ni cobro pendiente.
+
+5. Importes, métodos y fechas de cobro
+
+El precio de tarifa es una propuesta. Un importe diferente requiere motivo.
+Los cobros monetarios admiten de 0,01 a 99.999.999,99 €, máximo dos decimales.
+Se calculan y almacenan con precisión decimal, nunca acumulando floats.
+
+Se requiere método activo. En un cobro pendiente representa el método previsto.
+Al cobrar se puede elegir otro método monetario activo; se conserva el previsto
+en la operación y el efectivamente utilizado en el movimiento y la auditoría.
+El importe se liquida completo; pagos fraccionados quedan fuera de este sprint.
+
+Cobro pendiente exige fecha prevista de hoy o posterior y no admite fecha real
+de pago. Al liquidarlo, fecha real entre la operación y hoy. Puede estar fuera
+del plazo previsto, sin cambiar el periodo contratado.
+
+Una renovación confirmada se registra hoy; su pago se fecha hoy.
+El primer pago confirmado permite fecha entre el inicio de la suscripción y hoy.
+Importar fechas históricas se mantiene en el flujo de revisión del sprint 3.5.
+
+6. Validaciones y concurrencia
+
+Cliente activo y no eliminado; producto, tarifa anual y servidor activos.
+Referencias históricas inactivas se conservan si no se cambia la asignación.
+Se admiten ACTIVA, PROXIMA_A_VENCER y VENCIDA.
+SUSPENDIDA exige reactivar antes. CANCELADA no se puede reabrir.
+
+Cada solicitud de creación lleva UUID, huella de contenido/usuario y versión de
+suscripción. Repetir exactamente la petición devuelve la operación ya registrada.
+Otra carga con la misma clave, o una versión desactualizada, produce 409.
+Cobrar/anular usan la versión de la operación; repetir la misma acción ya
+completada no genera nuevos efectos.
+
+Renovación, movimiento, fechas, avisos y auditoría se escriben en una transacción.
+Si falla cualquier escritura, se revierte todo. Los bloqueos se coordinan con
+las mutaciones y el worker de suscripciones y con los catálogos.
+
+7. No renovar
+
+Preferencia reversible por suscripción, con motivo y versión obligatorios.
+No cancela ni acorta el periodo pagado. Excluye del seguimiento y bloquea nuevas
+renovaciones hasta retirarla. No anula ni perdona cobros pendientes.
+Es distinta de la cancelación definitiva de una suscripción.
+
+8. Pantallas
+
+/renovaciones:
+- Por gestionar: hoy, mañana, próximas según umbral configurado, vencidas
+  anteriores a hoy, No renovar y todas las elegibles.
+- Historial y cobros: búsqueda de cliente, estado de operación, estado del cobro,
+  intervalo de fecha de operación y paginación.
+- Orden de seguimiento por vencimiento; historial del más reciente al más antiguo.
+
+/renovaciones/:id muestra periodo, importe, snapshots, pago y motivo de anulación.
+Desde cliente se accede al historial filtrado. Desde suscripción se puede renovar,
+registrar el primer pago, gestionar la preferencia y consultar/cobrar/anular.
+Las deudas permanecen accesibles incluso si el servicio está cancelado.
+
+Los formularios conservan datos y versión al abrirse. Respuestas tardías no
+borran el borrador. Reintentar usa la misma clave para la misma carga.
+Cancelar no escribe. Se impiden doble envío y cierre mientras se confirma.
+Las consultas afectadas se actualizan antes de habilitar otra operación.
+
+9. Anulación y corrección
+
+No se borran renovaciones ni movimientos. Anular exige motivo.
+La corrección simple está limitada a operaciones GESTION_WEB cuya información
+anterior se conoce y no tienen operaciones completadas posteriores.
+El periodo actual debe coincidir con el generado y la suscripción no estar
+cancelada. Restaurar fechas no sobrescribe otros campos ni retira una suspensión.
+
+En una transacción:
+- marcar operación ANULADA e incrementar su versión;
+- anular el ingreso/deuda asociado, conservando sus datos;
+- restaurar fechas y recalcular el estado por fecha, respetando SUSPENDIDA;
+- cerrar el aviso de cobro y reconciliar el aviso del periodo restaurado;
+- auditar cada cambio.
+
+Anular un primer pago no acorta el servicio. Después puede registrarse el pago
+correcto con otra clave. Una devolución bancaria no se ejecuta automáticamente.
+Operaciones importadas, correcciones en cadena y reembolsos requieren un flujo
+específico posterior; no se restauran periodos antiguos a ciegas.
+
+10. Avisos internos
+
+Revisión al arrancar y cada minuto, en lotes transaccionales de hasta 100.
+Aviso RENOVACION por suscripción/periodo al entrar en el umbral o estar vencida.
+Aviso COBRO al registrar una deuda, con fecha prevista.
+Vencer por sí solo nunca genera ingreso ni deuda.
+
+Renovar completa el aviso del periodo anterior. Suspender, cancelar o marcar
+No renovar cancela avisos de renovación que dejen de aplicar, no la deuda.
+Cobrar completa su aviso; anular lo cancela.
+No se reabren avisos terminales: si vuelve a hacer falta, se crea otro registro.
+Las claves automáticas de avisos abiertos son únicas. Los lotes confirmados
+persisten si otro falla, y las lecturas no esperan al worker.
+
+Calendario, posponer tareas, Telegram y envíos externos siguen en sprint 10.
+
+11. Histórico e importación
+
+La importación continúa aplazada. Se mantienen los vínculos y snapshots existentes.
+FECHA = próximo vencimiento; P.AÑO = pago anual; TOTAL = acumulado de control,
+nunca ingreso adicional. Fecha histórica de operación/pago = FECHA menos un año.
+Las futuras importaciones distinguirán ALTA de RENOVACION por el flujo revisado.
+No se ejecuta carga, reconciliación ni seed histórico durante este sprint.
+
+12. Verificación
+
+Pruebas de fechas, primer pago, deuda, gratuidad, reintentos, concurrencia,
+catálogos históricos, restricciones, anulaciones y rollback completo.
+Pruebas de avisos duplicados, recuperación por lotes y lecturas independientes.
+Regresión de sprints 4/5, navegador con API simulada y flujo real con PostgreSQL
+temporal. Instrucciones y resultados en backend/SPRINT6.md.

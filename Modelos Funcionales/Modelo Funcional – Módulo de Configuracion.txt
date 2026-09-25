@@ -342,3 +342,11 @@ Se añadirá configuración para:
 - política de fechas históricas y zona horaria;
 - si un movimiento importado queda pendiente o confirmado;
 - versión del mapeo utilizado en cada importación.
+
+Decisión vigente del sprint 6 (24/09/2026)
+
+La política tardía queda fijada por el usuario: el periodo comienza cuando se
+renueva el servicio. Cobrar más tarde no cambia su vencimiento. No se ofrece
+un ajuste que retroceda al vencimiento antiguo ni que amplíe fechas al cobrar.
+Anticipadas desde el vencimiento vigente; duración siempre anual.
+El umbral suscripciones.dias_proxima se reutiliza para seguimiento y avisos.

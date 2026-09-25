@@ -581,3 +581,33 @@ Todos los movimientos importados conservarán el vínculo a la fila de origen,
 su producto, tarifa, servidor, referencia y método de pago históricos. La
 corrección de un importe se realizará mediante anulación y nuevo movimiento,
 no sobrescribiendo el histórico.
+
+ACTUALIZACIÓN SPRINT 6 — Cobros operativos (24/09/2026)
+
+Esta sección prevalece sobre los ejemplos iniciales de ingresos al guardar
+clientes. Dar de alta un cliente o una suscripción no genera dinero. El primer
+pago se registra explícitamente desde la suscripción y no amplía su periodo.
+
+Renovación de servicio y cobro son independientes:
+- operación COMPLETADA con ingreso CONFIRMADO cuando ya se ha cobrado;
+- operación COMPLETADA con movimiento PENDIENTE cuando se aplaza el pago;
+- gratuita con importe cero, sin ingreso ni deuda.
+
+Solo CONFIRMADO suma a ingresos. PENDIENTE es deuda por cobrar y ANULADO se
+excluye de balances; ambos permanecen visibles en el historial.
+No se almacena ni incrementa un total de cliente independiente del libro.
+
+Al cobrar se confirma el mismo movimiento, con fecha y método monetario reales,
+sin crear otra renovación/ingreso ni cambiar el periodo contratado. Se conserva
+el plazo previsto como dato de seguimiento y se audita el cambio.
+Pagos parciales, conciliación bancaria y cobro en pasarelas no se implementan.
+
+Renovar el 25 y pagar el 30 significa periodo desde el 25 y dinero recibido
+el 30. Una renovación anticipada conserva el vencimiento vigente como base.
+Los informes futuros usarán fecha del movimiento confirmado (cobro), no la
+fecha de inicio del periodo ni la fecha de creación del registro.
+
+La anulación segura del módulo de renovaciones anula también ingreso/deuda y
+conserva toda la trazabilidad. No realiza una devolución bancaria real.
+La gestión de gastos, balances e informes completos sigue en el sprint 7.
+No se ha importado ni conciliado el XLSX durante este sprint.

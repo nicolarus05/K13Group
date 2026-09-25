@@ -16,7 +16,7 @@ after(async () => {
   await browser?.close();
 });
 
-async function fixture(t) {
+async function fixture(t, overrides = {}) {
   const context = await browser.newContext();
   const page = await context.newPage();
   const errors = [];
@@ -51,6 +51,7 @@ async function fixture(t) {
     servidor: server,
     referencia: null,
     estado: { valor: 'PROXIMA_A_VENCER', etiqueta: 'Próxima a vencer' },
+    ...overrides,
   };
   const catalogs = { productos: [product], tarifas: [rate], servidores: [server], referencias: [] };
   const writes = [];
@@ -116,6 +117,28 @@ async function fixture(t) {
     },
   };
 }
+
+test(
+  'permite editar el dispositivo tras una renovación anticipada sin cambiar fechas',
+  { timeout: 30000 },
+  async (t) => {
+    const { page, writes } = await fixture(t, {
+      fechaInicio: '2026-10-15T00:00:00.000Z',
+      fechaFin: '2027-10-15T00:00:00.000Z',
+    });
+    await page.getByRole('button', { name: 'Editar', exact: true }).click();
+    const start = page.getByLabel('Fecha de inicio', { exact: true });
+    assert.equal(await start.inputValue(), '2026-10-15');
+    assert.equal(await start.evaluate((el) => el.readOnly && el.checkValidity()), true);
+    await page.getByLabel('Tipo de dispositivo (opcional)').fill('TV renovada');
+    await page.getByRole('button', { name: 'Guardar cambios', exact: true }).click();
+    // El mock devuelve 409: comprobar que la validación nativa permite llegar a la API.
+    await page.getByRole('alert').filter({ hasText: 'La suscripción ha cambiado' }).waitFor();
+    assert.equal(writes.length, 1);
+    assert.equal(writes[0].fechaInicio, '2026-10-15');
+    assert.equal(writes[0].tipoDispositivo, 'TV renovada');
+  },
+);
 
 test(
   'el código canónico de próximo vencimiento muestra etiqueta y advertencia',

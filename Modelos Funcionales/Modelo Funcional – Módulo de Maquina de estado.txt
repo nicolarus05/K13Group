@@ -256,3 +256,29 @@ no se mezclarán con el estado persistente de la operación histórica.
 El valor técnico canónico será PROXIMA_A_VENCER, sin tilde. La etiqueta visible
 para el usuario será “Próxima a vencer”. Los valores de estado se mantendrán
 constantes en base de datos, API, seed y frontend.
+
+Actualización sprint 6 — servicio y cobro independientes
+
+Crear renovación/primer pago desde la web → COMPLETADA.
+El movimiento asociado → CONFIRMADO si cobrado o PENDIENTE si existe deuda.
+Gratis → COMPLETADA sin movimiento. No usar PENDIENTE de renovación como
+sinónimo de dinero pendiente ni como fila ficticia de seguimiento.
+
+COMPLETADA → ANULADA mediante corrección segura de la última operación web.
+Su movimiento PENDIENTE o CONFIRMADO → ANULADO dentro de esa misma transacción.
+PENDIENTE de movimiento → CONFIRMADO al recibir el pago completo.
+CONFIRMADO no vuelve a PENDIENTE y ANULADO/ANULADA son terminales.
+No se borran filas ni se simula una devolución bancaria.
+
+Renovar actualiza el periodo anual; cobrar después nunca lo actualiza.
+Anular restaura el periodo previo solo si no hay operaciones posteriores ni
+cambios incompatibles; preserva SUSPENDIDA y nunca reabre CANCELADA.
+
+noRenovar no es un estado: es una preferencia reversible que impide renovar
+y retira avisos de renovación, sin cancelar el servicio ni extinguir deudas.
+
+Avisos automáticos: PENDIENTE → COMPLETADO por renovación/cobro;
+PENDIENTE → CANCELADO cuando deja de aplicar. Si vuelve a ser necesario se
+crea otro aviso, sin reabrir el anterior. No generan movimientos al vencer.
+La revisión de avisos usa lotes de hasta 100 y no ocurre en consultas GET.
+Bloqueo externo, Telegram, calendario y otras automatizaciones siguen pendientes.

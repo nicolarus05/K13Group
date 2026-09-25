@@ -10,6 +10,7 @@ export const subscriptionStates = [
   'CANCELADA',
 ] as const;
 export interface Subscription {
+  noRenovar: boolean;
   id: string;
   version: number;
   clienteId: string;

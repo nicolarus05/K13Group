@@ -13,6 +13,7 @@ import {
   type Subscription,
 } from '@/modules/suscripciones/suscripciones.service';
 import { SubscriptionForm } from '@/modules/suscripciones/subscription-form';
+import { SubscriptionRenewals } from '@/modules/renovaciones/renewal-history';
 
 export default function Page() {
   const { id } = useParams<{ id: string }>();
@@ -86,6 +87,7 @@ export default function Page() {
         </h1>
         <EstadoBadge estado={row.estado.valor} />
       </header>
+      {!edit && !action && <SubscriptionRenewals subscription={row} />}
       {edit ? (
         <>
           <Button variant="secondary" onClick={() => setEdit(null)}>

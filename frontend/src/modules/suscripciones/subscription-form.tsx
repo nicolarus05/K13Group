@@ -47,6 +47,9 @@ export function SubscriptionForm({
   const [saving, setSaving] = useState(false);
   const busy = useRef(false);
   const request = useRef<{ fingerprint: string; id: string } | null>(null);
+  // Una renovación anticipada ya confirmada puede tener un inicio futuro.
+  // Se conserva ese periodo; las altas y correcciones siguen limitadas a hoy.
+  const futureRenewal = Boolean(item && item.fechaInicio.slice(0, 10) > todayMadrid());
   const options = useQuery({
     queryKey: ['catalogos', 'suscripciones-options'],
     queryFn: async () => {
@@ -151,7 +154,7 @@ export function SubscriptionForm({
   );
   return (
     <form onSubmit={(event) => void submit(event)} className="max-w-2xl space-y-4">
-      <p className="text-sm text-text-secondary">
+      <p className="text-text-secondary text-sm">
         Periodo anual. Esta operación no cobra ni registra una renovación.
       </p>
       {options.isPending && <p role="status">Cargando catálogos…</p>}
@@ -213,7 +216,7 @@ export function SubscriptionForm({
                   ))}
               </select>
             </label>
-            <p className="text-xs text-text-secondary">
+            <p className="text-text-secondary text-xs">
               Se muestran hasta 25 coincidencias. Busca para encontrar otros clientes.
             </p>
           </>
@@ -245,14 +248,20 @@ export function SubscriptionForm({
           type="date"
           required
           min="1000-01-01"
-          max={todayMadrid()}
+          max={futureRenewal ? undefined : todayMadrid()}
+          readOnly={futureRenewal}
           value={input.fechaInicio}
           onChange={(event) => update('fechaInicio', event.target.value)}
         />
+        {futureRenewal && (
+          <p className="text-text-secondary text-sm">
+            Periodo de renovación anticipada. Las fechas se gestionan desde renovaciones.
+          </p>
+        )}
         <p className="text-sm">Próxima renovación: {annualPreview(input.fechaInicio)}</p>
         {item && input.fechaInicio !== item.fechaInicio.slice(0, 10) && (
           <>
-            <p className="text-sm text-warning">
+            <p className="text-warning text-sm">
               Solo corrige un error de captura. No uses este cambio para renovar. Si ya existen
               renovaciones, la corrección se rechazará.
             </p>

@@ -79,6 +79,12 @@ export default function ClienteDetallePage() {
       </Card>
 
       {/* Suscripciones e historial del cliente */}
+      <Link
+        href={'/renovaciones?historial=1&clienteId=' + cliente.id}
+        className="text-primary underline"
+      >
+        Ver renovaciones y cobros del cliente
+      </Link>
       <Card>
         <CardHeader>
           <CardTitle>Suscripciones</CardTitle>

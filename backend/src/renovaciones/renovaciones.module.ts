@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
-import { RenovacionesController } from './renovaciones.controller';
+import { RenovacionesController, SubscriptionRenewalsController } from './renovaciones.controller';
+import { RecordatoriosModule } from '../recordatorios/recordatorios.module';
 import { RenovacionesService } from './renovaciones.service';
 
 @Module({
-  controllers: [RenovacionesController],
+  imports: [RecordatoriosModule],
+  controllers: [RenovacionesController, SubscriptionRenewalsController],
   providers: [RenovacionesService],
   exports: [RenovacionesService],
 })

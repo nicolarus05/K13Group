@@ -3,8 +3,9 @@ require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
 const { randomUUID } = require('node:crypto');
 const { spawnSync } = require('node:child_process');
+const { readdirSync } = require('node:fs');
 const path = require('node:path');
-async function main() {
+async function runSuite(spec) {
   const schema = 'catalogos_test_' + randomUUID().replaceAll('-', '');
   const url = new URL(process.env.DATABASE_URL);
   url.searchParams.set('schema', schema);
@@ -13,6 +14,7 @@ async function main() {
     await db.$executeRawUnsafe(`CREATE SCHEMA "${schema}"`);
     const env = {
       ...process.env,
+      NODE_ENV: 'test',
       DATABASE_URL: url.toString(),
       TEST_DATABASE_URL: url.toString(),
       JWT_SECRET: 'catalogos-test-only',
@@ -20,7 +22,7 @@ async function main() {
     };
     for (const [bin, args] of [
       ['prisma', ['migrate', 'deploy']],
-      ['jest', ['--runInBand', '--testPathPattern=\\.integration\\.spec\\.ts$']],
+      ['jest', ['--runInBand', '--runTestsByPath', spec]],
     ]) {
       const result = spawnSync(path.resolve('node_modules/.bin', bin), args, {
         env,
@@ -35,6 +37,17 @@ async function main() {
     await db.$executeRawUnsafe(`DROP SCHEMA "${schema}" CASCADE`);
     await db.$disconnect();
   }
+}
+async function main() {
+  // Cada suite posee su esquema: ni el orden de Jest ni los 10.000 fixtures
+  // opcionales pueden contaminar las pruebas de otros módulos.
+  const load = 'suscripciones/suscripciones-load.integration.spec.ts';
+  const suites = readdirSync(path.resolve('src'), { recursive: true })
+    .filter((file) => file.endsWith('.integration.spec.ts'))
+    .filter((file) => file !== load || process.env.SUBSCRIPTIONS_LOAD_TEST === '1')
+    .sort((a, b) => (a === load ? -1 : b === load ? 1 : a.localeCompare(b)))
+    .map((file) => path.join('src', file));
+  for (const spec of suites) await runSuite(spec);
 }
 main().catch((error) => {
   console.error(error.message);

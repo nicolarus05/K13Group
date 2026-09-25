@@ -122,7 +122,7 @@ RN-003.002
 Una renovación genera automáticamente:
 
 Registro de renovación.
-Movimiento financiero de ingreso.
+Movimiento financiero de ingreso confirmado o pendiente, salvo gratuidad.
 Actualización de la fecha de vencimiento.
 Registro en auditoría.
 
@@ -145,6 +145,42 @@ RN-003.005
 El importe queda congelado.
 
 Aunque el precio cambie posteriormente, el histórico conserva el importe original.
+
+Actualización RN-003 — sprint 6 (24/09/2026)
+
+Periodos de 12 meses. Anticipada desde fechaFin, conservando días; puntual/tardía
+desde el día de renovación. Renovar el 25 con deuda y cobrar el 30 mantiene
+vencimiento el 25 del año siguiente. El cobro no modifica fechas del servicio.
+
+La operación de servicio es COMPLETADA aunque el movimiento sea PENDIENTE.
+Solo CONFIRMADO es ingreso realizado. esGratuito exige importe cero, sin
+movimiento, deuda ni fecha de cobro. No se confunde Gratis con un cobro pendiente.
+La deuda exige fecha prevista y método previsto; al liquidarla se puede indicar
+el método monetario activo real. No se permiten pagos fraccionados en sprint 6.
+Importes distintos de la tarifa requieren motivo; valores decimales de dos
+posiciones como máximo. No se actualizan retrospectivamente precios/snapshots.
+
+Primer pago explícito de tipo ALTA, sin ampliar fechas y sin operaciones previas
+vigentes. Crear cliente/suscripción por sí solo no genera dinero ni deuda.
+No se supone cobro inicial de suscripciones existentes sin confirmación humana.
+
+No renovar es preferencia reversible por suscripción, distinta de CANCELADA.
+No reduce el periodo ni perdona deuda. SUSPENDIDA requiere reactivar antes de
+renovar; CANCELADA no se reabre. Cliente, producto, tarifa y servidor activos;
+referencias históricas se mantienen. Cobrar una deuda no reactiva el servicio.
+
+Creación idempotente por solicitudId, huella/usuario y versión de suscripción.
+Cobro/anulación con versión de operación. Repeticiones exactas no duplican efectos.
+Todo cambio monetario se confirma junto con su auditoría o se revierte completo.
+
+Anulación simple solo de última operación GESTION_WEB compatible, con motivo
+y periodo anterior conocido; no borrar, reabrir canceladas ni sobrescribir
+operaciones posteriores. Anular ingreso/deuda, restaurar periodo respetando
+suspensión y reconciliar avisos. Reembolsar en el banco no es una acción del sistema.
+
+Avisos de renovación/cobro únicos mientras están abiertos, procesados en lotes
+de hasta 100. No se reabren terminales ni se generan ingresos solo por vencer.
+Consultas sin escrituras ni barridos globales. Importación real sigue aplazada.
 
 RN-004 — Productos
 RN-004.001
@@ -270,7 +306,8 @@ Se generará una anulación y quedará registrada en la auditoría.
 
 RN-009.005
 
-Toda renovación crea un movimiento financiero de ingreso automáticamente.
+Toda renovación monetaria crea un ingreso confirmado o pendiente según su cobro.
+Las gratuitas no crean movimiento monetario. Cobrar confirma el existente.
 
 RN-010 — Recordatorios
 RN-010.001

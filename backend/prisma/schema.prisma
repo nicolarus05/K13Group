@@ -69,6 +69,7 @@ model Cliente {
 model Suscripcion {
   id                            String    @id @default(uuid()) @db.Uuid
   version                       Int       @default(1)
+  noRenovar                     Boolean   @default(false) @map("no_renovar")
   solicitudId                   String?   @unique @map("solicitud_id") @db.Uuid
   solicitudHash                 String?   @map("solicitud_hash") @db.VarChar(64)
   clienteId                     String    @map("cliente_id") @db.Uuid
@@ -98,6 +99,7 @@ model Suscripcion {
   importacionFilas ImportacionFila[]
 
   @@index([clienteId])
+  @@index([fechaFin, id])
   @@index([identificadorOperativoHash])
   @@map("suscripciones")
 }
@@ -105,6 +107,14 @@ model Suscripcion {
 // ─── 5. renovaciones ────────────────────────────────────────────────────────
 model Renovacion {
   id                       String    @id @default(uuid()) @db.Uuid
+  version                  Int       @default(1)
+  solicitudId              String?   @unique @map("solicitud_id") @db.Uuid
+  solicitudHash            String?   @map("solicitud_hash") @db.VarChar(64)
+  tipoOperacion            String    @default("RENOVACION") @map("tipo_operacion") @db.VarChar(20)
+  inicioAnterior           DateTime? @map("inicio_anterior") @db.Date
+  finAnterior              DateTime? @map("fin_anterior") @db.Date
+  anuladaAt                DateTime? @map("anulada_at")
+  motivoAnulacion          String?   @map("motivo_anulacion")
   suscripcionId            String    @map("suscripcion_id") @db.Uuid
   fechaInicio              DateTime  @map("fecha_inicio") @db.Date
   fechaFin                 DateTime  @map("fecha_fin") @db.Date
@@ -195,6 +205,9 @@ model Referencia {
 // ─── 10. movimientos_financieros ────────────────────────────────────────────
 model MovimientoFinanciero {
   id                       String   @id @default(uuid()) @db.Uuid
+  operacionClave           String?  @unique @map("operacion_clave") @db.Uuid
+  fechaCobro               DateTime? @map("fecha_cobro") @db.Date
+  fechaPrevistaCobro       DateTime? @map("fecha_prevista_cobro") @db.Date
   tipoId                   String   @map("tipo_id") @db.Uuid
   suscripcionId            String?  @map("suscripcion_id") @db.Uuid
   renovacionId             String?  @map("renovacion_id") @db.Uuid
@@ -254,6 +267,7 @@ model CategoriaGasto {
 // ─── 13. recordatorios ──────────────────────────────────────────────────────
 model Recordatorio {
   id            String   @id @default(uuid()) @db.Uuid
+  claveAutomatica String? @unique @map("clave_automatica") @db.VarChar(120)
   clienteId     String   @map("cliente_id") @db.Uuid
   suscripcionId String?  @map("suscripcion_id") @db.Uuid
   tipoId        String   @map("tipo_id") @db.Uuid
@@ -267,6 +281,7 @@ model Recordatorio {
   tipo        Estado       @relation("TipoRecordatorio", fields: [tipoId], references: [id])
   estado      Estado       @relation("EstadoRecordatorio", fields: [estadoId], references: [id])
 
+  @@index([suscripcionId, estadoId])
   @@map("recordatorios")
 }
 

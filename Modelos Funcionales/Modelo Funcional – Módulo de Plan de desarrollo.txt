@@ -325,19 +325,50 @@ El siguiente sprint (6) implementará la renovación y su registro financiero.
 
 SPRINT 6 – Renovaciones
 
-Aquí implementaremos toda la lógica de negocio.
+Estado: IMPLEMENTADO Y VALIDADO (24/09/2026). Cierre en backend/SPRINT6.md.
+Sin importar el XLSX. Las decisiones del usuario sustituyen ejemplos mensuales
+y cualquier interpretación que confunda renovar el servicio con recibir el dinero.
 
-Incluye:
+6.1 — Periodos anuales
+- Anticipada desde el vencimiento, conservando días; tardía desde la renovación.
+- Renovar el 25 y pagar el 30 mantiene el vencimiento el 25 del año siguiente.
+- Renovaciones completadas con cobro confirmado o pendiente.
+- Primer pago explícito, también aplazable, sin ampliar el periodo inicial.
 
-Renovación automática.
-Renovación manual.
-Actualización de fechas.
-Cambio de estado.
-Registro financiero.
-Auditoría.
-Recordatorios automáticos.
+6.2 — Transacciones y datos
+- Renovación, movimiento, actualización de suscripción, avisos y auditoría atómicos.
+- Versiones optimistas y claves idempotentes; snapshots históricos conservados.
+- Gratis con importe cero, sin ingreso ni deuda; importes distintos con motivo.
+- Fecha de cobro separada de la de operación y del plazo previsto.
+- No se crean cobros retroactivos para las suscripciones existentes.
 
-Resultado: renovaciones completamente automatizadas.
+6.3 — API e interfaz
+- Seguimiento por hoy, mañana, próximas, vencidas y No renovar.
+- Historial paginado, detalle y filtros por cliente, operación, cobro y fechas.
+- Acceso desde cliente/suscripción; renovación, primer pago y liquidación de deuda.
+- Borradores y versiones estables ante consultas tardías; reintentos sin duplicados.
+- No renovar reversible, sin cancelar servicio ni perdonar deuda.
+
+6.4 — Correcciones y avisos
+- Anulación segura de la última operación compatible, sin borrado ni devolución
+  bancaria automática. Restaura periodo y anula su movimiento en una transacción.
+- Avisos internos por periodo/cobro, revisión por lotes, sin duplicar ni bloquear
+  lecturas; cierre con la operación y recuperación tras fallos.
+
+6.5 — Validación
+- Migración compatible, pruebas aisladas y regresión de sprints 4/5.
+- Cobros posteriores no modifican el servicio. Fallos no dejan escrituras parciales.
+- Chrome con API ficticia y con Nest/PostgreSQL temporal reales.
+- Comprobación de tipos, lint, compilación y carga con 10.000 suscripciones.
+- Actualización de Renovaciones, API, reglas, estados, Finanzas y Base de Datos.
+
+Fuera de alcance: XLSX, cobros bancarios automáticos, pagos fraccionados,
+renovaciones masivas, correcciones históricas complejas, gastos e informes
+financieros completos (sprint 7), dashboard/estadísticas y calendario/envíos
+externos (sprint 10). Confirmar una renovación siempre es una acción humana.
+
+Resultado: renovación y primer pago operativos con cobros confirmados/pendientes,
+historial trazable y avisos internos, sin dependencia del Excel.
 
 SPRINT 7 – Finanzas
 

@@ -95,6 +95,7 @@ export class ClientesService {
     });
 
     return this.prisma.$transaction(async (tx) => {
+      await lockCatalog(tx, 'referencias');
       const cliente = await tx.cliente.create({
         data: { ...dto, telefono, telefonoNormalizado, estadoId: estadoActivo.id },
         include: INCLUDE_ESTADO,
@@ -127,6 +128,9 @@ export class ClientesService {
     }
 
     return this.prisma.$transaction(async (tx) => {
+      // Mismo orden que suscripciones/renovaciones: catálogo antes de fila de cliente.
+      // ensureReferencia no debe esperar al catálogo mientras retiene esa fila.
+      if (dto.nombre) await lockCatalog(tx, 'referencias');
       const cliente = await tx.cliente.update({
         where: { id },
         data: { ...dto, ...(hasTelefono ? { telefono, telefonoNormalizado } : {}) },

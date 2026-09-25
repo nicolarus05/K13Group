@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 
 // Lista explícita: nunca devolver identificadores operativos, hashes ni claves de solicitud.
 export const subscriptionSelect = {
+  noRenovar: true,
   id: true,
   version: true,
   clienteId: true,

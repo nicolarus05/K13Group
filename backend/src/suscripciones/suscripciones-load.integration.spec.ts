@@ -4,6 +4,7 @@ import { seedBase } from '../../prisma/seed';
 import { PrismaService } from '../database/prisma.service';
 import { ClientesService } from '../clientes/clientes.service';
 import { SuscripcionesService } from './suscripciones.service';
+import { RecordatoriosService } from '../recordatorios/recordatorios.service';
 
 const isolated = process.env.TEST_DATABASE_URL;
 const suite = isolated && process.env.SUBSCRIPTIONS_LOAD_TEST === '1' ? describe : describe.skip;
@@ -23,7 +24,10 @@ suite('Regresión de carga: 10.000 estados pendientes', () => {
   });
 
   it('permite leer clientes durante el recálculo y confirma todos los lotes sin duplicar auditoría', async () => {
-    const service = new SuscripcionesService(db as PrismaService);
+    const service = new SuscripcionesService(
+      db as PrismaService,
+      new RecordatoriosService(db as PrismaService),
+    );
     const clients = new ClientesService(db as PrismaService, service);
     await service.syncStates();
     const active = await db.estado.findUniqueOrThrow({

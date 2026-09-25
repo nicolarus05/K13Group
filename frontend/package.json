@@ -9,7 +9,7 @@
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "type-check": "tsc --noEmit",
-    "test:ui": "node --test scripts/suscripciones-ui.test.cjs"
+    "test:ui": "node --test scripts/*-ui.test.cjs"
   },
   "dependencies": {
     "next": "15.3.5",
