@@ -54,6 +54,7 @@ export function ExpenseDialog({ action, onClose }: { action: ExpenseAction; onCl
       await Promise.all([
         cache.invalidateQueries({ queryKey: ['finanzas'] }),
         cache.invalidateQueries({ queryKey: ['dashboard'] }),
+        cache.invalidateQueries({ queryKey: ['estadisticas'] }),
       ]);
       onClose();
     } catch (err) {

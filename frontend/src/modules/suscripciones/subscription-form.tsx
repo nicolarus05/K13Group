@@ -115,6 +115,7 @@ export function SubscriptionForm({
         cache.invalidateQueries({ queryKey: ['suscripciones'] }),
         cache.invalidateQueries({ queryKey: ['clientes'] }),
         cache.invalidateQueries({ queryKey: ['dashboard'] }),
+        cache.invalidateQueries({ queryKey: ['estadisticas'] }),
       ]);
       onSaved?.();
       router.push('/suscripciones/' + saved.id);

@@ -1,3 +1,4 @@
+import { attribution } from '../estadisticas/attribution';
 import {
   BadRequestException,
   ConflictException,
@@ -267,6 +268,7 @@ export class RenovacionesService {
               : 'La renovación se registra hoy; los históricos requieren su flujo de importación.',
           );
         const snapshots = {
+          ...attribution(before.productoId, before.servidorId, before.referenciaId),
           productoNombreSnapshot: before.producto.nombre,
           tarifaNombreSnapshot: before.tarifa.nombre,
           servidorNombreSnapshot: before.servidor.nombre,

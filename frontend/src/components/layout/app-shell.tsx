@@ -18,6 +18,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       cache.getMutationCache().subscribe((event) => {
         if (event.type === 'updated' && event.action.type === 'success') {
           void cache.invalidateQueries({ queryKey: ['dashboard'] });
+          void cache.invalidateQueries({ queryKey: ['estadisticas'] });
         }
       }),
     [cache],
@@ -67,7 +68,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         <main
           id="main-content"
           tabIndex={-1}
-          className={'k13-main' + (path === '/dashboard' ? ' k13-main-dashboard' : '')}
+          className={
+            'k13-main' +
+            (['/dashboard', '/estadisticas'].includes(path) ? ' k13-main-dashboard' : '')
+          }
         >
           {children}
         </main>

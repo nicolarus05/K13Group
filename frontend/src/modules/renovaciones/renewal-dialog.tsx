@@ -94,8 +94,8 @@ export function RenewalDialog({ action, onClose }: { action: RenewalAction; onCl
         await renewals.create(sub.id, initial, { ...dto, solicitudId: attempt.current.key });
       }
       await Promise.all(
-        ['renovaciones', 'suscripciones', 'clientes', 'finanzas', 'dashboard'].map((key) =>
-          cache.invalidateQueries({ queryKey: [key] }),
+        ['renovaciones', 'suscripciones', 'clientes', 'finanzas', 'dashboard', 'estadisticas'].map(
+          (key) => cache.invalidateQueries({ queryKey: [key] }),
         ),
       );
       toast.success('Operación registrada correctamente.');
@@ -121,7 +121,7 @@ export function RenewalDialog({ action, onClose }: { action: RenewalAction; onCl
           {sub.cliente.nombre} · {sub.producto.nombre}
         </p>
         {(initial || action.kind === 'renovar') && (
-          <div className="rounded border border-hover p-3 text-sm">
+          <div className="border-hover rounded border p-3 text-sm">
             <p>Vencimiento actual: {dateLabel(sub.fechaFin)}</p>
             <p>Nuevo vencimiento: {initial ? dateLabel(sub.fechaFin) : annualPreview(base)}</p>
             <p>
@@ -166,7 +166,7 @@ export function RenewalDialog({ action, onClose }: { action: RenewalAction; onCl
                 required
                 value={method}
                 disabled={saving || methods.isPending}
-                className="mt-1 w-full rounded border border-hover bg-background p-2"
+                className="border-hover bg-background mt-1 w-full rounded border p-2"
                 onChange={(e) => {
                   setMethod(e.target.value);
                   if (methods.data?.find((m) => m.id === e.target.value)?.esGratuito)

@@ -417,7 +417,7 @@ estadísticas/gráficas avanzadas en sprint 9.
 
 SPRINT 8 – Dashboard
 
-Implementado el 25/09/2026, pendiente de revisión del usuario y commit.
+Implementado el 25/09/2026 y confirmado en ba23773.
 
 - Dashboard oscuro inspirado en referencia K13GROUP y logo original; sidebar
   responsive/plegable y cabecera compartida. No se rediseñan los otros módulos.
@@ -437,16 +437,31 @@ reproducible en backend/SPRINT8.md. Siguiente sprint: 9, Estadísticas.
 
 SPRINT 9 – Estadísticas
 
-Gráficas de:
+Implementado el 28/09/2026, revisado y validado el 29/09/2026 para su cierre.
+Corregida la actualización de los filtros de catálogo; 48 pruebas de interfaz
+y cuatro E2E aprobados tras la corrección. Sin importación del XLSX.
 
-Clientes.
-Productos.
-Renovaciones.
-Ingresos.
-Beneficios.
-Evolución temporal.
+- Ocho informes: Resumen, Clientes, Renovaciones, Finanzas, Productos,
+  Servidores, Referencias y Métodos de pago. Estilo K13 del sprint 8.
+- Ingresos brutos confirmados, gastos pagados, resultado operativo, ticket
+  medio, altas y renovaciones; series diarias/mensuales/anuales y comparativas.
+- Cliente perdido: 30 días desde último vencimiento sin otro servicio vigente.
+- Tasa por CLIENTE único con vencimiento en el periodo: cuenta si renueva al
+  menos un servicio, incluso anticipadamente, tarde, gratis o con cobro pendiente.
+  ALTA y anuladas no cuentan; los históricos sin evidencia se señalan.
+- Atribución histórica por IDs congelados; no trasladar ingresos al cambiar
+  servidor/referente ni reconstruir IDs antiguos desde nombres ambiguos.
+- Periodos hasta cinco años, detalle diario hasta 366 días, zona Europe/Madrid.
+  Comparación con ventana anterior de igual duración; base cero sin porcentaje.
+- Rankings paginados y top 10 + Otros; filtros compatibles con cada indicador,
+  refresco e invalidación tras cambios, estados de carga/vacío/error/reintento.
+- GET autenticados de solo lectura y agregados SQL en snapshot consistente;
+  migración aditiva sin cambiar importes/fechas ni cargar XLSX.
+- Pruebas unitarias, integración aislada, navegador y flujo E2E con Finanzas.
 
-Incluye filtros por rango de fechas.
+Contrato y límites en backend/SPRINT9.md y anexo vigente del módulo Estadísticas.
+No incluye exportaciones (sprint 12), envíos/calendario (10), predicciones,
+metas ni reparto de gastos generales. No inventa series históricas de estados.
 
 SPRINT 10 – Recordatorios y Calendario
 

@@ -23,6 +23,7 @@ const items = [
   { label: 'Renovaciones', href: '/renovaciones', icon: RefreshCw },
   { label: 'Catálogos', href: '/catalogos', icon: BookOpen },
   { label: 'Finanzas', href: '/finanzas', icon: DollarSign },
+  { label: 'Estadísticas', href: '/estadisticas', icon: BarChart2 },
   { label: 'Importar Excel', href: '/importaciones', icon: Upload },
 ];
 export function Sidebar({
@@ -66,10 +67,6 @@ export function Sidebar({
         {!collapsed && (
           <div className="k13-nav-future">
             <small>PRÓXIMAMENTE</small>
-            <span>
-              <BarChart2 size={18} />
-              Estadísticas
-            </span>
             <span>
               <Settings size={18} />
               Configuración

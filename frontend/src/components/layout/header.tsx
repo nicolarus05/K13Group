@@ -9,6 +9,7 @@ const labels: Record<string, string> = {
   suscripciones: 'Suscripciones',
   renovaciones: 'Renovaciones',
   finanzas: 'Finanzas',
+  estadisticas: 'Estadísticas',
   catalogos: 'Catálogos',
   importaciones: 'Importaciones',
 };

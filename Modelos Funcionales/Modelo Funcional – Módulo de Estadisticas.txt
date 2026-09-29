@@ -437,3 +437,51 @@ Las métricas por producto, servidor, referencia y método de pago se calculará
 con sus valores canónicos, pero cada resultado podrá enlazar con las variantes
 originales usadas en el Excel. Así se evitará que MAXPLAYER, K13PLAYER o una
 variante con dispositivo aparezcan como productos independientes sin revisión.
+
+ANEXO V1.2 — Alcance implementado del sprint 9 (28/09/2026)
+
+Este anexo concreta y prevalece sobre las propuestas generales anteriores.
+Contrato técnico, reglas y pruebas reproducibles: backend/SPRINT9.md.
+
+Ocho apartados: Resumen, Clientes, Renovaciones, Finanzas, Productos, Servidores,
+Referencias y Métodos de pago. Fechas inclusivas de Madrid, diario/mensual/anual,
+máximo cinco años y hasta 366 días en diario. Comparación con ventana contigua
+anterior de igual duración; con base cero no se inventa porcentaje.
+
+Economía: ingresos brutos y gastos pagados CONFIRMADO por fechaCobro o fecha.
+Pendientes y anulados no suman; gratis cuenta como operación sin ingreso.
+Resultado operativo = ingresos - gastos, no beneficio fiscal. Ticket medio por
+movimiento cobrado. Gastos generales: sin reparto ni beneficio por producto,
+servidor o referencia. Filtro de método analiza ingresos; categoría analiza
+gastos, mutuamente excluyentes y sin calcular resultado sobre bases parciales.
+
+Clientes perdidos: al menos 30 días desde su último vencimiento y sin otro
+servicio vigente. Sin suscripciones no es perdido. Clientes actuales por grupo
+son únicos pero no sumables entre grupos; separados de importes históricos.
+No se reconstruyen series de activos/perdidos con el estado actual mutable.
+
+Tasa de renovación POR CLIENTE, no por suscripción:
+clientes únicos que renovaron al menos una suscripción cuyo vencimiento cae
+en el intervalo / clientes únicos con algún vencimiento en el intervalo.
+Si 8 de 10 clientes renuevan, 80 %, aunque alguno tenga tres servicios.
+Se usa el vencimiento original finAnterior: anticipadas/tardías cuentan en
+su cohorte, también gratis y pendientes; ALTA y anuladas quedan fuera.
+Periodo sin vencimientos: sin base. La tasa puede cambiar al registrar tarde.
+Con renovaciones completadas sin finAnterior verificable se marca cobertura
+incompleta y no se muestra tasa definitiva. No deducirlo de fechaFin - 1 año.
+
+Ingresos y renovaciones agrupados por IDs canónicos congelados al registrar.
+Cambios posteriores de servidor/referente no mueven el dinero histórico.
+Catálogos inactivos y renombrados conservan su identidad. Histórico ambiguo
+en grupo Sin atribución verificable, incluido en totales; distinto de Sin
+referencia conocido. Staging sin conciliar se informa y no suma económicamente.
+
+Filtros según significado: estadoCliente solo situación actual; estadoOperacion
+solo operaciones, no denominador de tasa; IDs de producto/servidor/referente
+en rankings; método/categoría según base económica. No existe filtro de duración
+porque todas las suscripciones son anuales. Tablas paginadas y top 10 + Otros.
+Consulta sin escrituras, refresco cada minuto, actualización tras mutaciones.
+
+Exportaciones Excel/PDF/CSV se mantienen para sprint 12; metas, predicciones,
+heatmaps y rentabilidad desglosada quedan fuera de esta entrega. No se necesita
+importar el XLSX para utilizar ni verificar las estadísticas.

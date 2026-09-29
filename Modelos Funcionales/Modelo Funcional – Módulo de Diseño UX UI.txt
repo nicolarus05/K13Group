@@ -644,3 +644,17 @@ La interfaz de clientes incorporará teléfono, producto canónico, dispositivo,
 servidor, referencia y fecha de vencimiento. La tabla seguirá siendo responsive:
 en móvil se transformará en tarjetas y el asistente deberá poder completarse
 sin depender de una tabla horizontal.
+
+Actualización sprint 9 — Estadísticas (28/09/2026)
+
+Pantalla /estadisticas con sidebar/cabecera y estilo oscuro K13 del dashboard.
+Ocho informes, periodos relativos/personalizados, detalle diario/mensual/anual,
+filtros por sección y catálogos buscables/paginados incluidos inactivos.
+Gráficas de evolución con tablas de valores exactos, barras top 10 + Otros,
+tablas de ranking paginadas y desplazamiento interno en móvil.
+Indicadores actuales etiquetados aparte del periodo histórico. Mostrar Sin base,
+No aplicable y cobertura incompleta en vez de porcentajes/dinero inventados.
+Carga, vacío, error/reintento, refresco al minuto e invalidación tras guardar.
+Filtros/periodo/sección persisten durante la sesión. El cambio de día actualiza
+rangos relativos sin sobrescribir fechas personalizadas ni borradores.
+El resto de pantallas conserva su diseño; XLSX y exportaciones no son requisito.

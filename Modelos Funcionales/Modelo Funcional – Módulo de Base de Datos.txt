@@ -416,3 +416,18 @@ Snapshots de categoría/método; correcciones preservan nombres si el vínculo
 no cambia. Gastos anulados conservan registro, importe e historial.
 Los ingresos siguen bajo gestión exclusiva del proceso de renovaciones.
 Balances derivados mediante agregación SQL/Decimal, sin tablas de totales.
+
+Actualización sprint 9 — 28/09/2026
+
+Migración aditiva 20260928100000_estadisticas_atribucion. En renovaciones y
+movimientos_financieros: atribucion_verificada BOOLEAN DEFAULT false NOT NULL;
+producto_id_snapshot, servidor_id_snapshot, referencia_id_snapshot UUID nullable.
+Son identidades históricas, no relaciones mutables; se mantienen snapshots de
+nombres. Índices en renovaciones(fin_anterior) y renovaciones(fecha_operacion).
+
+Las nuevas operaciones web y futuras conciliaciones guardan los IDs conocidos
+en la transacción original. Cobrar posteriormente conserva la atribución.
+Referencia null con atribución verificada significa Sin referencia; false
+significa histórico no verificable, nunca reconstruido desde nombres/configuración
+actual. La migración no modifica fechas/importes ni crea movimientos/clientes.
+No importa XLSX ni almacena métricas. Agregados SQL en transacción RepeatableRead.

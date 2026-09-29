@@ -59,6 +59,7 @@ export default function Page() {
         cache.invalidateQueries({ queryKey: ['suscripciones'] }),
         cache.invalidateQueries({ queryKey: ['clientes'] }),
         cache.invalidateQueries({ queryKey: ['dashboard'] }),
+        cache.invalidateQueries({ queryKey: ['estadisticas'] }),
       ]);
     } catch (error) {
       setError(catalogError(error));

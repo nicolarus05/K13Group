@@ -686,3 +686,23 @@ Errores: 400 validación; 401 sin sesión; 404 inexistente; 409 conflicto de
 versión, duplicidad lógica, estado incompatible o corrección insegura.
 Creación y acciones devuelven success/data. Los cambios y su auditoría son
 atómicos. El módulo completo /finanzas sigue reservado al sprint 7.
+
+Actualización sprint 9 — 28/09/2026
+
+GET autenticados /estadisticas (alias /estadisticas/resumen) y
+/estadisticas/clientes, /renovaciones, /finanzas, /productos, /servidores,
+/referencias y /metodos-pago, todos bajo el prefijo /estadisticas.
+Respuesta success/data. Sin escrituras ni credenciales ni registros originales.
+desde/hasta YYYY-MM-DD inclusivas, ambas o ninguna (mes hasta hoy Madrid).
+agrupacion=dia|mes|ano; page>=1, limit=1..100 (10 defecto).
+Máximo cinco años; detalle diario hasta 366 días. Comparación ventana anterior
+contigua de igual duración. Cada informe comparte snapshot RepeatableRead.
+
+Clientes admite estadoCliente ACTIVO/INACTIVO solo para situación actual.
+Renovaciones admite estadoOperacion COMPLETADA/ANULADA sin alterar la cohorte.
+Productos/Servidores/Referencias admiten productoId/servidorId/referenciaId UUID.
+Métodos admite metodoPagoId; Finanzas metodoPagoId O categoriaGastoId, no ambos.
+Resumen no admite filtros de entidad. Incompatibles/fechas inválidas: 400;
+sin sesión: 401. Rankings incluyen data/pagination/grafico/totalImporte.
+Campos actuales e históricos separados y cobertura incompleta explícita.
+Contrato completo y límites: backend/SPRINT9.md.

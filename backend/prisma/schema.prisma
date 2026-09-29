@@ -106,6 +106,10 @@ model Suscripcion {
 
 // ─── 5. renovaciones ────────────────────────────────────────────────────────
 model Renovacion {
+  atribucionVerificada     Boolean   @default(false) @map("atribucion_verificada")
+  productoIdSnapshot       String?   @map("producto_id_snapshot") @db.Uuid
+  servidorIdSnapshot       String?   @map("servidor_id_snapshot") @db.Uuid
+  referenciaIdSnapshot     String?   @map("referencia_id_snapshot") @db.Uuid
   id                       String    @id @default(uuid()) @db.Uuid
   version                  Int       @default(1)
   solicitudId              String?   @unique @map("solicitud_id") @db.Uuid
@@ -139,6 +143,8 @@ model Renovacion {
   movimientos     MovimientoFinanciero[]
 
   @@index([suscripcionId, fechaOperacion])
+  @@index([finAnterior], map: "renovaciones_fin_anterior_idx")
+  @@index([fechaOperacion], map: "renovaciones_fecha_operacion_idx")
   @@map("renovaciones")
 }
 
@@ -204,6 +210,10 @@ model Referencia {
 
 // ─── 10. movimientos_financieros ────────────────────────────────────────────
 model MovimientoFinanciero {
+  atribucionVerificada     Boolean   @default(false) @map("atribucion_verificada")
+  productoIdSnapshot       String?   @map("producto_id_snapshot") @db.Uuid
+  servidorIdSnapshot       String?   @map("servidor_id_snapshot") @db.Uuid
+  referenciaIdSnapshot     String?   @map("referencia_id_snapshot") @db.Uuid
   id                       String   @id @default(uuid()) @db.Uuid
   version                  Int      @default(1)
   solicitudHash            String?  @map("solicitud_hash") @db.VarChar(64)
