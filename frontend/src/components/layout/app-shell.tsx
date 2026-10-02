@@ -19,6 +19,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         if (event.type === 'updated' && event.action.type === 'success') {
           void cache.invalidateQueries({ queryKey: ['dashboard'] });
           void cache.invalidateQueries({ queryKey: ['estadisticas'] });
+          void cache.invalidateQueries({ queryKey: ['recordatorios'] });
         }
       }),
     [cache],
@@ -70,7 +71,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           tabIndex={-1}
           className={
             'k13-main' +
-            (['/dashboard', '/estadisticas'].includes(path) ? ' k13-main-dashboard' : '')
+            (['/dashboard', '/estadisticas', '/recordatorios', '/calendario'].some(
+              (p) => path === p || path.startsWith(p + '/'),
+            )
+              ? ' k13-main-dashboard'
+              : '')
           }
         >
           {children}

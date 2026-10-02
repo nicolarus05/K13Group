@@ -150,6 +150,20 @@ nombre	VARCHAR(100)
 activo	BOOLEAN	
 created_at	TIMESTAMP	
 13. recordatorios
+Ampliación sprint 10 (02/10/2026): cliente_id siempre obligatorio.
+version INTEGER NOT NULL DEFAULT 1; origen VARCHAR(20) MANUAL/AUTOMATICO/LEGACY;
+fecha_original DATE; fecha conserva la fecha efectiva de seguimiento.
+solicitud_id UUID UNIQUE y solicitud_hash VARCHAR(64) para alta idempotente.
+cerrado_at TIMESTAMP, motivo VARCHAR(1000), updated_at TIMESTAMP.
+movimiento_id UUID nullable FK movimientos_financieros (ON DELETE SET NULL).
+clave_automatica UNIQUE reserva el aviso por suscripción/periodo o renovación.
+Cerrar manualmente conserva esa clave; resolver/cambiar la obligación la libera
+sin reabrir ni reescribir el estado terminal de un aviso gestionado previamente.
+Índices estado/fecha/id, cliente/fecha, movimiento y suscripción/estado.
+Migración aditiva: copia fecha a fecha_original y enlaza cobros automáticos por
+renovación y suscripción; históricos sin clave siguen LEGACY, no se adivina origen.
+No modifica importes, periodos o datos del XLSX.
+
 Campo	Tipo	PK	FK
 id	UUID	✅	
 cliente_id	UUID		✅ clientes.id

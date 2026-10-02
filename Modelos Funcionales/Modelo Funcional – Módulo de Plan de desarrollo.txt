@@ -465,13 +465,26 @@ metas ni reparto de gastos generales. No inventa series históricas de estados.
 
 SPRINT 10 – Recordatorios y Calendario
 
+Estado: implementado, revisado y validado localmente el 02/10/2026.
+Corregidas la pérdida de borrador por refresco y la paginación fuera de rango.
+Verificación: 18 unitarias + 108 integración + 58 interfaz + 5 flujos E2E.
+Compilación y TypeScript correctos; tres avisos de lint preexistentes en backend.
+
 Implementación de:
 
 Recordatorios de renovación.
 Recordatorios de cobro.
-Recordatorios de Telegram.
+Avisos exclusivamente dentro de la web, siempre asignados a un cliente.
+Sin envíos Telegram/email ni integración externa en este sprint.
 Calendario mensual.
 Agenda diaria.
+Gestión paginada: filtros, alta manual, descripción editable en avisos manuales,
+posponer, completar, cancelar y consultar historial. Motivo y versión obligatorios.
+Campana y dashboard comparten el criterio de atención; calendario sin duplicar
+obligaciones y con renovaciones futuras fuera de la ventana de siete días.
+Posponer/cerrar no renueva servicios ni registra pagos. El cobro real y la
+renovación se realizan desde sus flujos existentes. Sin importar el XLSX.
+Contrato detallado: módulo Recordatorios y Calendario y backend/SPRINT10.md.
 SPRINT 11 – Configuración
 
 Incluye:

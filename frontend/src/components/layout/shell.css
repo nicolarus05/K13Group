@@ -251,3 +251,18 @@
     transition: none;
   }
 }
+.k13-header-actions .k13-icon-button {
+  position: relative;
+}
+.k13-notice-count {
+  position: absolute;
+  top: -3px;
+  right: -5px;
+  min-width: 17px;
+  padding: 1px 3px;
+  border-radius: 9px;
+  background: #bf1554;
+  color: white;
+  font-size: 10px;
+  line-height: 14px;
+}

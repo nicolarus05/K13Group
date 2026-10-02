@@ -94,9 +94,15 @@ export function RenewalDialog({ action, onClose }: { action: RenewalAction; onCl
         await renewals.create(sub.id, initial, { ...dto, solicitudId: attempt.current.key });
       }
       await Promise.all(
-        ['renovaciones', 'suscripciones', 'clientes', 'finanzas', 'dashboard', 'estadisticas'].map(
-          (key) => cache.invalidateQueries({ queryKey: [key] }),
-        ),
+        [
+          'renovaciones',
+          'suscripciones',
+          'clientes',
+          'finanzas',
+          'dashboard',
+          'estadisticas',
+          'recordatorios',
+        ].map((key) => cache.invalidateQueries({ queryKey: [key] })),
       );
       toast.success('Operación registrada correctamente.');
       onClose();

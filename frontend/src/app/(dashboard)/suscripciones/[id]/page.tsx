@@ -60,6 +60,7 @@ export default function Page() {
         cache.invalidateQueries({ queryKey: ['clientes'] }),
         cache.invalidateQueries({ queryKey: ['dashboard'] }),
         cache.invalidateQueries({ queryKey: ['estadisticas'] }),
+        cache.invalidateQueries({ queryKey: ['recordatorios'] }),
       ]);
     } catch (error) {
       setError(catalogError(error));
@@ -107,7 +108,7 @@ export default function Page() {
         </>
       ) : (
         <>
-          <dl className="grid gap-4 rounded border border-hover p-4 sm:grid-cols-2">
+          <dl className="border-hover grid gap-4 rounded border p-4 sm:grid-cols-2">
             <div>
               <dt>Cliente</dt>
               <dd>
@@ -206,7 +207,7 @@ export default function Page() {
           {action && (
             <form
               onSubmit={(event) => void transition(event)}
-              className="max-w-xl space-y-3 rounded border border-hover p-4"
+              className="border-hover max-w-xl space-y-3 rounded border p-4"
             >
               <p>
                 {action.kind === 'cancelar'
@@ -264,7 +265,7 @@ export default function Page() {
           </p>
         ) : history.data.data.length ? (
           history.data.data.map((entry) => (
-            <article key={entry.id} className="rounded border border-hover p-3">
+            <article key={entry.id} className="border-hover rounded border p-3">
               <p>
                 {entry.accion.replaceAll('_', ' ')} · {entry.usuario?.nombre ?? 'Sistema'} ·{' '}
                 {new Date(entry.createdAt).toLocaleString('es-ES', { timeZone: 'Europe/Madrid' })}
@@ -272,7 +273,7 @@ export default function Page() {
               {entry.datosNuevos?.motivo && <p className="text-sm">{entry.datosNuevos.motivo}</p>}
               <details className="mt-2 text-sm">
                 <summary>Ver datos anteriores y posteriores</summary>
-                <pre className="overflow-auto whitespace-pre-wrap break-all">
+                <pre className="overflow-auto break-all whitespace-pre-wrap">
                   {JSON.stringify(
                     { antes: entry.datosAnteriores, despues: entry.datosNuevos },
                     null,

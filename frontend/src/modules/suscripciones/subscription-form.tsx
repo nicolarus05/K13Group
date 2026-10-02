@@ -116,6 +116,7 @@ export function SubscriptionForm({
         cache.invalidateQueries({ queryKey: ['clientes'] }),
         cache.invalidateQueries({ queryKey: ['dashboard'] }),
         cache.invalidateQueries({ queryKey: ['estadisticas'] }),
+        cache.invalidateQueries({ queryKey: ['recordatorios'] }),
       ]);
       onSaved?.();
       router.push('/suscripciones/' + saved.id);

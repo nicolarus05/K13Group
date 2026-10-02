@@ -14,6 +14,8 @@ import {
   ChevronsRight,
   BarChart2,
   Settings,
+  Bell,
+  CalendarDays,
 } from 'lucide-react';
 const logo = '/LogoK13GROUP.jpg';
 const items = [
@@ -24,6 +26,8 @@ const items = [
   { label: 'Catálogos', href: '/catalogos', icon: BookOpen },
   { label: 'Finanzas', href: '/finanzas', icon: DollarSign },
   { label: 'Estadísticas', href: '/estadisticas', icon: BarChart2 },
+  { label: 'Recordatorios', href: '/recordatorios', icon: Bell },
+  { label: 'Calendario', href: '/calendario', icon: CalendarDays },
   { label: 'Importar Excel', href: '/importaciones', icon: Upload },
 ];
 export function Sidebar({

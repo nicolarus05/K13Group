@@ -1,0 +1,143 @@
+.reminders {
+  color: #e6edf7;
+  max-width: 1600px;
+  margin: auto;
+}
+.reminders h1 {
+  font-size: 1.8rem;
+  margin: 12px 0;
+}
+.reminders h2 {
+  font-size: 1.2rem;
+  margin-bottom: 12px;
+}
+.reminders p {
+  margin: 12px 0;
+}
+.reminders a {
+  color: #53c7ef;
+}
+.rem-heading,
+.rem-filters,
+.rem-pager,
+.rem-links,
+.rem-client-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.rem-heading {
+  margin-bottom: 24px;
+}
+.rem-heading > div {
+  margin-right: auto;
+}
+.rem-section {
+  padding: 20px;
+  margin: 18px 0;
+}
+.reminders label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+  margin: 8px 0;
+}
+.reminders input,
+.reminders select,
+.reminders textarea,
+.reminders button {
+  background: #071529;
+  color: #e6edf7;
+  border: 1px solid #38506d;
+  border-radius: 7px;
+  padding: 9px 12px;
+  max-width: 100%;
+}
+.reminders button {
+  cursor: pointer;
+}
+.reminders button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.reminders button[aria-pressed='true'] {
+  border-color: #00c9f0;
+  background: #073756;
+}
+.reminders :focus-visible {
+  outline: 2px solid #25c8e9;
+  outline-offset: 3px;
+}
+.reminders textarea {
+  min-height: 82px;
+  width: 100%;
+}
+.reminders fieldset {
+  border: 0;
+  padding: 0;
+}
+.reminders fieldset button {
+  margin: 8px 8px 0 0;
+}
+.reminders table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+.reminders td,
+.reminders th {
+  padding: 14px 10px;
+  border-bottom: 1px solid #22334c;
+}
+.reminders small {
+  display: block;
+  color: #a6b7cd;
+}
+.rem-pager {
+  margin: 18px 0 0;
+  justify-content: flex-end;
+}
+.rem-error {
+  color: #ffb6bb;
+}
+.rem-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 5px;
+  margin: 15px 0;
+}
+.rem-calendar button {
+  min-height: 82px;
+  text-align: left;
+  padding: 8px;
+}
+.rem-calendar .outside {
+  opacity: 0.55;
+}
+.rem-calendar small {
+  font-size: 0.75rem;
+}
+.rem-agenda {
+  padding: 14px 0;
+  border-bottom: 1px solid #22334c;
+}
+@media (max-width: 640px) {
+  .rem-section {
+    padding: 12px;
+  }
+  .rem-filters label {
+    width: 100%;
+  }
+  .rem-calendar button {
+    min-height: 62px;
+    padding: 5px;
+  }
+  .rem-calendar small {
+    font-size: 0.65rem;
+  }
+  .reminders td {
+    min-width: 115px;
+  }
+}

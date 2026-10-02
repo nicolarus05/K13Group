@@ -210,6 +210,7 @@ model Referencia {
 
 // ─── 10. movimientos_financieros ────────────────────────────────────────────
 model MovimientoFinanciero {
+  recordatorios            Recordatorio[]
   atribucionVerificada     Boolean   @default(false) @map("atribucion_verificada")
   productoIdSnapshot       String?   @map("producto_id_snapshot") @db.Uuid
   servidorIdSnapshot       String?   @map("servidor_id_snapshot") @db.Uuid
@@ -288,6 +289,16 @@ model CategoriaGasto {
 
 // ─── 13. recordatorios ──────────────────────────────────────────────────────
 model Recordatorio {
+  version       Int      @default(1)
+  origen        String   @default("LEGACY") @db.VarChar(20)
+  fechaOriginal DateTime? @map("fecha_original") @db.Date
+  solicitudId   String? @unique @map("solicitud_id") @db.Uuid
+  solicitudHash String? @map("solicitud_hash") @db.VarChar(64)
+  cerradoAt     DateTime? @map("cerrado_at")
+  motivo        String? @db.VarChar(1000)
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
+  movimientoId String? @map("movimiento_id") @db.Uuid
+  movimiento MovimientoFinanciero? @relation(fields: [movimientoId], references: [id])
   id            String   @id @default(uuid()) @db.Uuid
   claveAutomatica String? @unique @map("clave_automatica") @db.VarChar(120)
   clienteId     String   @map("cliente_id") @db.Uuid
@@ -304,6 +315,9 @@ model Recordatorio {
   estado      Estado       @relation("EstadoRecordatorio", fields: [estadoId], references: [id])
 
   @@index([suscripcionId, estadoId])
+  @@index([estadoId, fecha, id])
+  @@index([clienteId, fecha])
+  @@index([movimientoId])
   @@map("recordatorios")
 }
 

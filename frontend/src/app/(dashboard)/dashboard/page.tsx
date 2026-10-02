@@ -494,17 +494,7 @@ export default function DashboardPage() {
                 <small>Hasta los próximos {data.trabajo.diasAviso} días</small>
               </div>
               {data.trabajo.recordatorios.map((row) => (
-                <Link
-                  className="k13-task"
-                  key={row.id}
-                  href={
-                    row.tipo.valor === 'COBRO'
-                      ? '/clientes/' + row.cliente.id
-                      : row.suscripcionId
-                        ? '/suscripciones/' + row.suscripcionId
-                        : '/clientes/' + row.cliente.id
-                  }
-                >
+                <Link className="k13-task" key={row.id} href={'/recordatorios/' + row.id}>
                   <span>
                     {row.cliente.nombre}
                     <small>{row.tipo.etiqueta}</small>
@@ -516,7 +506,8 @@ export default function DashboardPage() {
                 <p className="k13-empty">No hay avisos internos próximos.</p>
               )}
               <p className="k13-panel-footnote">
-                Calendario y envíos externos llegarán en el sprint 10.
+                <Link href="/recordatorios">Gestionar avisos</Link> ·{' '}
+                <Link href="/calendario">Ver calendario</Link>. Solo avisos dentro de la web.
               </p>
             </section>
           </div>

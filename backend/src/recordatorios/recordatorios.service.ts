@@ -69,13 +69,27 @@ export class RecordatoriosService implements OnApplicationBootstrap, OnModuleDes
     if (this.timer) clearInterval(this.timer);
   }
   async close(tx: Prisma.TransactionClient, key: string, completed: boolean, actor: string | null) {
-    const before = await tx.recordatorio.findUnique({ where: { claveAutomatica: key } });
+    const before = await tx.recordatorio.findUnique({
+      where: { claveAutomatica: key },
+      include: { estado: true },
+    });
     if (!before) return;
+    const terminal = ['COMPLETADO', 'CANCELADO'].includes(before.estado.valor);
     const after = await tx.recordatorio.update({
       where: { id: before.id },
       data: {
         claveAutomatica: null,
-        estadoId: await stateId(tx, 'recordatorio_estado', completed ? 'COMPLETADO' : 'CANCELADO'),
+        version: { increment: 1 },
+        ...(terminal
+          ? {}
+          : {
+              cerradoAt: new Date(),
+              estadoId: await stateId(
+                tx,
+                'recordatorio_estado',
+                completed ? 'COMPLETADO' : 'CANCELADO',
+              ),
+            }),
       },
     });
     await audit(
@@ -83,7 +97,7 @@ export class RecordatoriosService implements OnApplicationBootstrap, OnModuleDes
       actor,
       'recordatorios',
       after.id,
-      completed ? 'COMPLETAR' : 'CANCELAR',
+      terminal ? 'LIBERAR_ORIGEN' : completed ? 'COMPLETAR' : 'CANCELAR',
       before,
       after,
     );
@@ -101,6 +115,17 @@ export class RecordatoriosService implements OnApplicationBootstrap, OnModuleDes
     const after = await tx.recordatorio.create({
       data: {
         claveAutomatica: key,
+        origen: 'AUTOMATICO',
+        fechaOriginal: fecha,
+        movimientoId:
+          kind === 'COBRO'
+            ? (
+                await tx.movimientoFinanciero.findFirst({
+                  where: { renovacionId: key.slice(2), suscripcionId: subscription.id },
+                  select: { id: true },
+                })
+              )?.id
+            : undefined,
         suscripcionId: subscription.id,
         clienteId: subscription.clienteId,
         tipoId: await stateId(tx, 'recordatorio_tipo', kind),

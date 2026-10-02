@@ -433,10 +433,30 @@ GET /estadisticas/renovaciones
 GET /estadisticas/productos
 MÓDULO RECORDATORIOS
 GET /recordatorios
+GET /recordatorios/resumen
+GET /recordatorios/calendario
+GET /recordatorios/agenda
+GET /recordatorios/:id
+GET /recordatorios/:id/historial
 POST /recordatorios
-PUT /recordatorios/:id
+POST /recordatorios/:id/editar
 POST /recordatorios/:id/completar
 POST /recordatorios/:id/posponer
+POST /recordatorios/:id/cancelar
+
+Contrato vigente sprint 10: autenticación JWT, GET sin escrituras; detalle y
+resumen con success/data, listas con pagination. Alta requiere solicitudId UUID,
+clienteId UUID, tipo RENOVACION/COBRO/TELEGRAM, fecha YYYY-MM-DD y descripción
+de 3-1000 caracteres; suscripcionId opcional debe pertenecer al cliente.
+TELEGRAM solo etiqueta histórica de contacto interno, nunca realiza un envío.
+Acciones requieren version y motivo de 3-1000 caracteres; posponer añade fecha,
+editar añade descripcion. Fecha posterior a la actual y no pasada. Conflicto 409.
+Lista: page>=1, limit 1-100 (25), search, clienteId, tipo, estado, desde/hasta,
+vista atencion (defecto), hoy, atrasados, proximos, todos (incluye cerrados).
+Calendario y agenda: desde/hasta inclusivos, máximo 62 días, por defecto hoy;
+clienteId, tipo, search por nombre. Agenda paginada; calendario agregado por día.
+Historial paginado con proyección segura, sin credenciales ni claves técnicas.
+
 MÓDULO CONFIGURACIÓN
 GET /configuracion
 PUT /configuracion

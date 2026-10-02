@@ -319,6 +319,12 @@ Cobro
 Telegram
 RN-010.002
 
+Alcance confirmado sprint 10 (02/10/2026): exclusivamente avisos dentro de la
+web, siempre asignados a un cliente. TELEGRAM conserva su código histórico y
+se presenta como Contacto interno; no envía mensajes. Posponer y completar no
+modifican periodos ni registran cobros. Contrato vigente y excepciones en el
+módulo Recordatorios y Calendario.
+
 Un recordatorio completado no podrá volver a estado pendiente.
 
 RN-010.003

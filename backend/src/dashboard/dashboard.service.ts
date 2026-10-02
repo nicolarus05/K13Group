@@ -5,6 +5,7 @@ import { FinanzasService } from '../finanzas/finanzas.service';
 import { FinanceQueryDto } from '../finanzas/finanzas.dto';
 import { businessDay, parseDay, DATE_STATES } from '../suscripciones/subscription-dates';
 import { warningDays } from '../recordatorios/recordatorios.service';
+import { attentionWhere } from '../recordatorios/recordatorios-query';
 import { buildPaginatedResponse } from '../common/helpers/response.helper';
 import { normalizePhone } from '../common/helpers/normalization';
 import { DashboardClientsDto, DashboardQueryDto } from './dashboard.dto';
@@ -205,7 +206,7 @@ export class DashboardService {
           },
         });
         const reminders = await tx.recordatorio.findMany({
-          where: { estado: { valor: 'PENDIENTE' }, fecha: { lte: end } },
+          where: attentionWhere(today, days),
           take: 5,
           orderBy: [{ fecha: 'asc' }, { id: 'asc' }],
           select: {

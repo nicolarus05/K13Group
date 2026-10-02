@@ -1,0 +1,60 @@
+MODELO FUNCIONAL — RECORDATORIOS Y CALENDARIO (SPRINT 10, 02/10/2026)
+
+Decisiones confirmadas
+Avisos solo dentro de la web. Todos están asignados a un cliente.
+Sin Telegram, email, notificaciones push ni importación del XLSX.
+El tipo histórico TELEGRAM se presenta como Contacto interno, sin envío.
+
+Reglas
+Renovaciones: un aviso por suscripción y fecha de fin, desde siete días antes
+(suscripciones.dias_proxima configurable existente, fallback 7). Incluye vencidas.
+No renovar, suscripción suspendida/cancelada o cliente inactivo/borrado excluyen
+el automático de renovación. Varias suscripciones siguen siendo obligaciones
+distintas, aunque correspondan al mismo cliente.
+Cobros: aviso ligado al ingreso pendiente generado por alta/renovación. Requiere
+atención desde la fecha prevista de cobro. La inactividad no elimina la deuda.
+Manual: cliente obligatorio, suscripción opcional coherente con ese cliente;
+tipo, fecha y descripción. Solo la descripción manual puede editarse.
+
+Gestión
+Posponer exige fecha posterior a la de seguimiento actual y no pasada. Conserva
+fecha original, no modifica el vencimiento ni la fecha prevista del ingreso.
+Los POSPUESTO reaparecen al llegar el día, sin escritura desde GET.
+Completar/cancelar no renueva ni registra pago. Conserva histórico y clave del
+automático para que el worker no lo regenere. Cambiar/resolver la obligación
+libera la clave; una anulación real puede originar un aviso nuevo del periodo
+restaurado, sin reabrir el anterior. Acciones con motivo, versión y auditoría.
+Reintento de alta con mismo UUID/usuario/datos no duplica; otro contenido => 409.
+
+Interfaz K13
+/recordatorios: buscador de cliente/descripción, filtros de estado, tipo, fechas,
+atención/hoy/atrasados/próximos/todos; paginación y alta con buscador de clientes.
+/recordatorios/:id: detalle, gestionar, historial paginado y enlaces a cliente,
+suscripción y renovación/cobro. Estados de carga, error, vacío y recarga.
+La edición conserva el borrador y la versión original aunque llegue una lectura
+tardía o cambie el aviso desde otra sesión. Se advierte el conflicto; Recargar
+datos no borra el texto ni actualiza silenciosamente la versión de escritura.
+Descartar borrador y cargar versión actual es una acción explícita; si falla la
+lectura conserva el borrador. Si el aviso ya está cerrado, el borrador permanece
+visible pero Guardar queda deshabilitado. Un guardado correcto limpia el borrador.
+Lista y agenda reajustan su página al reducirse el total, conservando filtros y
+día seleccionado. Si no quedan resultados vuelven a página 1; solo una respuesta
+terminada de la página actual puede reajustarla, nunca una respuesta vieja.
+Campana: número de avisos que requieren atención; no presenta cero si la
+consulta falla. Refresco cada minuto y tras mutaciones. No notificación externa.
+Dashboard: mismo criterio de atención y enlaces a detalle/calendario.
+
+Calendario
+/calendario: mes de 42 celdas de lunes a domingo y agenda diaria paginada,
+navegación mensual, selección de día/tipo y diseño adaptable a móvil.
+Incluye vencimientos futuros aunque aún no tengan aviso, ingresos pendientes
+y tareas manuales abiertas. Une automáticos con su obligación, sin duplicarlos.
+Un aviso POSPUESTO desplaza el evento de seguimiento, mostrando la fecha original.
+Cerrar el aviso no elimina la obligación del calendario: se muestra su estado.
+Al renovarse/cobrarse realmente desaparece la obligación resuelta.
+Fechas civiles Europe/Madrid; rango máximo 62 días y respuesta mensual agregada,
+agenda con límite 100. GET autenticados, sin efectos laterales ni credenciales.
+
+Fuera de alcance
+Envíos externos, tareas sin cliente, recurrencia manual, gestión de configuración
+del sprint 11, exportación y carga real del XLSX.

@@ -127,6 +127,15 @@ Reglas
 Un recordatorio completado no puede volver a pendiente.
 Un recordatorio cancelado no puede reactivarse.
 Posponer cambia únicamente la fecha de ejecución.
+Contrato vigente sprint 10: POSPUESTO conserva su estado hasta la gestión manual
+o cierre del negocio; cuando llega su fecha vuelve a la lista de atención por
+consulta, sin transición escrita ni recreación. Puede volver a posponerse,
+completarse o cancelarse. No se reabren estados terminales.
+Toda acción usa versión optimista y motivo, con auditoría transaccional.
+Completar el aviso no renueva, no cobra y no bloquea servicios externos.
+Renovar/cobrar cierra el automático asociado; anular cancela el cobro pendiente.
+No renovar, suspender/cancelar servicio o inactivar cliente suprime avisos de
+renovación, nunca elimina una deuda. Un vencimiento solo no crea deuda.
 Máquina de Estados – Movimientos Financieros
 Estados
 Estado	Descripción

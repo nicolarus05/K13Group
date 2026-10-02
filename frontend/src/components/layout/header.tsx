@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Bell, LogOut, Menu, UserCircle } from 'lucide-react';
 import { useMe, useLogout } from '@/modules/auth/hooks/use-auth';
+import { useQuery } from '@tanstack/react-query';
+import { reminders } from '@/modules/recordatorios/recordatorios.service';
 const labels: Record<string, string> = {
   dashboard: 'Dashboard',
   clientes: 'Clientes',
@@ -12,10 +14,19 @@ const labels: Record<string, string> = {
   estadisticas: 'Estadísticas',
   catalogos: 'Catálogos',
   importaciones: 'Importaciones',
+  recordatorios: 'Recordatorios',
+  calendario: 'Calendario',
 };
 export function Header({ onMenu }: { onMenu: () => void }) {
   const path = usePathname();
   const { data: user } = useMe();
+  const notices = useQuery({
+    queryKey: ['recordatorios', 'resumen'],
+    queryFn: reminders.summary,
+    enabled: Boolean(user),
+    staleTime: 0,
+    refetchInterval: 60000,
+  });
   const { mutate: logout, isPending } = useLogout();
   return (
     <header className="k13-header">
@@ -28,11 +39,19 @@ export function Header({ onMenu }: { onMenu: () => void }) {
       <div className="k13-header-actions">
         <Link
           className="k13-icon-button"
-          href="/dashboard#trabajo-pendiente"
+          href="/recordatorios"
           aria-label="Ver trabajo pendiente"
           title="Ver trabajo pendiente"
         >
           <Bell size={20} />
+          {!notices.isError && typeof notices.data?.atencion === 'number' && (
+            <span
+              className="k13-notice-count"
+              aria-label={`${notices.data.atencion} avisos requieren atención`}
+            >
+              {notices.data.atencion > 99 ? '99+' : notices.data.atencion}
+            </span>
+          )}
         </Link>
         <span className="k13-user">
           <UserCircle size={28} />
