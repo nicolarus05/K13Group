@@ -220,3 +220,14 @@ datos y archivos generados quedan fuera de los commits. Compose, sintaxis de dev
 y git diff --check correctos. No se han cambiado funcionalidades en este paso;
 se conservan los resultados de pruebas del paso 2, sin repetirlas.
 No se ha hecho push, merge ni despliegue.
+
+## Publicación y planificación del sprint 11
+
+Los commits del entorno y las correcciones se publicaron en GitHub y se integraron
+en `main` mediante el merge `8f631ec`. Esto publica el código, no despliega la web.
+
+La planificación completa del sprint 11, revisada el 8 de octubre de 2026, está en
+[backend/SPRINT11.md](backend/SPRINT11.md) y resumida en el plan general. Incluye
+contratos, datos, tareas, dependencias, API, pruebas y criterios de cierre, con
+restauración desde la web, orden de métodos de pago y parámetros técnicos editables.
+El sprint sigue pendiente de implementación.

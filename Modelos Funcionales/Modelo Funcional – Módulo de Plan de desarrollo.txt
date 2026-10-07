@@ -487,13 +487,31 @@ renovación se realizan desde sus flujos existentes. Sin importar el XLSX.
 Contrato detallado: módulo Recordatorios y Calendario y backend/SPRINT10.md.
 SPRINT 11 – Configuración
 
-Incluye:
+Estado: PLANIFICADO COMPLETO (08/10/2026). Pendiente de implementación.
+Plan detallado y criterios de aceptación: backend/SPRINT11.md.
+Base integrada en main: 8f631ec. Histórico XLSX del sprint 3.5 aplazado.
 
-Configuración general.
-Métodos de pago.
-Categorías.
-Backups.
-Parámetros del sistema.
+11.1 — Contratos, datos y proveedor central de ajustes tipados y versionados.
+11.2 — General y Sistema: nombre/logo, preferencias, umbral, temporizadores y
+       duración de sesión; propagación real a los módulos sin perder borradores.
+11.3 — Reutilizar los seis catálogos, navegación directa, observaciones y
+       relaciones; incluir orden manual de métodos de pago en sus selectores.
+11.4 — Cuenta, contraseña, último acceso, reautenticación y cierre global.
+11.5 — Backups manuales: crear, listar, descargar, eliminar, validar y restaurar
+       desde la web, con proceso independiente, copia previa y rollback probado.
+11.6 — Diagnóstico, historial del módulo, regresiones, operación WSL y documentación.
+
+Secuencia: 11.1 → 11.4 → 11.2 → 11.3 → 11.5 → 11.6, con pruebas por bloque.
+Conservar EUR, español, Europe/Madrid y las reglas anuales/tardías vigentes.
+No duplicar catálogos, importar el XLSX ni modificar importes/fechas históricos.
+Las propuestas numéricas y el diseño técnico están identificados en el plan.
+Automatización de backups, auditoría global y producción continúan en 13/15.
+
+Cierre: todos los ajustes tienen efecto comprobable, auditoría y concurrencia;
+restauración web y recuperación tras fallo demostradas en datos ficticios aislados;
+tipos, lint, builds y regresiones correctos; entorno Windows/WSL saludable.
+La existencia de pantallas o archivos de backup no basta para cerrar el sprint.
+
 SPRINT 12 – Importación y Exportación
 Importación
 Excel.
