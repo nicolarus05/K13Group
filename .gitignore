@@ -41,3 +41,7 @@ Thumbs.db
 
 # Testing
 coverage/
+
+# Exclusiones versionadas del contexto Docker
+!backend/.dockerignore
+!frontend/.dockerignore
