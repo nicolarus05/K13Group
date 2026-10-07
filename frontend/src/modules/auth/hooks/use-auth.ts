@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/components/ui/toast';
 import { authService } from '../services/auth.service';
 import type { LoginFormData } from '../schemas/login.schema';
 
@@ -32,12 +33,14 @@ export function useLogin() {
 }
 
 export function useLogout() {
+  const toast = useToast();
   const router = useRouter();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: () => authService.logout(),
-    onSettled: () => {
+    onError: () => toast.error('No se pudo cerrar la sesión. Inténtalo de nuevo.'),
+    onSuccess: () => {
       queryClient.clear();
       router.push('/login');
       router.refresh();

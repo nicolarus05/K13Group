@@ -69,7 +69,7 @@ const isolated = process.env.TEST_DATABASE_URL;
     const user = await db.usuario.findUniqueOrThrow({ where: { username: 'admin' } });
     cookie =
       'access_token=' +
-      new JwtService().sign({ sub: user.id }, { secret: process.env.JWT_SECRET, expiresIn: '30m' });
+      new JwtService().sign({ sub: user.id, sid: (await db.sesion.create({ data: { usuarioId: user.id, token: 'fixture-access-only', expiresAt: new Date(Date.now() + 3600000) } })).id }, { secret: process.env.JWT_SECRET, expiresIn: '30m' });
     method = (await db.metodoPago.create({ data: { nombre: 'Efectivo finanzas' } })).id;
     category = (await db.categoriaGasto.create({ data: { nombre: 'Hosting finanzas' } })).id;
     states = Object.fromEntries(

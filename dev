@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
+case "${1:-help}" in
+  start) docker compose up -d --wait ;;
+  stop) docker compose stop ;;
+  status) docker compose ps ;;
+  logs) docker compose logs --tail=100 -f ;;
+  backend) shift; docker compose exec backend "$@" ;;
+  frontend) shift; docker compose exec frontend "$@" ;;
+  build-backend)
+    docker compose stop backend
+    trap 'docker compose up -d --wait backend' EXIT
+    docker compose run --rm --no-deps backend npm run build
+    ;;
+  build-frontend)
+    docker compose stop frontend
+    trap 'docker compose up -d frontend' EXIT
+    docker compose run --rm --no-deps -e NODE_ENV=production frontend npm run build
+    ;;
+  test-ui) docker compose up -d --wait frontend; docker compose exec frontend npm run test:ui ;;
+  test-backend) docker compose exec backend npm test -- --runInBand ;;
+  test-integration) docker compose exec backend npm run test:integration ;;
+  migrate) docker compose exec backend npx prisma migrate deploy ;;
+  seed) docker compose exec backend npm run db:seed ;;
+  *) echo 'Uso: ./dev {start|stop|status|logs|backend comando...|frontend comando...|build-backend|build-frontend|test-ui|test-backend|test-integration|migrate|seed}' ;;
+esac

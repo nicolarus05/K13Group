@@ -61,7 +61,7 @@ export class ClientesController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Eliminar cliente (borrado lógico)' })
-  async remove(@Param('id') id: string) {
-    await this.clientesService.remove(id);
+  async remove(@Param('id') id: string, @CurrentUser() user: Usuario) {
+    await this.clientesService.remove(id, user.id);
   }
 }

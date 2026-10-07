@@ -43,7 +43,7 @@ const isolated = process.env.TEST_DATABASE_URL;
     const user = await db.usuario.findUniqueOrThrow({ where: { username: 'admin' } });
     cookie =
       'access_token=' +
-      new JwtService().sign({ sub: user.id }, { secret: process.env.JWT_SECRET, expiresIn: '10m' });
+      new JwtService().sign({ sub: user.id, sid: (await db.sesion.create({ data: { usuarioId: user.id, token: 'fixture-access-only', expiresAt: new Date(Date.now() + 3600000) } })).id }, { secret: process.env.JWT_SECRET, expiresIn: '10m' });
     const estado = await db.estado.findUniqueOrThrow({
       where: { tipo_valor: { tipo: 'cliente', valor: 'ACTIVO' } },
     });
