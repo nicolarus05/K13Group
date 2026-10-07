@@ -105,7 +105,7 @@ export class ClientesService {
         data: { usuarioId, tabla: 'clientes', registroId: cliente.id, accion: 'CREAR' },
       });
       return cliente;
-    });
+    }).catch((error: unknown) => this.writeError(error));
   }
 
   async update(id: string, dto: UpdateClienteDto, usuarioId: string) {
@@ -132,7 +132,7 @@ export class ClientesService {
       // ensureReferencia no debe esperar al catálogo mientras retiene esa fila.
       if (dto.nombre) await lockCatalog(tx, 'referencias');
       const cliente = await tx.cliente.update({
-        where: { id },
+        where: { id, deletedAt: null },
         data: { ...dto, ...(hasTelefono ? { telefono, telefonoNormalizado } : {}) },
         include: INCLUDE_ESTADO,
       });
@@ -141,16 +141,28 @@ export class ClientesService {
         data: { usuarioId, tabla: 'clientes', registroId: id, accion: 'EDITAR' },
       });
       return cliente;
-    });
+    }).catch((error: unknown) => this.writeError(error));
   }
 
   // RN-001.004: borrado lógico
-  async remove(id: string) {
-    await this.findOne(id);
-    return this.prisma.cliente.update({
-      where: { id },
-      data: { deletedAt: new Date() },
+  async remove(id: string, usuarioId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const result = await tx.cliente.updateMany({
+        where: { id, deletedAt: null }, data: { deletedAt: new Date() },
+      });
+      if (!result.count) throw new NotFoundException(`Cliente ${id} no encontrado`);
+      await tx.actividad.create({
+        data: { usuarioId, tabla: 'clientes', registroId: id, accion: 'ELIMINAR' },
+      });
     });
+  }
+
+  private writeError(error: unknown): never {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') throw new ConflictException('Ya existe un cliente con ese teléfono');
+      if (error.code === 'P2025') throw new NotFoundException('Cliente no encontrado');
+    }
+    throw error;
   }
 
   private async ensureReferencia(tx: Prisma.TransactionClient, nombre: string, usuarioId: string) {

@@ -51,7 +51,7 @@ async function main() {
     const apiOrigin = 'http://127.0.0.1:' + app.getHttpServer().address().port;
     const user = await db.usuario.findUniqueOrThrow({ where: { username: 'admin' } });
     const token = new JwtService().sign(
-      { sub: user.id },
+      { sub: user.id, sid: (await db.sesion.create({ data: { usuarioId: user.id, token: 'fixture-access-only', expiresAt: new Date(Date.now() + 3600000) } })).id },
       { secret: process.env.JWT_SECRET, expiresIn: '10m' },
     );
     const state = await db.estado.findUniqueOrThrow({

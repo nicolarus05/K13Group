@@ -161,3 +161,62 @@ el arranque con `./dev start` y el acceso desde Windows al login y Swagger (HTTP
 Esta comprobación cierra la recuperación del entorno, no los pendientes funcionales
 y de seguridad detectados en la revisión del proyecto. No se han cambiado
 dependencias ni realizado commit, push o despliegue.
+
+## Paso 2: correcciones transversales, 7 de octubre de 2026
+
+- Sesiones persistidas en la tabla existente `sesiones`, con identificador en los
+  JWT y hash SHA-256 del refresh token. Access y refresh comprueban sesión vigente
+  y usuario activo. Logout revoca ambos, incluso si el access ha caducado, sin
+  cerrar las sesiones de otros dispositivos. Los tokens anteriores al cambio
+  requieren iniciar sesión de nuevo.
+- La web recupera el access con el refresh, agrupa renovaciones concurrentes y
+  reintenta cada petición una sola vez. Los 401 tardíos reutilizan la renovación
+  completada. Una sesión revocada termina en login; los fallos temporales no
+  cierran sesión. El login permanece accesible con cookies inválidas. Si falla
+  un cierre de sesión manual, muestra un error y permite reintentarlo.
+- La duración de las cookies corresponde a la caducidad del JWT configurado.
+  La sesión tiene vencimiento absoluto (7 días por defecto); refrescar no lo
+  prolonga ni rota el refresh token. Se admiten renovaciones desde varias pestañas.
+- `ThrottlerGuard` global activo: 100 peticiones por minuto por IP y endpoint;
+  login limitado a 10. Devuelve 429 con `Retry-After`. Contadores en memoria de
+  cada proceso; un despliegue con varias réplicas necesitará almacenamiento compartido.
+  Referencia: https://docs.nestjs.com/security/rate-limiting.
+- CORS admite `Idempotency-Key` para confirmar importaciones desde la web.
+- Índice único parcial para teléfonos normalizados de clientes no eliminados.
+  Altas/ediciones concurrentes duplicadas devuelven 409 y un mensaje visible.
+  El borrado lógico y su auditoría son atómicos; si la auditoría falla se revierte
+  el borrado. Un cliente eliminado no puede editarse y su teléfono puede reutilizarse.
+
+Migración `20261007180000_clientes_telefono_unico` aplicada: 12 migraciones al día.
+Normaliza los teléfonos existentes con las mismas reglas que la API. Si encuentra
+duplicados, aborta toda la migración sin fusionar ni borrar clientes. El índice
+parcial se mantiene en SQL, ya que no se expresa como un `@unique` global en Prisma.
+Copia previa de PostgreSQL en
+`/home/nicolas/backups/k13group/antes-paso2-20261007.dump` (fuera del repositorio).
+
+Validación: 18 unitarias y 121 de integración aprobadas; 58 pruebas UI existentes
+y 7 nuevas de autenticación aprobadas. Tipos, lint y compilaciones correctos,
+con los mismos tres avisos previos del backend. Migraciones probadas desde cero
+en esquemas temporales. Recorrido adicional en Chromium con API real: navegación
+sin access, refresh único, logout y rechazo de tokens copiados. No se repitieron
+los cinco scripts E2E de módulos ni la carga opcional; sus fixtures de autenticación
+se han adaptado para crear sesiones persistidas.
+
+El entorno queda arrancado en desarrollo. No se ha importado el histórico,
+actualizado dependencias ni desplegado a producción. Al cerrar el paso 2 aún
+no se había realizado commit/push. Estos cambios no cierran el sprint 13 completo.
+
+## Paso 3: consolidación en Git, 7 de octubre de 2026
+
+Cambios consolidados en la rama `chore/entorno-desarrollo` en dos commits locales:
+
+1. `chore: preparar desarrollo reproducible en Windows y WSL`: Compose local,
+   Dockerfiles con npm ci, Chromium, exclusiones Docker, comandos dev y documentación.
+2. `fix: asegurar sesiones e integridad de clientes`: correcciones del paso 2,
+   migración, pruebas de regresión y contrato de API actualizado.
+
+Se ha revisado el contenido versionado: .env permanece ignorado y las copias de
+datos y archivos generados quedan fuera de los commits. Compose, sintaxis de dev
+y git diff --check correctos. No se han cambiado funcionalidades en este paso;
+se conservan los resultados de pruebas del paso 2, sin repetirlas.
+No se ha hecho push, merge ni despliegue.

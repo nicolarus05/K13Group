@@ -726,3 +726,21 @@ Resumen no admite filtros de entidad. Incompatibles/fechas inválidas: 400;
 sin sesión: 401. Rankings incluyen data/pagination/grafico/totalImporte.
 Campos actuales e históricos separados y cobertura incompleta explícita.
 Contrato completo y límites: backend/SPRINT9.md.
+
+
+ANEXO VIGENTE — Correcciones transversales (07/10/2026)
+
+Autenticación mediante cookies HttpOnly: cada JWT contiene sub y sid. Access y
+refresh exigen sesión persistida no caducada y usuario activo. El refresh se
+conserva como hash en sesiones.token; su duración es absoluta (7 días por defecto).
+POST /auth/refresh emite solo access, sin prolongar la sesión.
+POST /auth/logout funciona con access expirado o solo refresh, revoca la sesión
+y limpia cookies; sin cookies devuelve 200. Una cookie manipulada no permite
+revocar sesiones ajenas. Los JWT anteriores sin sid dejan de ser válidos.
+El login permite 10 peticiones/minuto por IP; el resto de endpoints, 100 por IP
+y endpoint. Exceso: 429 con Retry-After. Contadores en memoria por proceso.
+CORS permite Idempotency-Key desde el origen configurado.
+Clientes: duplicados de teléfono normalizado entre no eliminados devuelven 409
+incluso bajo concurrencia. El borrado lógico devuelve 204, registra ELIMINAR
+con usuario y es transaccional con la auditoría; repetir el borrado devuelve 404.
+Detalles de operación y verificación en DESARROLLO.md, sección Paso 2.

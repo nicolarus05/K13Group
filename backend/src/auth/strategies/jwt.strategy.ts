@@ -1,13 +1,13 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
-import { UsersService } from '../../users/users.service';
+import { AuthService, SessionPayload } from '../auth.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
-  constructor(config: ConfigService, private usersService: UsersService) {
+  constructor(config: ConfigService, private auth: AuthService) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         (req: Request) => req?.cookies?.['access_token'] ?? null,
@@ -17,9 +17,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     });
   }
 
-  async validate(payload: { sub: string }) {
-    const user = await this.usersService.findById(payload.sub);
-    if (!user || !user.activo) throw new UnauthorizedException();
-    return user;
+  async validate(payload: SessionPayload) {
+    return this.auth.validateSession(payload);
   }
 }

@@ -61,6 +61,8 @@ model Cliente {
   recordatorios    Recordatorio[]
   importacionFilas ImportacionFila[]
 
+  // Unicidad solo entre no eliminados: índice parcial clientes_telefono_activo_key
+  // definido en la migración 20261007180000_clientes_telefono_unico.
   @@index([telefonoNormalizado])
   @@map("clientes")
 }

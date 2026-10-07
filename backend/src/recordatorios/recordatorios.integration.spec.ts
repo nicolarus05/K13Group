@@ -81,7 +81,7 @@ const isolated = process.env.TEST_DATABASE_URL;
     actor = (await db.usuario.findUniqueOrThrow({ where: { username: 'admin' } })).id;
     cookie =
       'access_token=' +
-      new JwtService().sign({ sub: actor }, { secret: process.env.JWT_SECRET, expiresIn: '30m' });
+      new JwtService().sign({ sub: actor, sid: (await db.sesion.create({ data: { usuarioId: actor, token: 'fixture-access-only', expiresAt: new Date(Date.now() + 3600000) } })).id }, { secret: process.env.JWT_SECRET, expiresIn: '30m' });
     states = Object.fromEntries(
       (await db.estado.findMany()).map((s) => [s.tipo + '.' + s.valor, s.id]),
     );

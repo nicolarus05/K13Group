@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { isAxiosError } from 'axios';
 import { useRouter } from 'next/navigation';
 import { UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -78,8 +79,10 @@ export default function ClientesPage() {
       }
       setFormOpen(false);
       setEditCliente(undefined);
-    } catch {
-      error('Error al guardar el cliente.');
+    } catch (cause) {
+      error(isAxiosError(cause) && cause.response?.status === 409
+        ? 'Ya existe un cliente con ese teléfono.'
+        : 'Error al guardar el cliente.');
     }
   }
 

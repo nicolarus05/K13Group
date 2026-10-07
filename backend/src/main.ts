@@ -4,6 +4,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import * as cookieParser from 'cookie-parser';
 import helmet from 'helmet';
+import { corsOptions } from './common/cors-options';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -18,13 +19,7 @@ async function bootstrap() {
   // Seguridad
   // Helmet debe ir antes de CORS para no bloquear las cabeceras CORS
   app.use(cookieParser());
-  app.enableCors({
-    origin: config.get('FRONTEND_URL', 'http://localhost:3000'),
-    credentials: true,
-    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Cookie'],
-    exposedHeaders: ['Set-Cookie'],
-  });
+  app.enableCors(corsOptions(config.get('FRONTEND_URL', 'http://localhost:3000')));
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
   // Validación global de DTOs
