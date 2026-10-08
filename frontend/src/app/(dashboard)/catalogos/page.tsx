@@ -1,6 +1,10 @@
 'use client';
+import { useListQuery } from '@/modules/configuracion/preferences';
 
-import { useRef, useState, type FormEvent } from 'react';
+import { Suspense, useRef, useState, type FormEvent } from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { PaymentOrder, ReferenceSummary } from '@/modules/configuracion/catalog-extras';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,13 +31,23 @@ const selectClass =
 const isActive = (row: CatalogRecord) => row.activo && !row.deletedAt;
 const money = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' });
 
-export default function CatalogosPage() {
-  const [kind, setKind] = useState<CatalogKind>('productos');
+export default function Page() {
+  return (
+    <Suspense fallback={<p>Cargando catálogos…</p>}>
+      <CatalogosPage />
+    </Suspense>
+  );
+}
+function CatalogosPage() {
+  const params = useSearchParams();
+  const kind = tabs.find((t) => t.kind === params.get('tab'))?.kind ?? 'productos';
+  const setKind = (kind: CatalogKind) =>
+    window.history.pushState(null, '', `/catalogos?tab=${kind}`);
   return (
     <div className="mx-auto max-w-7xl space-y-5">
       <header>
-        <h1 className="text-xl font-semibold text-text-main">Catálogos</h1>
-        <p className="mt-1 text-sm text-text-secondary">
+        <h1 className="text-text-main text-xl font-semibold">Catálogos</h1>
+        <p className="text-text-secondary mt-1 text-sm">
           Gestiona las aplicaciones, precios y opciones de tu negocio.
         </p>
       </header>
@@ -49,6 +63,7 @@ export default function CatalogosPage() {
           </Button>
         ))}
       </nav>
+      {kind === 'metodos-pago' && <PaymentOrder />}
       <CatalogPanel key={kind} kind={kind} />
     </div>
   );
@@ -56,10 +71,13 @@ export default function CatalogosPage() {
 
 function CatalogPanel({ kind }: { kind: CatalogKind }) {
   const client = useQueryClient();
-  const [query, setQuery] = useState<CatalogQuery>({
+  const params = useSearchParams();
+  const [query, setQuery] = useListQuery<CatalogQuery>({
     page: 1,
-    limit: 25,
     estado: 'activo',
+    ...(kind === 'tarifas' && params.get('productoId')
+      ? { productoId: params.get('productoId')! }
+      : {}),
     sort: 'nombre',
     order: 'asc',
   });
@@ -104,7 +122,7 @@ function CatalogPanel({ kind }: { kind: CatalogKind }) {
           value={query.search ?? ''}
           onChange={(event) => filter({ search: event.target.value })}
         />
-        <label className="space-y-1 text-sm text-text-secondary">
+        <label className="text-text-secondary space-y-1 text-sm">
           Estado
           <select
             aria-label="Estado"
@@ -117,9 +135,10 @@ function CatalogPanel({ kind }: { kind: CatalogKind }) {
             <option value="todos">Todos</option>
           </select>
         </label>
-        <label className="space-y-1 text-sm text-text-secondary">
+        <label className="text-text-secondary space-y-1 text-sm">
           Orden
           <select
+            disabled={kind === 'metodos-pago'}
             aria-label="Orden"
             className={selectClass}
             value={`${query.sort}:${query.order}`}
@@ -134,7 +153,7 @@ function CatalogPanel({ kind }: { kind: CatalogKind }) {
           </select>
         </label>
         {kind === 'tarifas' && (
-          <label className="space-y-1 text-sm text-text-secondary">
+          <label className="text-text-secondary space-y-1 text-sm">
             Producto
             <select
               aria-label="Producto"
@@ -153,17 +172,17 @@ function CatalogPanel({ kind }: { kind: CatalogKind }) {
         )}
       </div>
       {notice && (
-        <p role="status" className="text-sm text-success">
+        <p role="status" className="text-success text-sm">
           {notice}
         </p>
       )}
       {failure && (
-        <p role="alert" className="text-sm text-danger">
+        <p role="alert" className="text-danger text-sm">
           {failure}
         </p>
       )}
       {products.isError && (
-        <p role="alert" className="text-sm text-danger">
+        <p role="alert" className="text-danger text-sm">
           {catalogError(products.error)}{' '}
           <Button variant="ghost" onClick={() => void products.refetch()}>
             Reintentar productos
@@ -209,7 +228,7 @@ function CatalogPanel({ kind }: { kind: CatalogKind }) {
             ) : (
               <>
                 {!queryResult.data.data.length && (
-                  <p className="py-8 text-center text-text-secondary">
+                  <p className="text-text-secondary py-8 text-center">
                     No hay registros para estos filtros. Puedes crear uno desde el formulario.
                   </p>
                 )}
@@ -217,24 +236,33 @@ function CatalogPanel({ kind }: { kind: CatalogKind }) {
                   {queryResult.data.data.map((row) => (
                     <article
                       key={row.id}
-                      className="flex flex-wrap items-center justify-between gap-3 rounded-input border border-hover p-3"
+                      className="rounded-input border-hover flex flex-wrap items-center justify-between gap-3 border p-3"
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="break-words font-medium text-text-main">{row.nombre}</p>
-                        <p className="break-words text-sm text-text-secondary">
+                        <p className="text-text-main font-medium break-words">{row.nombre}</p>
+                        <p className="text-text-secondary text-sm break-words">
                           {kind === 'tarifas'
                             ? `${row.producto?.nombre} · 12 meses · ${money.format(Number(row.precio))}`
                             : (row.descripcion ?? row.observaciones ?? '')}
                         </p>
+                        {kind === 'referencias' && <ReferenceSummary id={row.id} />}
+                        {kind === 'productos' && (
+                          <Link
+                            className="text-primary underline"
+                            href={`/catalogos?tab=tarifas&productoId=${row.id}`}
+                          >
+                            Ver tarifas
+                          </Link>
+                        )}
                         {kind === 'metodos-pago' && (
-                          <p className="text-sm text-text-secondary">
+                          <p className="text-text-secondary text-sm">
                             {row.esGratuito
                               ? 'Gratuito · sin movimiento monetario'
                               : 'Cobro monetario'}
                           </p>
                         )}
                         {kind === 'tarifas' && row.producto && !isActive(row.producto) && (
-                          <p className="text-xs text-warning">
+                          <p className="text-warning text-xs">
                             Producto inactivo: tarifa no disponible para nuevas asignaciones.
                           </p>
                         )}
@@ -331,7 +359,7 @@ function CatalogForm({
       return;
     }
     if (kind === 'productos') payload.descripcion = description;
-    if (kind === 'referencias') payload.observaciones = description;
+    if (kind === 'referencias' || kind === 'servidores') payload.observaciones = description;
     if (kind === 'metodos-pago') payload.esGratuito = free;
     if (kind === 'tarifas') {
       if (!productId || !price || Number(price) <= 0) {
@@ -371,7 +399,7 @@ function CatalogForm({
               value={name}
               onChange={(event) => setName(event.target.value)}
             />
-            {(kind === 'productos' || kind === 'referencias') && (
+            {(kind === 'productos' || kind === 'referencias' || kind === 'servidores') && (
               <Input
                 label={kind === 'productos' ? 'Descripción' : 'Observaciones'}
                 maxLength={2000}
@@ -381,7 +409,7 @@ function CatalogForm({
             )}
             {kind === 'tarifas' && (
               <>
-                <label className="block space-y-1 text-sm text-text-secondary">
+                <label className="text-text-secondary block space-y-1 text-sm">
                   Producto
                   <select
                     aria-label="Producto"
@@ -413,9 +441,9 @@ function CatalogForm({
                   value={price}
                   onChange={(event) => setPrice(event.target.value)}
                 />
-                <p className="text-sm text-text-secondary">Duración: 12 meses.</p>
+                <p className="text-text-secondary text-sm">Duración: 12 meses.</p>
                 {!item && !activeProducts.length && (
-                  <p className="text-sm text-warning">
+                  <p className="text-warning text-sm">
                     Crea o activa un producto para añadir su tarifa.
                   </p>
                 )}
@@ -433,7 +461,7 @@ function CatalogForm({
             )}
           </fieldset>
           {error && (
-            <p role="alert" className="text-sm text-danger">
+            <p role="alert" className="text-danger text-sm">
               {error}
             </p>
           )}

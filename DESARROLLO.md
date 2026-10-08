@@ -231,3 +231,15 @@ La planificación completa del sprint 11, revisada el 8 de octubre de 2026, est�
 contratos, datos, tareas, dependencias, API, pruebas y criterios de cierre, con
 restauración desde la web, orden de métodos de pago y parámetros técnicos editables.
 El sprint sigue pendiente de implementación.
+
+## Configuración y recuperación
+
+La administración está disponible en `/configuracion`. El servicio Docker
+`recovery` ejecuta las copias y restauraciones manuales con herramientas PostgreSQL
+16, dentro de WSL. Configurar `RECOVERY_SECRET` en `.env` con una clave aleatoria
+independiente (por ejemplo, `openssl rand -hex 32`) y conservarla junto con los
+secretos de infraestructura.
+
+Consulta [la guía operativa de recuperación](recovery/README.md) para el uso desde
+la web, los comandos de emergencia, la conservación externa y las pruebas aisladas.
+No se ejecuta una restauración sobre la base de trabajo como parte de las pruebas.

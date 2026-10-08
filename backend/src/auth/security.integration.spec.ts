@@ -63,6 +63,8 @@ const isolated = process.env.TEST_DATABASE_URL;
   });
 
   it('persiste solo el hash del refresh y alinea cookies con la duración configurada', async () => {
+    // Sin ajuste persistido se mantiene el valor inicial del entorno.
+    await db.configuracion.deleteMany({ where: { clave: 'seguridad.access_minutos' } });
     app.get(ConfigService).set('JWT_EXPIRES_IN', '2m');
     const response = await api()
       .post('/api/v1/auth/login')

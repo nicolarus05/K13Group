@@ -80,9 +80,12 @@ test('recupera la navegación con solo refresh y agrupa los 401 concurrentes', a
 
 test('un 401 tardío reutiliza la renovación ya completada', async (t) => {
   const { page, calls } = await fixture(t, { late401: true });
+  const loaded = page.waitForResponse(
+    (r) => r.url().includes('/api/v1/clientes') && r.status() === 200,
+  );
   await page.goto(origin + '/clientes');
   await page.getByLabel('0 avisos requieren atención').waitFor();
-  await page.waitForResponse((r) => r.url().includes('/api/v1/clientes') && r.status() === 200);
+  await loaded;
   assert.equal(calls.refresh, 1);
 });
 
@@ -97,8 +100,11 @@ test('refresh revocado limpia cookies y lleva al login sin bucle', async (t) => 
 
 test('un fallo temporal del refresh no cierra la sesión ni redirige', async (t) => {
   const { page, calls } = await fixture(t, { refreshStatus: 503 });
+  const failed = page.waitForResponse(
+    (r) => r.url().endsWith('/auth/refresh') && r.status() === 503,
+  );
   await page.goto(origin + '/clientes');
-  await page.waitForResponse((r) => r.url().endsWith('/auth/refresh') && r.status() === 503);
+  await failed;
   assert.equal(calls.logout, 0);
   assert.equal(new URL(page.url()).pathname, '/clientes');
 });

@@ -1,4 +1,9 @@
 'use client';
+import {
+  usePreferences,
+  useDateLabel,
+  useRefreshInterval,
+} from '@/modules/configuracion/preferences';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -18,7 +23,7 @@ import {
 } from 'lucide-react';
 import { dashboard } from '@/modules/dashboard/dashboard.service';
 import { Kpi, FinanceChart } from '@/modules/dashboard/dashboard-widgets';
-import { todayMadrid, dateLabel } from '@/modules/suscripciones/suscripciones.service';
+import { todayMadrid } from '@/modules/suscripciones/suscripciones.service';
 import { money } from '@/modules/renovaciones/renovaciones.service';
 import { catalogError } from '@/modules/catalogos/services/catalogos.service';
 import { ExpenseDialog } from '@/modules/finanzas/expense-dialog';
@@ -36,6 +41,10 @@ function relativePeriod(preset: string, today: string) {
 }
 
 export default function DashboardPage() {
+  const brand = usePreferences()['negocio.nombre'];
+  const dateLabel = useDateLabel();
+  const refreshInterval = useRefreshInterval();
+
   const [today, setToday] = useState(todayMadrid);
   const [dates, setDates] = useState(() => relativePeriod('mes', today));
   const [customRange, setCustomRange] = useState(dates),
@@ -69,13 +78,13 @@ export default function DashboardPage() {
   const report = useQuery({
     queryKey: ['dashboard', 'summary', range],
     queryFn: () => dashboard.get(range),
-    refetchInterval: expense || client ? false : 60000,
+    refetchInterval: expense || client ? false : refreshInterval,
   });
   const clients = useQuery({
     queryKey: ['dashboard', 'clients', page, search, estado],
     queryFn: () =>
       dashboard.clients({ page, search: search || undefined, estado: estado || undefined }),
-    refetchInterval: client ? false : 60000,
+    refetchInterval: client ? false : refreshInterval,
   });
   useEffect(() => {
     if (clients.isSuccess && !clients.isFetching && clients.data.pagination.page === page) {
@@ -114,7 +123,7 @@ export default function DashboardPage() {
     <div className="k13-dashboard">
       <div className="k13-dashboard-heading">
         <div>
-          <p className="k13-eyebrow">K13GROUP · CENTRO DE CONTROL</p>
+          <p className="k13-eyebrow">{brand} · CENTRO DE CONTROL</p>
           <h1>Dashboard</h1>
           <p>Resumen general de tu negocio</p>
         </div>

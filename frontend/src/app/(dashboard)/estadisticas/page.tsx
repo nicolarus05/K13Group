@@ -1,5 +1,12 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useConfiguredPage } from '@/modules/configuracion/preferences';
+import {
+  usePreferences,
+  useDateLabel,
+  useRefreshInterval,
+} from '@/modules/configuracion/preferences';
+import { useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { BarChart2, RefreshCw } from 'lucide-react';
 import {
@@ -11,7 +18,7 @@ import {
 } from '@/modules/estadisticas/estadisticas.service';
 import { Series, Bars } from '@/modules/estadisticas/charts';
 import { CatalogFilter } from '@/modules/estadisticas/catalog-filter';
-import { todayMadrid, dateLabel } from '@/modules/suscripciones/suscripciones.service';
+import { todayMadrid } from '@/modules/suscripciones/suscripciones.service';
 import { money } from '@/modules/renovaciones/renovaciones.service';
 import { catalogError } from '@/modules/catalogos/services/catalogos.service';
 import '../dashboard/dashboard.css';
@@ -40,7 +47,19 @@ const percent = (value: string | null) =>
     ? 'Sin base de comparación'
     : Number(value).toLocaleString('es-ES', { maximumFractionDigits: 1 }) +
       ' % vs periodo anterior';
-export default function StatisticsPage() {
+export default function Page() {
+  return (
+    <Suspense fallback={<p>Cargando estadísticas…</p>}>
+      <StatisticsPage />
+    </Suspense>
+  );
+}
+function StatisticsPage() {
+  const params = useSearchParams();
+  const brand = usePreferences()['negocio.nombre'];
+  const dateLabel = useDateLabel();
+  const refreshInterval = useRefreshInterval();
+
   const cache = useQueryClient();
   const [today, setToday] = useState(todayMadrid),
     [section, setSection] = useState<Section>('resumen'),
@@ -49,7 +68,7 @@ export default function StatisticsPage() {
   const [custom, setCustom] = useState<Range>(() => relative('mes', today)),
     [draft, setDraft] = useState(custom),
     [error, setError] = useState(''),
-    [page, setPage] = useState(1);
+    [page, setPage, pageLimit] = useConfiguredPage();
   const [filters, setFilters] = useState<Partial<Record<Section, Filters>>>({}),
     [ready, setReady] = useState(false);
   const range = preset === 'personalizado' ? custom : relative(preset, today),
@@ -90,8 +109,15 @@ export default function StatisticsPage() {
         if (saved.filters && typeof saved.filters === 'object') setFilters(saved.filters);
       }
     } catch {}
+    const reference = params.get('referenciaId');
+    if (reference) {
+      setSection('referencias');
+      setPreset('mes');
+      setFilters({ referencias: { referenciaId: reference } });
+      setPage(1);
+    }
     setReady(true);
-  }, []);
+  }, [params, setPage]);
   useEffect(() => {
     if (ready)
       try {
@@ -120,11 +146,12 @@ export default function StatisticsPage() {
   };
   const rangeError = validate(range);
   const report = useQuery({
-    queryKey: ['estadisticas', section, range, grain, page, filter],
-    queryFn: () => stats.get(section, { ...range, agrupacion: grain, page, ...filter }),
+    queryKey: ['estadisticas', section, range, grain, page, pageLimit, filter],
+    queryFn: () =>
+      stats.get(section, { ...range, agrupacion: grain, page, limit: pageLimit, ...filter }),
     enabled: ready && !rangeError,
     staleTime: 0,
-    refetchInterval: 60000,
+    refetchInterval: refreshInterval,
   });
   const data = rangeError ? undefined : report.data;
   useEffect(() => {
@@ -136,7 +163,7 @@ export default function StatisticsPage() {
       page > Math.max(1, p.totalPages)
     )
       setPage(Math.max(1, p.totalPages));
-  }, [report.data, report.isSuccess, report.isFetching, page]);
+  }, [report.data, report.isSuccess, report.isFetching, page, setPage]);
   const changeFilter = (key: keyof Filters, value: string) => {
     const next = { ...filter };
     if (value) next[key] = value;
@@ -160,7 +187,7 @@ export default function StatisticsPage() {
     <div className="k13-dashboard stats-page">
       <div className="k13-dashboard-heading">
         <div>
-          <p className="k13-eyebrow">K13GROUP · ANÁLISIS DEL NEGOCIO</p>
+          <p className="k13-eyebrow">{brand} · ANÁLISIS DEL NEGOCIO</p>
           <h1>Estadísticas</h1>
           <p>Datos registrados, comparativas claras y decisiones informadas.</p>
         </div>

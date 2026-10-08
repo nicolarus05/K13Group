@@ -1,0 +1,92 @@
+# Instalación ficticia sin puertos publicados ni volúmenes de datos de desarrollo.
+services:
+  permissions:
+    image: postgres:16-alpine
+    user: '0:0'
+    entrypoint: ['sh', '-c', 'chown 1000:1000 /recovery /assets']
+    volumes:
+      - test_recovery:/recovery
+      - test_assets:/assets
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: k13_sprint11_test
+      POSTGRES_USER: fixture
+      POSTGRES_PASSWORD: fixture-test-only
+    tmpfs: /var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U fixture -d k13_sprint11_test']
+      interval: 2s
+      retries: 30
+  web:
+    image: k13group-frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001/api/v1
+      NODE_ENV: development
+    volumes:
+      - ../frontend:/app
+      - frontend_modules:/app/node_modules:ro
+      - test_next:/app/.next
+    command: npm run dev
+    healthcheck:
+      test: ['CMD', 'node', '-e', "fetch('http://localhost:3000/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      retries: 40
+  api:
+    user: '1000:1000'
+    image: k13group-backend
+    # API y navegador comparten localhost; cookies y CORS reales, sin interceptar.
+    network_mode: service:web
+    depends_on:
+      permissions: {condition: service_completed_successfully}
+      db: {condition: service_healthy}
+      web: {condition: service_started}
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://fixture:fixture-test-only@db:5432/k13_sprint11_test
+      JWT_SECRET: sprint11-isolated-access-only
+      JWT_REFRESH_SECRET: sprint11-isolated-refresh-only
+      JWT_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+      FRONTEND_URL: http://localhost:3000
+      RECOVERY_DIR: /recovery
+      ASSET_DIR: /assets
+      RECOVERY_SECRET: sprint11-isolated-recovery-only
+    volumes:
+      - ../backend:/app
+      - backend_modules:/app/node_modules:ro
+      - test_recovery:/recovery
+      - test_assets:/assets
+    command: ['sh', '-c', 'npx prisma migrate deploy && npm run db:seed && node dist/src/main']
+    healthcheck:
+      test: ['CMD', 'node', '-e', "fetch('http://localhost:3001/api/docs').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      retries: 40
+  worker:
+    build: .
+    depends_on:
+      permissions: {condition: service_completed_successfully}
+      db: {condition: service_healthy}
+    environment:
+      PGHOST: db
+      PGUSER: fixture
+      PGPASSWORD: fixture-test-only
+      PGDATABASE: k13_sprint11_test
+      RECOVERY_SECRET: sprint11-isolated-recovery-only
+    volumes:
+      - test_recovery:/recovery
+      - test_assets:/assets
+    healthcheck:
+      test: ['CMD', 'python3', '-c', "import os,time; assert time.time()-os.stat('/recovery/heartbeat').st_mtime<15"]
+      interval: 5s
+      retries: 20
+volumes:
+  frontend_modules:
+    external: true
+    name: k13group_frontend_node_modules
+  backend_modules:
+    external: true
+    name: k13group_backend_node_modules
+  test_next:
+  test_recovery:
+  test_assets:

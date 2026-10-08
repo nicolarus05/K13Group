@@ -13,6 +13,7 @@ export interface CatalogRecord {
   duracionMeses?: number;
   precio?: Prisma.Decimal;
   producto?: { id: string; nombre: string; activo: boolean; deletedAt: Date | null };
+  orden?: number;
   esGratuito?: boolean;
 }
 export interface CatalogData {
@@ -23,6 +24,7 @@ export interface CatalogData {
   productoId?: string;
   duracionMeses?: number;
   precio?: number;
+  orden?: number;
   esGratuito?: boolean;
   deletedAt?: Date | null;
 }
@@ -98,8 +100,13 @@ export function catalogRepository(
       };
     case 'metodos-pago':
       return {
-        list: (where, skip, take, orderBy) =>
-          tx.metodoPago.findMany({ where, skip, take, orderBy }),
+        list: (where, skip, take, _orderBy) =>
+          tx.metodoPago.findMany({
+            where,
+            skip,
+            take,
+            orderBy: [{ orden: 'asc' }, { nombre: 'asc' }, { id: 'asc' }],
+          }),
         count: (where) => tx.metodoPago.count({ where }),
         get: (id) => tx.metodoPago.findUnique({ where: { id } }),
         create: (data) => tx.metodoPago.create({ data }),

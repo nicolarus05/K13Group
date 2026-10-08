@@ -1,4 +1,5 @@
 'use client';
+import { useConfiguredPage } from '@/modules/configuracion/preferences';
 
 import { useState } from 'react';
 import { isAxiosError } from 'axios';
@@ -26,12 +27,12 @@ export default function ClientesPage() {
   const { success, error } = useToast();
 
   const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
+  const [page, setPage, pageLimit] = useConfiguredPage();
   const [formOpen, setFormOpen] = useState(false);
   const [editCliente, setEditCliente] = useState<Cliente | undefined>();
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const { data, isLoading } = useClientes({ page, limit: 25, search: search || undefined });
+  const { data, isLoading } = useClientes({ page, limit: pageLimit, search: search || undefined });
   const createMutation = useCreateCliente();
   const updateMutation = useUpdateCliente(editCliente?.id ?? '');
   const deleteMutation = useDeleteCliente();
@@ -51,14 +52,21 @@ export default function ClientesPage() {
           <Button
             size="sm"
             variant="secondary"
-            onClick={(e) => { e.stopPropagation(); setEditCliente(r); setFormOpen(true); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditCliente(r);
+              setFormOpen(true);
+            }}
           >
             Editar
           </Button>
           <Button
             size="sm"
             variant="danger"
-            onClick={(e) => { e.stopPropagation(); setDeleteId(r.id); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeleteId(r.id);
+            }}
           >
             Eliminar
           </Button>
@@ -80,9 +88,11 @@ export default function ClientesPage() {
       setFormOpen(false);
       setEditCliente(undefined);
     } catch (cause) {
-      error(isAxiosError(cause) && cause.response?.status === 409
-        ? 'Ya existe un cliente con ese teléfono.'
-        : 'Error al guardar el cliente.');
+      error(
+        isAxiosError(cause) && cause.response?.status === 409
+          ? 'Ya existe un cliente con ese teléfono.'
+          : 'Error al guardar el cliente.',
+      );
     }
   }
 
@@ -102,8 +112,13 @@ export default function ClientesPage() {
     <div className="space-y-5">
       {/* Cabecera */}
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-text-main">Clientes</h1>
-        <Button onClick={() => { setEditCliente(undefined); setFormOpen(true); }}>
+        <h1 className="text-text-main text-xl font-semibold">Clientes</h1>
+        <Button
+          onClick={() => {
+            setEditCliente(undefined);
+            setFormOpen(true);
+          }}
+        >
           <UserPlus className="h-4 w-4" />
           Nuevo cliente
         </Button>
@@ -114,7 +129,10 @@ export default function ClientesPage() {
         <Input
           placeholder="Buscar por nombre, teléfono o email…"
           value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
         />
       </div>
 
@@ -129,7 +147,7 @@ export default function ClientesPage() {
           emptyDescription="Crea el primer cliente pulsando el botón superior."
         />
         {data && data.pagination.totalPages > 1 && (
-          <div className="border-t border-hover px-4">
+          <div className="border-hover border-t px-4">
             <Pagination
               page={data.pagination.page}
               totalPages={data.pagination.totalPages}
@@ -144,7 +162,10 @@ export default function ClientesPage() {
       {/* Modal crear / editar */}
       <ClienteFormModal
         open={formOpen}
-        onClose={() => { setFormOpen(false); setEditCliente(undefined); }}
+        onClose={() => {
+          setFormOpen(false);
+          setEditCliente(undefined);
+        }}
         onSubmit={handleSubmit}
         cliente={editCliente}
         isLoading={createMutation.isPending || updateMutation.isPending}

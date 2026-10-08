@@ -1,5 +1,7 @@
 'use client';
 import Image from 'next/image';
+import { usePreferences } from '@/modules/configuracion/preferences';
+import { api } from '@/lib/api';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -19,6 +21,7 @@ import {
 } from 'lucide-react';
 const logo = '/LogoK13GROUP.jpg';
 const items = [
+  { label: 'Configuración', href: '/configuracion', icon: Settings },
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Clientes', href: '/clientes', icon: Users },
   { label: 'Suscripciones', href: '/suscripciones', icon: CreditCard },
@@ -40,6 +43,9 @@ export function Sidebar({
   onNavigate?: () => void;
 }) {
   const path = usePathname();
+  const prefs = usePreferences();
+  const customLogo = prefs['negocio.logo_asset_id'];
+  const brand = prefs['negocio.nombre'];
   return (
     <aside
       className={'k13-sidebar' + (collapsed ? ' is-collapsed' : '')}
@@ -48,10 +54,21 @@ export function Sidebar({
       <Link
         href="/dashboard"
         className="k13-brand"
-        aria-label="K13Group · Inicio"
+        aria-label={`${brand} · Inicio`}
         onClick={onNavigate}
       >
-        <Image src={logo} alt="K13Group" width={158} height={158} priority sizes="158px" />
+        {customLogo ? (
+          <Image
+            unoptimized
+            src={`${api.defaults.baseURL}/configuracion/logo/${customLogo}`}
+            alt={brand}
+            width={158}
+            height={158}
+          />
+        ) : (
+          <Image src={logo} alt={brand} width={158} height={158} priority sizes="158px" />
+        )}
+        {!collapsed && <span>{brand}</span>}
       </Link>
       <nav aria-label="Navegación principal">
         {items.map(({ label, href, icon: Icon }) => (
@@ -68,15 +85,6 @@ export function Sidebar({
             <span>{label}</span>
           </Link>
         ))}
-        {!collapsed && (
-          <div className="k13-nav-future">
-            <small>PRÓXIMAMENTE</small>
-            <span>
-              <Settings size={18} />
-              Configuración
-            </span>
-          </div>
-        )}
       </nav>
       {onCollapse && (
         <button

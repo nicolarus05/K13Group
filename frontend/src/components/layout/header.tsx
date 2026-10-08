@@ -1,4 +1,5 @@
 'use client';
+import { useRefreshInterval } from '@/modules/configuracion/preferences';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Bell, LogOut, Menu, UserCircle } from 'lucide-react';
@@ -6,6 +7,7 @@ import { useMe, useLogout } from '@/modules/auth/hooks/use-auth';
 import { useQuery } from '@tanstack/react-query';
 import { reminders } from '@/modules/recordatorios/recordatorios.service';
 const labels: Record<string, string> = {
+  configuracion: 'Configuración',
   dashboard: 'Dashboard',
   clientes: 'Clientes',
   suscripciones: 'Suscripciones',
@@ -18,6 +20,8 @@ const labels: Record<string, string> = {
   calendario: 'Calendario',
 };
 export function Header({ onMenu }: { onMenu: () => void }) {
+  const refreshInterval = useRefreshInterval();
+
   const path = usePathname();
   const { data: user } = useMe();
   const notices = useQuery({
@@ -25,7 +29,7 @@ export function Header({ onMenu }: { onMenu: () => void }) {
     queryFn: reminders.summary,
     enabled: Boolean(user),
     staleTime: 0,
-    refetchInterval: 60000,
+    refetchInterval: refreshInterval,
   });
   const { mutate: logout, isPending } = useLogout();
   return (

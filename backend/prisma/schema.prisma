@@ -185,6 +185,7 @@ model Tarifa {
 
 // ─── 8. servidores ──────────────────────────────────────────────────────────
 model Servidor {
+  observaciones String?
   id        String    @id @default(uuid()) @db.Uuid
   nombre    String    @unique @db.VarChar(100)
   activo    Boolean   @default(true)
@@ -264,6 +265,7 @@ model MovimientoFinanciero {
 
 // ─── 11. metodos_pago ───────────────────────────────────────────────────────
 model MetodoPago {
+  orden     Int       @default(0)
   id        String    @id @default(uuid()) @db.Uuid
   nombre    String    @unique @db.VarChar(100)
   activo    Boolean   @default(true)

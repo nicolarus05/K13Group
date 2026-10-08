@@ -1,3 +1,5 @@
+import { acquireOperation } from '../recovery/maintenance';
+import { readSettings, warningDays as configuredWarningDays } from '../configuracion/settings';
 import {
   BadRequestException,
   ConflictException,
@@ -34,6 +36,7 @@ type StateContext = {
 export class SuscripcionesService implements OnApplicationBootstrap, OnModuleDestroy {
   private timer?: ReturnType<typeof setInterval>;
   private running = false;
+  private lastRun = 0;
   private stopping = false;
   private readonly logger = new Logger(SuscripcionesService.name);
   constructor(
@@ -46,15 +49,22 @@ export class SuscripcionesService implements OnApplicationBootstrap, OnModuleDes
     const tick = async () => {
       if (this.running) return;
       this.running = true;
+      let release: (() => Promise<void>) | null = null;
       try {
+        release = await acquireOperation();
+        if (!release) return;
+        const minutes = (await readSettings(this.prisma))['sistema.intervalo_comprobacion_minutos'];
+        if (Date.now() - this.lastRun < minutes * 60000) return;
         await this.syncStates();
+        this.lastRun = Date.now();
       } catch {
         this.logger.error('No se pudieron actualizar los estados de suscripción; se reintentará.');
       } finally {
+        await release?.();
         this.running = false;
       }
     };
-    this.timer = setInterval(() => void tick(), 60_000);
+    this.timer = setInterval(() => void tick(), 10_000);
     this.timer.unref();
     void tick();
   }
@@ -69,11 +79,7 @@ export class SuscripcionesService implements OnApplicationBootstrap, OnModuleDes
     );
   }
   private async warningDays(tx: Prisma.TransactionClient) {
-    const config = await tx.configuracion.findUnique({
-      where: { clave: 'suscripciones.dias_proxima' },
-    });
-    const value = config ? Number(config.valor) : 7;
-    return Number.isInteger(value) && value >= 1 && value <= 365 ? value : 7;
+    return configuredWarningDays(tx);
   }
   private async stateId(tx: Prisma.TransactionClient, valor: string) {
     return (

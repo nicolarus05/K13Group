@@ -1,6 +1,8 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
+import { RecoveryModule } from './recovery/recovery.module';
+import { MaintenanceMiddleware, OperationCompletionInterceptor } from './recovery/maintenance';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './auth/auth.module';
@@ -23,7 +25,10 @@ import { MetodosPagoModule } from './metodos-pago/metodos-pago.module';
 import { CategoriasGastoModule } from './categorias-gasto/categorias-gasto.module';
 
 @Module({
-  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
+  providers: [
+    { provide: APP_INTERCEPTOR, useClass: OperationCompletionInterceptor },
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
@@ -41,6 +46,7 @@ import { CategoriasGastoModule } from './categorias-gasto/categorias-gasto.modul
     DashboardModule,
     EstadisticasModule,
     ConfiguracionModule,
+    RecoveryModule,
     AuditoriaModule,
     RecordatoriosModule,
     ImportacionesModule,
@@ -48,4 +54,8 @@ import { CategoriasGastoModule } from './categorias-gasto/categorias-gasto.modul
     CategoriasGastoModule,
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(MaintenanceMiddleware).forRoutes('*path');
+  }
+}

@@ -1,4 +1,5 @@
 'use client';
+import { useConfiguredPage } from '@/modules/configuracion/preferences';
 
 import { useEffect, useMemo, useState, type ChangeEvent, type ReactNode } from 'react';
 import { AlertTriangle, CheckCircle2, FileSpreadsheet, RefreshCw, Upload } from 'lucide-react';
@@ -37,14 +38,14 @@ export default function ImportacionesPage() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<ImportacionSummary | null>(null);
   const [allowWarnings, setAllowWarnings] = useState(false);
-  const [page, setPage] = useState(1);
+  const [page, setPage, pageLimit] = useConfiguredPage();
   const [selectedId, setSelectedId] = useState<string>('');
   const [form, setForm] = useState<ReviewForm>(emptyForm);
   const previewMutation = usePreviewImportacion();
   const confirmMutation = useConfirmImportacion();
   const reconcileMutation = useReconcileImportacion();
   const importId = preview?.importacionId;
-  const rowsQuery = useImportacionRows(importId, { page, limit: 20 });
+  const rowsQuery = useImportacionRows(importId, { page, limit: pageLimit });
   const catalogsQuery = useImportacionCatalogs(importId);
   const pendingQuery = usePendingImportacionValues(importId);
   const reviewMutation = useReviewImportacionRow(importId ?? '');
