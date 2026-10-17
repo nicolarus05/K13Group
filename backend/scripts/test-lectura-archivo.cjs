@@ -7,6 +7,7 @@ const { PrismaClient } = require('@prisma/client');
 const { seedBase } = require('../dist/prisma/seed');
 const { ExcelParserService } = require('../dist/src/importaciones/excel-parser.service');
 const { ImportacionesService } = require('../dist/src/importaciones/importaciones.service');
+const { IdentidadesService } = require('../dist/src/importaciones/identidades.service');
 const { ImportacionFilasDto } = require('../dist/src/importaciones/dto/importacion-filas.dto');
 async function main() {
   const buffer = readFileSync(0);
@@ -41,9 +42,17 @@ async function main() {
     assert.deepEqual(after.datosOriginales, original.datosOriginales);
     assert.equal(after.version, 2);
     assert.equal(after.historialLectura.length, 1);
+    const identities = new IdentidadesService(db);
+    await identities.prepare(summary.importacionId, actor.id);
+    const review = await identities.list(summary.importacionId, {page:1,limit:25});
+    assert.equal(review.version, 1);
+    assert.equal(Object.values(review.resumen).reduce((n,v)=>n+v,0), summary.filas);
+    assert.equal(await db.importacionFila.count({where:{importacionId:summary.importacionId,identidadId:null}}), 0);
+    await identities.prepare(summary.importacionId, actor.id);
+    assert.equal(await db.importacionIdentidad.count({where:{importacionId:summary.importacionId}}), summary.filas);
     for (const entity of ['cliente', 'suscripcion', 'renovacion', 'movimientoFinanciero']) assert.equal(await db[entity].count(), 0, entity);
     const withoutName = parsed.flatMap(s => s.filas).filter(r => !r.datosNormalizados.nombre).length;
-    console.log(JSON.stringify({ resultado: 'OK', hojas: parsed.length, filas: summary.filas, filasSinNombre: withoutName, bloqueos: summary.bloqueos, milisegundos: Date.now() - started, datosOperativosCreados: 0 }));
+    console.log(JSON.stringify({ resultado: 'OK', hojas: parsed.length, filas: summary.filas, filasSinNombre: withoutName, bloqueos: summary.bloqueos, identidades:review.resumen, milisegundos: Date.now() - started, datosOperativosCreados: 0 }));
   } finally {
     await db.$disconnect();
     assert.match(schema, /^catalogos_test_[a-f0-9]{32}$/);

@@ -25,12 +25,38 @@ import { ReconciliarImportacionDto } from './dto/reconciliar-importacion.dto';
 import { RevisarImportacionFilaDto } from './dto/revisar-importacion-fila.dto';
 import { ImportacionesService } from './importaciones.service';
 import { CorregirLecturaDto } from './dto/corregir-lectura.dto';
+import { IdentidadesService } from './identidades.service';
+import { DecidirIdentidadDto, IdentidadesQueryDto } from './dto/identidades.dto';
 
 @ApiTags('importaciones')
 @UseGuards(JwtAuthGuard)
 @Controller('importaciones')
 export class ImportacionesController {
-  constructor(private readonly importacionesService: ImportacionesService) {}
+  constructor(
+    private readonly importacionesService: ImportacionesService,
+    private readonly identidades: IdentidadesService,
+  ) {}
+
+  @Get(':id/identidades')
+  identities(@Param('id', ParseUUIDPipe) id: string, @Query() query: IdentidadesQueryDto) {
+    return this.identidades.list(id, query);
+  }
+  @Get(':id/identidades/clientes')
+  identityClients(@Param('id', ParseUUIDPipe) id: string, @Query() query: IdentidadesQueryDto) {
+    return this.identidades.clients(id, query);
+  }
+  @Post(':id/identidades/preparar')
+  prepareIdentities(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: Usuario) {
+    return this.identidades.prepare(id, user.id);
+  }
+  @Patch(':id/identidades/decidir')
+  decideIdentity(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: Usuario,
+    @Body() dto: DecidirIdentidadDto,
+  ) {
+    return this.identidades.decide(id, user.id, dto);
+  }
 
   @Patch(':id/filas/:filaId/lectura')
   correct(

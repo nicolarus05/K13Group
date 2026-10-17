@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { attribution } from '../estadisticas/attribution';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { Prisma, ImportacionFila } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
 import {
@@ -25,6 +25,7 @@ import { ImportacionFilasDto } from './dto/importacion-filas.dto';
 import { RevisarImportacionFilaDto, ROW_DECISIONS } from './dto/revisar-importacion-fila.dto';
 import { CorregirLecturaDto } from './dto/corregir-lectura.dto';
 import { Corrections, FIELDS, PARSER_VERSION, RowReading, Scope } from './excel-validation';
+import { identityData } from './identity-matching';
 
 const IMPORT_STATUS = {
   REVIEW: 'EN_REVISION',
@@ -306,6 +307,50 @@ export class ImportacionesService {
             observacionRevision: dto.motivo,
           },
         });
+        if (
+          row.identidadId &&
+          entries.some(([key]) => ['NOMBRE', 'TELEFONO', 'EMAIL', 'OBSERV'].includes(key))
+        ) {
+          const identity = await tx.importacionIdentidad.findUniqueOrThrow({
+            where: { id: row.identidadId },
+          });
+          const first = await tx.importacionFila.findFirstOrThrow({
+            where: { identidadId: identity.id },
+            orderBy: [{ hojaOrigen: 'asc' }, { filaOrigen: 'asc' }],
+          });
+          const pending = identity.estado === 'PENDIENTE';
+          await tx.importacionIdentidad.update({
+            where: { id: identity.id },
+            data: {
+              estado: pending ? 'PENDIENTE' : 'REVISAR',
+              ...(pending
+                ? {
+                    datos: identityData(
+                      first.datosNormalizados,
+                    ) as unknown as Prisma.InputJsonValue,
+                  }
+                : {}),
+              historial: [
+                ...(Array.isArray(identity.historial) ? identity.historial : []),
+                {
+                  id: randomUUID(),
+                  accion: 'CORREGIR_LECTURA',
+                  autor: author.nombre,
+                  usuarioId: actor,
+                  fecha: new Date().toISOString(),
+                  motivo: dto.motivo,
+                  filas: [row.id],
+                  campos: entries.map(([key]) => key),
+                  estadoAnterior: identity.estado,
+                },
+              ],
+            },
+          });
+          await tx.importacion.update({
+            where: { id },
+            data: { versionIdentidades: { increment: 1 } },
+          });
+        }
         const rows = await tx.importacionFila.findMany({
           where: { importacionId: id },
           select: {

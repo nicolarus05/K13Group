@@ -43,6 +43,34 @@ async function main() {
     await page.getByText('FECHA: 31/02/2026 → 2026-02-28', { exact: true }).waitFor();
     await page.getByLabel('Tipo de incidencia').selectOption('CLIENTE');
     await page.getByRole('heading', { name: 'Lectura de OCT · fila 6' }).waitFor();
+    await page.getByText('12.2 · Revisar identidades y duplicados', { exact: true }).click();
+    await page
+      .getByRole('button', { name: 'Preparar revisión de identidades', exact: true })
+      .click();
+    const review = page.getByRole('region', { name: 'Revisión de identidades' });
+    const identity = review
+      .locator('article')
+      .filter({ has: page.getByText('Cliente ficticio de lectura', { exact: true }) });
+    await identity
+      .getByRole('button', { name: 'Seleccionar 1 filas de esta identidad', exact: true })
+      .click();
+    await page
+      .getByLabel('Motivo de la decisión de identidad', { exact: true })
+      .fill('Identidad revisada en ensayo web');
+    await page.getByRole('button', { name: 'Guardar decisión de identidad', exact: true }).click();
+    await page
+      .getByText('Decisión guardada. Las filas originales y sus operaciones se conservan.', {
+        exact: true,
+      })
+      .waitFor();
+    await page.reload();
+    await page.getByText('Retomar un análisis guardado', { exact: true }).click();
+    await page.getByRole('button', { name: 'Abrir análisis', exact: true }).click();
+    await page.getByText('12.2 · Revisar identidades y duplicados', { exact: true }).click();
+    await page.getByLabel('Situación de identidad').selectOption('NUEVO');
+    await review.getByText('Cliente ficticio de lectura', { exact: true }).first().waitFor();
+    await review.getByText('Historial de identidad (1)', { exact: true }).click();
+    await review.getByText('Identidad revisada en ensayo web · 1 filas', { exact: true }).waitFor();
     for (const entity of ['clientes', 'suscripciones', 'finanzas']) {
       const response = await context.request.get('http://localhost:3001/api/v1/' + entity);
       assert.equal(response.status(), 200);
@@ -50,7 +78,7 @@ async function main() {
     }
     assert.deepEqual(errors, []);
     console.log(
-      'E2E lectura: archivo, coordenadas, PE, corrección, historial, filtros y reanudación correctos; sin clientes, suscripciones ni movimientos creados.',
+      'E2E lectura e identidades: archivo, PE, corrección, propuesta de identidad, historial, filtros y reanudación correctos; sin clientes, suscripciones ni movimientos creados.',
     );
   } finally {
     await browser.close();

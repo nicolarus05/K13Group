@@ -21,6 +21,7 @@ import {
 } from '@/modules/importaciones/hooks/use-importaciones';
 import type { ImportacionSummary } from '@/modules/importaciones/types/importaciones.types';
 import { ReadingPreview, ReadingHistory } from '@/modules/importaciones/reading-preview';
+import { IdentityReview } from '@/modules/importaciones/identity-review';
 import { catalogError } from '@/modules/catalogos/services/catalogos.service';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -288,7 +289,13 @@ export default function ImportacionesPage() {
           </Card>
 
           {preview.soloLectura && (
-            <ReadingPreview key={preview.importacionId} summary={preview} onUpdate={setPreview} />
+            <>
+              <IdentityReview
+                key={`identity-${preview.importacionId}`}
+                importId={preview.importacionId}
+              />
+              <ReadingPreview key={preview.importacionId} summary={preview} onUpdate={setPreview} />
+            </>
           )}
           {!isConfirmed && !preview.soloLectura && (
             <Card>

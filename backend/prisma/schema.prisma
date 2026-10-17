@@ -353,22 +353,24 @@ model Configuracion {
 
 // ─── 16. importaciones ──────────────────────────────────────────────────────
 model Importacion {
-  id           String    @id @default(uuid()) @db.Uuid
-  archivo      String    @db.VarChar(255)
-  usuarioId    String    @map("usuario_id") @db.Uuid
-  checksum     String?   @db.VarChar(64)
-  estado       String    @default("EN_PROCESO") @db.VarChar(40)
-  versionMapeo String    @default("1.1") @map("version_mapeo") @db.VarChar(20)
-  fechaInicio  DateTime? @map("fecha_inicio")
-  fechaFin     DateTime? @map("fecha_fin")
-  registros    Int       @default(0)
-  errores      Int       @default(0)
-  advertencias Int       @default(0)
-  informe      Json?
-  createdAt    DateTime  @default(now()) @map("created_at")
+  id                 String    @id @default(uuid()) @db.Uuid
+  archivo            String    @db.VarChar(255)
+  usuarioId          String    @map("usuario_id") @db.Uuid
+  checksum           String?   @db.VarChar(64)
+  estado             String    @default("EN_PROCESO") @db.VarChar(40)
+  versionMapeo       String    @default("1.1") @map("version_mapeo") @db.VarChar(20)
+  versionIdentidades Int       @default(0) @map("version_identidades")
+  fechaInicio        DateTime? @map("fecha_inicio")
+  fechaFin           DateTime? @map("fecha_fin")
+  registros          Int       @default(0)
+  errores            Int       @default(0)
+  advertencias       Int       @default(0)
+  informe            Json?
+  createdAt          DateTime  @default(now()) @map("created_at")
 
-  usuario Usuario           @relation(fields: [usuarioId], references: [id])
-  filas   ImportacionFila[]
+  usuario     Usuario                @relation(fields: [usuarioId], references: [id])
+  filas       ImportacionFila[]
+  identidades ImportacionIdentidad[]
 
   @@unique([checksum, versionMapeo])
   @@map("importaciones")
@@ -387,6 +389,7 @@ model ImportacionFila {
   correcciones        Json?
   historialLectura    Json?     @map("historial_lectura")
   version             Int       @default(1)
+  identidadId         String?   @map("identidad_id") @db.Uuid
   mapeo               Json?
   estado              String    @default("PENDIENTE") @db.VarChar(30)
   errores             Json?
@@ -403,6 +406,7 @@ model ImportacionFila {
   updatedAt           DateTime  @updatedAt @map("updated_at")
 
   importacion Importacion           @relation(fields: [importacionId], references: [id], onDelete: Cascade)
+  identidad   ImportacionIdentidad? @relation(fields: [identidadId], references: [id])
   cliente     Cliente?              @relation(fields: [clienteId], references: [id])
   suscripcion Suscripcion?          @relation(fields: [suscripcionId], references: [id])
   renovacion  Renovacion?           @relation("ImportacionFilaRenovacion", fields: [renovacionId], references: [id])
@@ -413,7 +417,27 @@ model ImportacionFila {
   @@index([importacionId, estado])
   @@index([importacionId, decision])
   @@index([hashFila])
+  @@index([identidadId])
   @@map("importacion_filas")
+}
+
+// Propuestas de identidad: no crean ni modifican clientes u operaciones.
+model ImportacionIdentidad {
+  id               String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  importacionId    String            @map("importacion_id") @db.Uuid
+  estado           String            @default("PENDIENTE") @db.VarChar(20)
+  datos            Json
+  clienteDestinoId String?           @map("cliente_destino_id") @db.Uuid
+  huellaCliente    String?           @map("huella_cliente") @db.VarChar(64)
+  historial        Json
+  solicitudId      String?           @unique @map("solicitud_id") @db.Uuid
+  solicitudHash    String?           @map("solicitud_hash") @db.VarChar(64)
+  createdAt        DateTime          @default(now()) @map("created_at")
+  importacion      Importacion       @relation(fields: [importacionId], references: [id], onDelete: Cascade)
+  filas            ImportacionFila[]
+
+  @@index([importacionId])
+  @@map("importacion_identidades")
 }
 
 // ─── 21. importacion_equivalencias ─────────────────────────────────────────
