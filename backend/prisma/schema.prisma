@@ -356,7 +356,7 @@ model Importacion {
   id           String    @id @default(uuid()) @db.Uuid
   archivo      String    @db.VarChar(255)
   usuarioId    String    @map("usuario_id") @db.Uuid
-  checksum     String?   @unique @db.VarChar(64)
+  checksum     String?   @db.VarChar(64)
   estado       String    @default("EN_PROCESO") @db.VarChar(40)
   versionMapeo String    @default("1.1") @map("version_mapeo") @db.VarChar(20)
   fechaInicio  DateTime? @map("fecha_inicio")
@@ -370,6 +370,7 @@ model Importacion {
   usuario Usuario           @relation(fields: [usuarioId], references: [id])
   filas   ImportacionFila[]
 
+  @@unique([checksum, versionMapeo])
   @@map("importaciones")
 }
 
@@ -377,11 +378,15 @@ model Importacion {
 model ImportacionFila {
   id                  String    @id @default(uuid()) @db.Uuid
   importacionId       String    @map("importacion_id") @db.Uuid
-  hojaOrigen          String    @map("hoja_origen") @db.VarChar(20)
+  hojaOrigen          String    @map("hoja_origen") @db.VarChar(31)
   filaOrigen          Int       @map("fila_origen")
   hashFila            String    @map("hash_fila") @db.VarChar(64)
   datosOriginales     Json      @map("datos_originales")
   datosNormalizados   Json?     @map("datos_normalizados")
+  lectura             Json?
+  correcciones        Json?
+  historialLectura    Json?     @map("historial_lectura")
+  version             Int       @default(1)
   mapeo               Json?
   estado              String    @default("PENDIENTE") @db.VarChar(30)
   errores             Json?

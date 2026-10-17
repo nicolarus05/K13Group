@@ -3,9 +3,17 @@ export interface ImportacionHoja {
   filas: number;
   errores: number;
   advertencias: number;
+  detalleErrores?: string[];
+  cabecera?: number | null;
+  columnasAusentes?: string[];
+  columnasAdicionales?: string[];
+  clasificacion?: Record<string, number>;
 }
 
 export interface ImportacionSummary {
+  versionMapeo?: string;
+  soloLectura?: boolean;
+  bloqueos?: Record<string, number>;
   importacionId: string;
   archivo: string;
   checksum: string | null;
@@ -23,6 +31,29 @@ export interface ImportacionSummary {
 }
 
 export interface ImportacionFila {
+  version: number;
+  historialLectura?: Array<{
+    version: number;
+    autor: string;
+    fecha: string;
+    motivo: string;
+    anteriores: Record<string, unknown>;
+    cambios: Record<string, unknown>;
+  }>;
+  correcciones?: Record<string, string | null>;
+  lectura?: {
+    campos: Record<
+      string,
+      { celda: string | null; encabezado: string; valor: unknown; estado: string; formula?: string }
+    >;
+    incidencias: Array<{
+      codigo: string;
+      campo: string;
+      celda: string | null;
+      ambito: string;
+      mensaje: string;
+    }>;
+  } | null;
   id: string;
   hojaOrigen: string;
   filaOrigen: number;
@@ -56,9 +87,21 @@ export interface ValorPendiente {
 
 export interface CatalogoImportacion {
   productos: Array<{ id: string; nombre: string }>;
-  tarifas: Array<{ id: string; nombre: string; duracionMeses: number; productoId: string; producto: { nombre: string } }>;
+  tarifas: Array<{
+    id: string;
+    nombre: string;
+    duracionMeses: number;
+    productoId: string;
+    producto: { nombre: string };
+  }>;
   servidores: Array<{ id: string; nombre: string }>;
   referencias: Array<{ id: string; nombre: string }>;
   metodosPago: Array<{ id: string; nombre: string }>;
-  equivalencias: Array<{ id: string; tipo: string; valorClave: string; valorCanonico: string; entidadId: string | null }>;
+  equivalencias: Array<{
+    id: string;
+    tipo: string;
+    valorClave: string;
+    valorCanonico: string;
+    entidadId: string | null;
+  }>;
 }

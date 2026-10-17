@@ -7,6 +7,7 @@ import {
   Param,
   Post,
   ParseIntPipe,
+  ParseUUIDPipe,
   Query,
   UploadedFile,
   UseGuards,
@@ -23,12 +24,25 @@ import { ImportacionFilasDto } from './dto/importacion-filas.dto';
 import { ReconciliarImportacionDto } from './dto/reconciliar-importacion.dto';
 import { RevisarImportacionFilaDto } from './dto/revisar-importacion-fila.dto';
 import { ImportacionesService } from './importaciones.service';
+import { CorregirLecturaDto } from './dto/corregir-lectura.dto';
 
 @ApiTags('importaciones')
 @UseGuards(JwtAuthGuard)
 @Controller('importaciones')
 export class ImportacionesController {
   constructor(private readonly importacionesService: ImportacionesService) {}
+
+  @Patch(':id/filas/:filaId/lectura')
+  correct(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('filaId', ParseUUIDPipe) filaId: string,
+    @Body() dto: CorregirLecturaDto,
+    @CurrentUser() user: Usuario,
+  ) {
+    return this.importacionesService
+      .correctReading(id, filaId, user.id, dto)
+      .then((data) => ({ success: true, data }));
+  }
 
   @Get()
   @ApiOperation({ summary: 'Listar importaciones históricas' })
@@ -51,7 +65,9 @@ export class ImportacionesController {
   })
   @ApiOperation({ summary: 'Previsualizar importación de CLIENTES 2026' })
   preview(@UploadedFile() file: Express.Multer.File, @CurrentUser() user: Usuario) {
-    return this.importacionesService.preview(file, user.id).then((data) => ({ success: true, data }));
+    return this.importacionesService
+      .preview(file, user.id)
+      .then((data) => ({ success: true, data }));
   }
 
   @Post(':id/confirmar')
@@ -74,7 +90,9 @@ export class ImportacionesController {
     @Body() dto: ReconciliarImportacionDto,
     @CurrentUser() user: Usuario,
   ) {
-    return this.importacionesService.reconcile(id, user.id, dto).then((data) => ({ success: true, data }));
+    return this.importacionesService
+      .reconcile(id, user.id, dto)
+      .then((data) => ({ success: true, data }));
   }
 
   @Get(':id')
@@ -109,8 +127,14 @@ export class ImportacionesController {
 
   @Post(':id/equivalencias')
   @ApiOperation({ summary: 'Crear o actualizar una equivalencia revisada' })
-  saveEquivalence(@Param('id') id: string, @Body() dto: EquivalenciaImportacionDto, @CurrentUser() user: Usuario) {
-    return this.importacionesService.saveEquivalence(id, user.id, dto).then((data) => ({ success: true, data }));
+  saveEquivalence(
+    @Param('id') id: string,
+    @Body() dto: EquivalenciaImportacionDto,
+    @CurrentUser() user: Usuario,
+  ) {
+    return this.importacionesService
+      .saveEquivalence(id, user.id, dto)
+      .then((data) => ({ success: true, data }));
   }
 
   @Patch(':id/filas/:filaId/revisar')
@@ -121,6 +145,8 @@ export class ImportacionesController {
     @Body() dto: RevisarImportacionFilaDto,
     @CurrentUser() user: Usuario,
   ) {
-    return this.importacionesService.reviewRow(id, filaId, user.id, dto).then((data) => ({ success: true, data }));
+    return this.importacionesService
+      .reviewRow(id, filaId, user.id, dto)
+      .then((data) => ({ success: true, data }));
   }
 }

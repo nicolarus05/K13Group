@@ -243,3 +243,22 @@ secretos de infraestructura.
 Consulta [la guía operativa de recuperación](recovery/README.md) para el uso desde
 la web, los comandos de emergencia, la conservación externa y las pruebas aisladas.
 No se ejecuta una restauración sobre la base de trabajo como parte de las pruebas.
+
+## Lectura del Excel de clientes
+
+`/importaciones` permite analizar XLSX/XLS, retomar lecturas guardadas y corregir
+valores con versión, motivo e historial. La lectura 12.1 conserva los originales
+y no habilita la creación de clientes, suscripciones ni cobros. PA no tiene
+equivalencia de pago; PE significa pendiente de pago. Los datos opcionales vacíos
+permanecen vacíos y las filas incompletas siguen visibles.
+
+Límites: 10 MB de archivo, 64 MB descomprimidos para XLSX, 24 hojas, 20.000 filas
+y 64 columnas por hoja, 500.000 celdas, 10.000 filas operativas y 10.000 caracteres
+por celda. El análisis se ejecuta en un trabajador con límite de memoria y 20 s
+de plazo; se admiten dos análisis simultáneos. No se recalculan fórmulas.
+
+`./dev test-e2e-lectura` ensaya la web y la API con datos ficticios en el proyecto
+Compose aislado `k13-lectura-test`, que se elimina al terminar. Tras compilar el
+backend, puede ensayarse un archivo completo por stdin con
+`docker compose exec -T backend node scripts/test-lectura-archivo.cjs < archivo.xlsx`.
+Ese comando crea y elimina su propio esquema temporal y solo imprime recuentos.
