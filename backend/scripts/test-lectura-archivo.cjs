@@ -8,6 +8,7 @@ const { seedBase } = require('../dist/prisma/seed');
 const { ExcelParserService } = require('../dist/src/importaciones/excel-parser.service');
 const { ImportacionesService } = require('../dist/src/importaciones/importaciones.service');
 const { IdentidadesService } = require('../dist/src/importaciones/identidades.service');
+const { EquivalenciasRevisionService } = require('../dist/src/importaciones/equivalencias-revision.service');
 const { ImportacionFilasDto } = require('../dist/src/importaciones/dto/importacion-filas.dto');
 async function main() {
   const buffer = readFileSync(0);
@@ -50,9 +51,28 @@ async function main() {
     assert.equal(await db.importacionFila.count({where:{importacionId:summary.importacionId,identidadId:null}}), 0);
     await identities.prepare(summary.importacionId, actor.id);
     assert.equal(await db.importacionIdentidad.count({where:{importacionId:summary.importacionId}}), summary.filas);
+    const equivalences = new EquivalenciasRevisionService(db, identities);
+    const inventory = {};
+    for(const tipo of ['PRODUCTO','TARIFA','SERVIDOR','REFERENCIA','PAGO']) {
+      const result = await equivalences.list(summary.importacionId, {tipo,page:1,limit:25});
+      assert.equal(result.resumen.filas, summary.filas);
+      assert.equal(result.inventario.reduce((n,g)=>n+g.total,0),summary.filas);
+      inventory[tipo] = {grupos:result.inventario.length, filas:result.pagination.total};
+    }
+    const payments = await equivalences.list(summary.importacionId, {tipo:'PAGO',page:1,limit:25});
+    const candidate = payments.data.find(r=>!r.campos.PAGO.ignorado&&!r.campos.PAGO.ausente&&r.campos.PAGO.sugerencias.length===1);
+    assert.ok(candidate, 'Hay al menos un método con sugerencia para ensayar');
+    const dto={huellaRevision:payments.huellaRevision,solicitudId:randomUUID(),tipo:'PAGO',alcance:'VALOR',clave:candidate.campos.PAGO.clave,accion:'ASIGNAR',entidadId:candidate.campos.PAGO.sugerencias[0].id,historico:false,motivo:'Ensayo aislado de equivalencia'};
+    const before=await equivalences.preview(summary.importacionId,dto);
+    assert.ok(before.total>0);
+    const decision=await equivalences.decide(summary.importacionId,actor.id,dto);
+    assert.deepEqual(await equivalences.decide(summary.importacionId,actor.id,dto),decision);
+    const resumed=await equivalences.list(summary.importacionId,{tipo:'PAGO',page:1,limit:25});
+    assert.equal(resumed.version,1);
+    assert.equal(resumed.resumen.pendientesPago,payments.resumen.pendientesPago);
     for (const entity of ['cliente', 'suscripcion', 'renovacion', 'movimientoFinanciero']) assert.equal(await db[entity].count(), 0, entity);
     const withoutName = parsed.flatMap(s => s.filas).filter(r => !r.datosNormalizados.nombre).length;
-    console.log(JSON.stringify({ resultado: 'OK', hojas: parsed.length, filas: summary.filas, filasSinNombre: withoutName, bloqueos: summary.bloqueos, identidades:review.resumen, milisegundos: Date.now() - started, datosOperativosCreados: 0 }));
+    console.log(JSON.stringify({ resultado: 'OK', hojas: parsed.length, filas: summary.filas, filasSinNombre: withoutName, bloqueos: summary.bloqueos, identidades:review.resumen, equivalencias:inventory, filasEnsayadas:before.total, milisegundos: Date.now() - started, datosOperativosCreados: 0 }));
   } finally {
     await db.$disconnect();
     assert.match(schema, /^catalogos_test_[a-f0-9]{32}$/);

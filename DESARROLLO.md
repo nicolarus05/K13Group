@@ -262,3 +262,28 @@ Compose aislado `k13-lectura-test`, que se elimina al terminar. Tras compilar el
 backend, puede ensayarse un archivo completo por stdin con
 `docker compose exec -T backend node scripts/test-lectura-archivo.cjs < archivo.xlsx`.
 Ese comando crea y elimina su propio esquema temporal y solo imprime recuentos.
+
+En la misma pantalla, «12.3 · Revisar equivalencias y operaciones propuestas»
+permite revisar producto, tarifa anual, servidor, referencia de origen y método
+de pago. Las equivalencias pertenecen a cada análisis; las excepciones por fila
+prevalecen. Antes de guardar se muestran todas las filas afectadas, incluidas las
+de otras hojas que oculten los filtros. Cada decisión conserva autor, motivo,
+versión e historial. Si cambia la lectura o el catálogo, las decisiones que
+dependan de esos datos quedan pendientes de revisión.
+Restaurar un valor de lectura anterior o reasignar el producto no rehabilita
+automáticamente las decisiones invalidadas. La ruta antigua de equivalencias
+globales rechaza los análisis 12.1 para preservar este aislamiento.
+
+Un servidor ausente no recibe un valor masivo por defecto. COBRA y PROMAX
+inactivos requieren confirmación de uso histórico y no se reactivan. La tarifa
+debe corresponder al producto revisado y durar 12 meses; P.AÑO conserva el
+importe histórico aunque difiera del precio actual. FECHA es el vencimiento;
+TOTAL es acumulado y no genera ingresos. Las referencias propias propuestas
+por identidad se muestran separadas de las referencias de origen.
+
+La revisión distingue identidad, suscripción y finanzas. PA se ignora, PE
+permanece pendiente de pago y asignar un método no acredita un cobro.
+Las decisiones siguen en staging: no crean clientes, suscripciones, renovaciones,
+referencias de catálogo ni movimientos. El ensayo web incluye ahora estas
+equivalencias; el ensayo del archivo completo comprueba sus cinco inventarios,
+el guardado idempotente y la ausencia de operaciones creadas.

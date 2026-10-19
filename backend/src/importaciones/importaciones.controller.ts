@@ -27,6 +27,8 @@ import { ImportacionesService } from './importaciones.service';
 import { CorregirLecturaDto } from './dto/corregir-lectura.dto';
 import { IdentidadesService } from './identidades.service';
 import { DecidirIdentidadDto, IdentidadesQueryDto } from './dto/identidades.dto';
+import { EquivalenciasRevisionService } from './equivalencias-revision.service';
+import { DecidirEquivalenciaDto, EquivalenciasQueryDto } from './dto/equivalencias-revision.dto';
 
 @ApiTags('importaciones')
 @UseGuards(JwtAuthGuard)
@@ -35,7 +37,30 @@ export class ImportacionesController {
   constructor(
     private readonly importacionesService: ImportacionesService,
     private readonly identidades: IdentidadesService,
+    private readonly equivalencias: EquivalenciasRevisionService,
   ) {}
+
+  @Get(':id/equivalencias-revision')
+  reviewEquivalences(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query() query: EquivalenciasQueryDto,
+  ) {
+    return this.equivalencias.list(id, query);
+  }
+
+  @Post(':id/equivalencias-revision/previsualizar')
+  previewEquivalence(@Param('id', ParseUUIDPipe) id: string, @Body() dto: DecidirEquivalenciaDto) {
+    return this.equivalencias.preview(id, dto);
+  }
+
+  @Patch(':id/equivalencias-revision')
+  decideEquivalence(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: DecidirEquivalenciaDto,
+    @CurrentUser() user: Usuario,
+  ) {
+    return this.equivalencias.decide(id, user.id, dto);
+  }
 
   @Get(':id/identidades')
   identities(@Param('id', ParseUUIDPipe) id: string, @Query() query: IdentidadesQueryDto) {

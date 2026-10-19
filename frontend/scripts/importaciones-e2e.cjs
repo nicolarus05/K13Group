@@ -71,6 +71,58 @@ async function main() {
     await review.getByText('Cliente ficticio de lectura', { exact: true }).first().waitFor();
     await review.getByText('Historial de identidad (1)', { exact: true }).click();
     await review.getByText('Identidad revisada en ensayo web · 1 filas', { exact: true }).waitFor();
+    await page
+      .getByText('12.3 · Revisar equivalencias y operaciones propuestas', { exact: true })
+      .click();
+    const chooseEquivalence = async (kind, name, historical = false) => {
+      await page.getByLabel('Campo de equivalencia', { exact: true }).selectOption(kind);
+      await page.getByRole('button', { name: 'Revisar OCT 4', exact: true }).click();
+      const option = page
+        .getByLabel('Destino de equivalencia', { exact: true })
+        .locator('option')
+        .filter({ hasText: name });
+      await page
+        .getByLabel('Destino de equivalencia', { exact: true })
+        .selectOption(await option.first().getAttribute('value'));
+      if (historical)
+        await page
+          .getByLabel('Confirmo el uso exclusivamente histórico; no se reactiva el servidor.')
+          .check();
+      await page
+        .getByLabel('Motivo de equivalencia', { exact: true })
+        .fill('Equivalencia revisada en ensayo web');
+      assert.equal(
+        await page.getByRole('button', { name: 'Guardar equivalencia', exact: true }).count(),
+        0,
+      );
+      await page.getByRole('button', { name: 'Previsualizar equivalencia', exact: true }).click();
+      await page.getByText(/1 filas en el alcance · 1 cambios efectivos/).waitFor();
+      await page.getByRole('button', { name: 'Guardar equivalencia', exact: true }).click();
+      await page
+        .getByText('Equivalencia guardada. No se han creado operaciones.', { exact: true })
+        .waitFor();
+    };
+    await chooseEquivalence('PRODUCTO', 'MAXPLAYER');
+    await chooseEquivalence('TARIFA', '75 €');
+    await chooseEquivalence('SERVIDOR', 'COBRA', true);
+    await chooseEquivalence('PAGO', 'Stripe');
+    const operation = page
+      .locator('tr')
+      .filter({ has: page.getByRole('button', { name: 'Revisar OCT 4', exact: true }) });
+    assert.match(await operation.innerText(), /Suscripción: HISTORICA/);
+    assert.match(await operation.innerText(), /Finanzas: PENDIENTE_PAGO/);
+    await page.reload();
+    await page.getByText('Retomar un análisis guardado', { exact: true }).click();
+    await page.getByRole('button', { name: 'Abrir análisis', exact: true }).click();
+    await page
+      .getByText('12.3 · Revisar equivalencias y operaciones propuestas', { exact: true })
+      .click();
+    await page.getByLabel('Campo de equivalencia', { exact: true }).selectOption('PAGO');
+    await page
+      .getByText('Historial de equivalencias de las filas visibles (1)', { exact: true })
+      .click();
+    await page.getByText(/Versión 4 .*Equivalencia revisada en ensayo web/).waitFor();
+    assert.match(await operation.innerText(), /PENDIENTE_PAGO/);
     for (const entity of ['clientes', 'suscripciones', 'finanzas']) {
       const response = await context.request.get('http://localhost:3001/api/v1/' + entity);
       assert.equal(response.status(), 200);
@@ -78,7 +130,7 @@ async function main() {
     }
     assert.deepEqual(errors, []);
     console.log(
-      'E2E lectura e identidades: archivo, PE, corrección, propuesta de identidad, historial, filtros y reanudación correctos; sin clientes, suscripciones ni movimientos creados.',
+      'E2E 12.1–12.3: lectura, corrección, identidad, producto, tarifa anual, servidor histórico, PE, previsualización, historial y reanudación correctos; sin operaciones creadas.',
     );
   } finally {
     await browser.close();

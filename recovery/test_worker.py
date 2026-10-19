@@ -37,6 +37,10 @@ class RecoveryTests(unittest.TestCase):
         w.query(f"INSERT INTO configuracion(id,clave,valor) VALUES ('{uuid.uuid4()}','negocio.nombre','Antes'),('{uuid.uuid4()}','negocio.logo_asset_id','{cls.logo}')")
         # Tabla adicional prueba decimales, fecha, claves externas y unicode.
         w.query(f"CREATE TABLE ensayo_financiero(id uuid PRIMARY KEY, usuario_id uuid REFERENCES usuarios(id), importe decimal(10,2), fecha date, snapshot jsonb); INSERT INTO ensayo_financiero VALUES ('{uuid.uuid4()}','{cls.user}',1234.56,'2024-02-29','{{\"nombre\":\"Ñandú histórico\"}}')")
+        # Las decisiones 12.3 y su versión deben sobrevivir al mismo backup y restore.
+        analysis=str(uuid.uuid4())
+        w.query(f"INSERT INTO importaciones(id,archivo,usuario_id,estado,version_mapeo,version_equivalencias) VALUES ('{analysis}','ensayo.xlsx','{cls.user}','EN_REVISION','12.1.0',1)")
+        w.query(f"INSERT INTO importacion_equivalencias_revision(id,importacion_id,version,tipo,alcance,clave,accion,origen,dependencias,autor,motivo,solicitud_id,solicitud_hash) VALUES ('{uuid.uuid4()}','{analysis}',1,'PAGO','VALOR','{'a'*64}','PENDIENTE','{{\"origen\":\"STR\"}}','{{}}','{cls.user}','Pendiente de revisión','{uuid.uuid4()}','{'b'*64}')")
         (w.ASSETS/(cls.logo+'.webp')).write_bytes(b'fixture-image-bytes')
         cls.copy=w.backup()
         cls.before=w.digest(w.DB)

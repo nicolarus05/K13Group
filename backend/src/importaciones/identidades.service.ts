@@ -89,7 +89,7 @@ export class IdentidadesService {
     return { preparado: true };
   }
 
-  private async context(tx: Prisma.TransactionClient, id: string) {
+  async context(tx: Prisma.TransactionClient, id: string) {
     const groups = await tx.importacionIdentidad.findMany({
       where: { importacionId: id, filas: { some: {} } },
       include: {

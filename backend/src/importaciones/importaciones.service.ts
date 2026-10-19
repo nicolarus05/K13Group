@@ -760,7 +760,12 @@ export class ImportacionesService {
   }
 
   async saveEquivalence(id: string, usuarioId: string, dto: EquivalenciaImportacionDto) {
-    await this.ensureImportacion(id);
+    const analysis = await this.prisma.importacion.findUnique({ where: { id } });
+    if (!analysis) throw new NotFoundException('Análisis no encontrado.');
+    if (analysis.versionMapeo.startsWith('12.1.'))
+      throw new ConflictException(
+        'Usa la revisión 12.3: sus equivalencias pertenecen únicamente a este análisis.',
+      );
     if (!CATALOG_TYPES.has(dto.tipo))
       throw new BadRequestException('Tipo de equivalencia no permitido.');
     if (!dto.entidadId)
