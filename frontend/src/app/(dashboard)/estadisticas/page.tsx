@@ -1,4 +1,5 @@
 'use client';
+import { ExportButton } from '@/modules/exportaciones/export-button';
 import { useConfiguredPage } from '@/modules/configuracion/preferences';
 import {
   usePreferences,
@@ -193,6 +194,11 @@ function StatisticsPage() {
         </div>
         <BarChart2 size={32} />
       </div>
+      <ExportButton
+        module="estadisticas"
+        section={section}
+        filters={{ ...range, agrupacion: grain, ...filter }}
+      />
       <nav className="stats-tabs" aria-label="Informes estadísticos">
         {Object.entries(sections).map(([key, label]) => (
           <button

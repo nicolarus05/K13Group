@@ -61,97 +61,117 @@ export class RenovacionesService {
     if (!row) throw new NotFoundException('Operación no encontrada.');
     return row;
   }
-  async list(query: RenewalQueryDto) {
-    if (query.desde) parseDay(query.desde);
-    if (query.hasta) parseDay(query.hasta);
-    if (query.desde && query.hasta && query.desde > query.hasta)
-      throw new BadRequestException('Intervalo de fechas inválido.');
-    const where: Prisma.RenovacionWhereInput = {
-      deletedAt: null,
-      ...(query.suscripcionId ? { suscripcionId: query.suscripcionId } : {}),
-      suscripcion: {
+  async list(query: RenewalQueryDto, client?: Prisma.TransactionClient) {
+    const read = async (tx: Prisma.TransactionClient) => {
+      if (query.desde) parseDay(query.desde);
+      if (query.hasta) parseDay(query.hasta);
+      if (query.desde && query.hasta && query.desde > query.hasta)
+        throw new BadRequestException('Intervalo de fechas inválido.');
+      const where: Prisma.RenovacionWhereInput = {
+        deletedAt: null,
+        ...(query.suscripcionId ? { suscripcionId: query.suscripcionId } : {}),
+        suscripcion: {
+          ...(query.clienteId ? { clienteId: query.clienteId } : {}),
+          ...(query.productoId ? { productoId: query.productoId } : {}),
+          ...(query.search
+            ? { cliente: { nombre: { contains: query.search.trim(), mode: 'insensitive' } } }
+            : {}),
+        },
+        ...(query.estado ? { estado: { valor: query.estado, tipo: 'renovacion' } } : {}),
+        ...(query.cobro === 'GRATIS'
+          ? { metodoPago: { esGratuito: true } }
+          : query.cobro
+            ? {
+                movimientos: {
+                  some: { estado: { valor: query.cobro, tipo: 'movimiento_estado' } },
+                },
+              }
+            : {}),
+        ...(query.desde || query.hasta
+          ? {
+              fechaOperacion: {
+                ...(query.desde ? { gte: parseDay(query.desde) } : {}),
+                ...(query.hasta ? { lte: parseDay(query.hasta) } : {}),
+              },
+            }
+          : {}),
+      };
+      const [rows, count] = await Promise.all([
+        tx.renovacion.findMany({
+          where,
+          select: renewalSelect,
+          skip: (query.page - 1) * query.limit,
+          take: query.limit,
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        }),
+        tx.renovacion.count({ where }),
+      ]);
+      return buildPaginatedResponse(rows, count, query.page, query.limit);
+    };
+    return client
+      ? read(client)
+      : this.prisma.$transaction(read, {
+          isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+        });
+  }
+  async queue(query: RenewalQueryDto, client?: Prisma.TransactionClient, day = businessDay()) {
+    const read = async (tx: Prisma.TransactionClient) => {
+      const today = parseDay(day);
+      const tomorrow = new Date(today.getTime() + 86400000);
+      const days = await warningDays(tx);
+      const where: Prisma.SuscripcionWhereInput = {
+        deletedAt: null,
+        cliente: {
+          deletedAt: null,
+          estado: { valor: 'ACTIVO' },
+          ...(query.search
+            ? { nombre: { contains: query.search.trim(), mode: 'insensitive' } }
+            : {}),
+        },
         ...(query.clienteId ? { clienteId: query.clienteId } : {}),
         ...(query.productoId ? { productoId: query.productoId } : {}),
-        ...(query.search
-          ? { cliente: { nombre: { contains: query.search.trim(), mode: 'insensitive' } } }
-          : {}),
-      },
-      ...(query.estado ? { estado: { valor: query.estado, tipo: 'renovacion' } } : {}),
-      ...(query.cobro === 'GRATIS'
-        ? { metodoPago: { esGratuito: true } }
-        : query.cobro
-          ? { movimientos: { some: { estado: { valor: query.cobro, tipo: 'movimiento_estado' } } } }
-          : {}),
-      ...(query.desde || query.hasta
-        ? {
-            fechaOperacion: {
-              ...(query.desde ? { gte: parseDay(query.desde) } : {}),
-              ...(query.hasta ? { lte: parseDay(query.hasta) } : {}),
-            },
-          }
-        : {}),
+        ...(query.suscripcionId ? { id: query.suscripcionId } : {}),
+        estado: { tipo: 'suscripcion', valor: { in: [...DATE_STATES] } },
+        noRenovar: query.vista === 'no-renovar',
+        ...(query.vista === 'hoy'
+          ? { fechaFin: today }
+          : query.vista === 'manana'
+            ? { fechaFin: tomorrow }
+            : query.vista === 'proximas'
+              ? { fechaFin: { gt: today, lte: new Date(today.getTime() + days * 86400000) } }
+              : query.vista === 'vencidas'
+                ? { fechaFin: { lt: today } }
+                : {}),
+      };
+      const [rows, count] = await Promise.all([
+        tx.suscripcion.findMany({
+          where,
+          select: subscriptionSelect,
+          skip: (query.page - 1) * query.limit,
+          take: query.limit,
+          orderBy: [{ fechaFin: 'asc' }, { id: 'asc' }],
+        }),
+        tx.suscripcion.count({ where }),
+      ]);
+      const states = await tx.estado.findMany({
+        where: { tipo: 'suscripcion' },
+        select: { id: true, valor: true, etiqueta: true },
+      });
+      return buildPaginatedResponse(
+        rows.map((row) => ({
+          ...row,
+          estado: states.find((s) => s.valor === datedState(row.fechaFin, day, days))!,
+        })),
+        count,
+        query.page,
+        query.limit,
+      );
     };
-    const [rows, count] = await this.prisma.$transaction([
-      this.prisma.renovacion.findMany({
-        where,
-        select: renewalSelect,
-        skip: (query.page - 1) * query.limit,
-        take: query.limit,
-        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-      }),
-      this.prisma.renovacion.count({ where }),
-    ]);
-    return buildPaginatedResponse(rows, count, query.page, query.limit);
-  }
-  async queue(query: RenewalQueryDto) {
-    const today = parseDay(businessDay());
-    const tomorrow = new Date(today.getTime() + 86400000);
-    const days = await warningDays(this.prisma);
-    const where: Prisma.SuscripcionWhereInput = {
-      deletedAt: null,
-      cliente: {
-        deletedAt: null,
-        estado: { valor: 'ACTIVO' },
-        ...(query.search ? { nombre: { contains: query.search.trim(), mode: 'insensitive' } } : {}),
-      },
-      ...(query.clienteId ? { clienteId: query.clienteId } : {}),
-      ...(query.productoId ? { productoId: query.productoId } : {}),
-      ...(query.suscripcionId ? { id: query.suscripcionId } : {}),
-      estado: { tipo: 'suscripcion', valor: { in: [...DATE_STATES] } },
-      noRenovar: query.vista === 'no-renovar',
-      ...(query.vista === 'hoy'
-        ? { fechaFin: today }
-        : query.vista === 'manana'
-          ? { fechaFin: tomorrow }
-          : query.vista === 'proximas'
-            ? { fechaFin: { gt: today, lte: new Date(today.getTime() + days * 86400000) } }
-            : query.vista === 'vencidas'
-              ? { fechaFin: { lt: today } }
-              : {}),
-    };
-    const [rows, count] = await this.prisma.$transaction([
-      this.prisma.suscripcion.findMany({
-        where,
-        select: subscriptionSelect,
-        skip: (query.page - 1) * query.limit,
-        take: query.limit,
-        orderBy: [{ fechaFin: 'asc' }, { id: 'asc' }],
-      }),
-      this.prisma.suscripcion.count({ where }),
-    ]);
-    const states = await this.prisma.estado.findMany({
-      where: { tipo: 'suscripcion' },
-      select: { id: true, valor: true, etiqueta: true },
-    });
-    return buildPaginatedResponse(
-      rows.map((row) => ({
-        ...row,
-        estado: states.find((s) => s.valor === datedState(row.fechaFin, businessDay(), days))!,
-      })),
-      count,
-      query.page,
-      query.limit,
-    );
+    return client
+      ? read(client)
+      : this.prisma.$transaction(read, {
+          isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+        });
   }
   async create(id: string, dto: RenewalDto, actor: string, initial = false) {
     const normalized = {

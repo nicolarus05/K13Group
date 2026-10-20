@@ -18,7 +18,7 @@ export class ClientesService {
     private readonly subscriptions: SuscripcionesService,
   ) {}
 
-  async findAll(query: FindClientesDto) {
+  async findAll(query: FindClientesDto, tx: Prisma.TransactionClient = this.prisma) {
     const { page = 1, search, estadoId } = query;
     const limit = Math.min(query.limit ?? 25, 100);
     const allowedSorts = new Set(['nombre', 'createdAt', 'updatedAt']);
@@ -39,14 +39,14 @@ export class ClientesService {
     };
 
     const [data, total] = await Promise.all([
-      this.prisma.cliente.findMany({
+      tx.cliente.findMany({
         where,
         skip,
         take: limit,
-        orderBy: { [sort]: 'asc' },
+        orderBy: [{ [sort]: 'asc' }, { id: 'asc' }],
         include: INCLUDE_ESTADO,
       }),
-      this.prisma.cliente.count({ where }),
+      tx.cliente.count({ where }),
     ]);
 
     return {
@@ -94,18 +94,20 @@ export class ClientesService {
       where: { tipo: 'cliente', valor: 'ACTIVO' },
     });
 
-    return this.prisma.$transaction(async (tx) => {
-      await lockCatalog(tx, 'referencias');
-      const cliente = await tx.cliente.create({
-        data: { ...dto, telefono, telefonoNormalizado, estadoId: estadoActivo.id },
-        include: INCLUDE_ESTADO,
-      });
-      await this.ensureReferencia(tx, cliente.nombre, usuarioId);
-      await tx.actividad.create({
-        data: { usuarioId, tabla: 'clientes', registroId: cliente.id, accion: 'CREAR' },
-      });
-      return cliente;
-    }).catch((error: unknown) => this.writeError(error));
+    return this.prisma
+      .$transaction(async (tx) => {
+        await lockCatalog(tx, 'referencias');
+        const cliente = await tx.cliente.create({
+          data: { ...dto, telefono, telefonoNormalizado, estadoId: estadoActivo.id },
+          include: INCLUDE_ESTADO,
+        });
+        await this.ensureReferencia(tx, cliente.nombre, usuarioId);
+        await tx.actividad.create({
+          data: { usuarioId, tabla: 'clientes', registroId: cliente.id, accion: 'CREAR' },
+        });
+        return cliente;
+      })
+      .catch((error: unknown) => this.writeError(error));
   }
 
   async update(id: string, dto: UpdateClienteDto, usuarioId: string) {
@@ -127,28 +129,31 @@ export class ClientesService {
       if (existe) throw new ConflictException('Ya existe un cliente con ese teléfono');
     }
 
-    return this.prisma.$transaction(async (tx) => {
-      // Mismo orden que suscripciones/renovaciones: catálogo antes de fila de cliente.
-      // ensureReferencia no debe esperar al catálogo mientras retiene esa fila.
-      if (dto.nombre) await lockCatalog(tx, 'referencias');
-      const cliente = await tx.cliente.update({
-        where: { id, deletedAt: null },
-        data: { ...dto, ...(hasTelefono ? { telefono, telefonoNormalizado } : {}) },
-        include: INCLUDE_ESTADO,
-      });
-      if (dto.nombre) await this.ensureReferencia(tx, cliente.nombre, usuarioId);
-      await tx.actividad.create({
-        data: { usuarioId, tabla: 'clientes', registroId: id, accion: 'EDITAR' },
-      });
-      return cliente;
-    }).catch((error: unknown) => this.writeError(error));
+    return this.prisma
+      .$transaction(async (tx) => {
+        // Mismo orden que suscripciones/renovaciones: catálogo antes de fila de cliente.
+        // ensureReferencia no debe esperar al catálogo mientras retiene esa fila.
+        if (dto.nombre) await lockCatalog(tx, 'referencias');
+        const cliente = await tx.cliente.update({
+          where: { id, deletedAt: null },
+          data: { ...dto, ...(hasTelefono ? { telefono, telefonoNormalizado } : {}) },
+          include: INCLUDE_ESTADO,
+        });
+        if (dto.nombre) await this.ensureReferencia(tx, cliente.nombre, usuarioId);
+        await tx.actividad.create({
+          data: { usuarioId, tabla: 'clientes', registroId: id, accion: 'EDITAR' },
+        });
+        return cliente;
+      })
+      .catch((error: unknown) => this.writeError(error));
   }
 
   // RN-001.004: borrado lógico
   async remove(id: string, usuarioId: string) {
     return this.prisma.$transaction(async (tx) => {
       const result = await tx.cliente.updateMany({
-        where: { id, deletedAt: null }, data: { deletedAt: new Date() },
+        where: { id, deletedAt: null },
+        data: { deletedAt: new Date() },
       });
       if (!result.count) throw new NotFoundException(`Cliente ${id} no encontrado`);
       await tx.actividad.create({
@@ -159,7 +164,8 @@ export class ClientesService {
 
   private writeError(error: unknown): never {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2002') throw new ConflictException('Ya existe un cliente con ese teléfono');
+      if (error.code === 'P2002')
+        throw new ConflictException('Ya existe un cliente con ese teléfono');
       if (error.code === 'P2025') throw new NotFoundException('Cliente no encontrado');
     }
     throw error;

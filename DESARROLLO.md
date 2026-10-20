@@ -337,3 +337,50 @@ comprueba el reintento y elimina el esquema al terminar. Nunca realiza esa
 carga en el esquema principal. Las pruebas de recuperación incluyen el recibo
 de un lote aplicado. La carga definitiva del archivo se realiza por separado,
 después de revisar las propuestas y disponer de una copia de seguridad actual.
+
+## Exportaciones
+
+Clientes, Suscripciones, Renovaciones, Finanzas y Estadísticas permiten descargar
+Excel, CSV y PDF desde el botón «Exportar». Se incluyen todos los resultados con
+los filtros y el orden actuales, independientemente de la página visible.
+Renovaciones distingue seguimiento e historial. Estadísticas incluye sus ocho
+informes, series, comparativas y clasificaciones completas; conserva las bases
+y limitaciones del cálculo mostrado en pantalla.
+
+La lectura usa una transacción Repeatable Read y una única fecha de referencia
+de Madrid para todas las páginas, incluso al cruzar medianoche. La generación se ejecuta en un
+trabajador separado con 256 MB y 20 segundos de plazo; se admiten dos solicitudes
+simultáneas por proceso. Límites: 10.000 registros en Excel/CSV, 1.000 en PDF,
+8 MB de datos, 20 MB de archivo, 32.767 caracteres por campo y 300 páginas PDF.
+La consulta tiene un plazo de 30 segundos. Al superar un límite se rechaza el
+archivo completo, sin truncarlo. El PDF divide tablas anchas en grupos de
+columnas y repite el número de fila, las cabeceras y la primera columna.
+
+Excel conserva teléfonos y referencias como texto, fechas como fechas e importes
+como números. CSV utiliza UTF-8 con BOM, punto y coma y comillas escapadas;
+neutraliza con apóstrofo los textos que podrían ejecutarse como fórmulas.
+Al abrir CSV mediante el importador de Excel, seleccionar tipo Texto para
+teléfonos y referencias para conservar ceros iniciales; XLSX ya define esos
+tipos. Los campos ausentes permanecen vacíos y cero no equivale a vacío.
+La referencia propia del cliente solo se exporta cuando existe una vinculación
+explícita en la materialización; una coincidencia de nombre no acredita propiedad.
+Los datos operativos restringidos no forman parte de las columnas exportables.
+Finanzas conserva la descripción de los movimientos antiguos aunque no tengan
+concepto. Renovaciones distingue el método original de la operación del método
+y las fechas del cobro posterior; un importe cero sin método gratuito no se
+presenta como una operación gratis.
+
+La API usa POST /exportaciones/:modulo con formato (xlsx/csv/pdf), filtros y,
+cuando corresponda, sección. No admite page/limit en los filtros. GET /exportaciones
+pagina el historial. Todas las rutas requieren sesión. El historial registra
+usuario, módulo, formato, fecha, estado, registros y tamaño; no almacena el archivo.
+GENERADA acredita generación, no guardado en el ordenador. FALLIDA identifica un
+intento fallido; GENERANDO sin resultado puede corresponder a un proceso
+interrumpido. Configuración muestra la última exportación generada correctamente.
+
+`./dev test-e2e-exportaciones` ejecuta el ensayo 12.1–12.4 y después descarga los
+tres formatos de los cinco módulos desde el navegador en el Compose aislado.
+Comprueba el historial y que las exportaciones no cambian los datos de negocio.
+Deja únicamente un PDF ficticio de revisión en /tmp/k13-exportacion-ensayo.pdf.
+Las pruebas de integración utilizan esquemas temporales. Ninguna de estas
+pruebas carga datos ni genera exportaciones en el entorno principal.

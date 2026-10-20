@@ -517,6 +517,12 @@ model Exportacion {
   tipo      String   @db.VarChar(20)
   usuarioId String   @map("usuario_id") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at")
+  modulo    String?  @db.VarChar(30)
+  seccion   String?  @db.VarChar(30)
+  estado    String   @default("GENERADA") @db.VarChar(20)
+  registros Int?
+  bytes     Int?
+  error     String?  @db.VarChar(200)
 
   usuario Usuario @relation(fields: [usuarioId], references: [id])
 

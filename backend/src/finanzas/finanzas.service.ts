@@ -62,33 +62,37 @@ export class FinanzasService {
     }
     return filters.length ? Prisma.sql`WHERE ${Prisma.join(filters, ' AND ')}` : Prisma.empty;
   }
-  async list(q: FinanceQueryDto) {
+  async list(q: FinanceQueryDto, client?: Prisma.TransactionClient) {
     const where = this.where(q);
-    return this.prisma.$transaction(
-      async (tx) => {
-        const ids = await tx.$queryRaw<{ id: string }[]>(Prisma.sql`
+    const read = async (tx: Prisma.TransactionClient) => {
+      const ids = await tx.$queryRaw<{ id: string }[]>(Prisma.sql`
           SELECT m.id FROM movimientos_financieros m ${where}
           ORDER BY COALESCE(m.fecha_cobro, m.fecha) DESC, m.id DESC
           LIMIT ${q.limit} OFFSET ${(q.page - 1) * q.limit}`);
-        const data = ids.length
-          ? await tx.movimientoFinanciero.findMany({
-              where: { id: { in: ids.map((row) => row.id) } },
-              select: financeReadSelect,
-            })
-          : [];
-        const byId = new Map(data.map((row) => [row.id, presentMovement(row)]));
-        const [count] = await tx.$queryRaw<{ total: number }[]>(Prisma.sql`
+      const data = ids.length
+        ? await tx.movimientoFinanciero.findMany({
+            where: { id: { in: ids.map((row) => row.id) } },
+            select: financeReadSelect,
+          })
+        : [];
+      const byId = new Map(data.map((row) => [row.id, presentMovement(row)]));
+      const [count] = await tx.$queryRaw<{ total: number }[]>(Prisma.sql`
           SELECT COUNT(*)::int AS total FROM movimientos_financieros m ${where}`);
-        return buildPaginatedResponse(
-          ids.map((row) => byId.get(row.id)!),
-          count.total,
-          q.page,
-          q.limit,
-        );
-      },
-      { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
-    );
+      return buildPaginatedResponse(
+        ids.map((row) => byId.get(row.id)!),
+        count.total,
+        q.page,
+        q.limit,
+      );
+    };
+    return client
+      ? read(client)
+      : this.prisma.$transaction(read, {
+          isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+          timeout: 30000,
+        });
   }
+
   async findOne(id: string, tx: Prisma.TransactionClient = this.prisma) {
     const row = await tx.movimientoFinanciero.findUnique({
       where: { id },

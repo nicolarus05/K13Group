@@ -1,4 +1,5 @@
 'use client';
+import { ExportButton } from '@/modules/exportaciones/export-button';
 import { useConfiguredPage } from '@/modules/configuracion/preferences';
 
 import { useState } from 'react';
@@ -124,6 +125,7 @@ export default function ClientesPage() {
         </Button>
       </div>
 
+      <ExportButton module="clientes" filters={{ search }} />
       {/* Buscador */}
       <div className="max-w-sm">
         <Input

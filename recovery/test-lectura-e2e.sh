@@ -12,8 +12,12 @@ cleanup() {
   fi
 }
 trap cleanup EXIT
-./dev build-backend
+if [[ "${E2E_SKIP_BUILD:-0}" != 1 ]]; then ./dev build-backend; fi
 "${compose[@]}" up -d --build --wait
 "${compose[@]}" exec -T api node scripts/lectura-fixture.cjs > "$test_dir/fixture.xlsx"
 "${compose[@]}" cp "$test_dir/fixture.xlsx" web:/tmp/lectura-fixture.xlsx >/dev/null
 "${compose[@]}" exec -T -e SPRINT12_ISOLATED=1 web node scripts/importaciones-e2e.cjs
+if [[ "${E2E_EXPORTACIONES:-0}" == 1 ]]; then
+  "${compose[@]}" exec -T -e SPRINT12_ISOLATED=1 web node scripts/exportaciones-e2e.cjs
+  "${compose[@]}" cp web:/tmp/k13-exportacion-ensayo.pdf /tmp/k13-exportacion-ensayo.pdf >/dev/null
+fi

@@ -15,6 +15,7 @@ type RetriableRequest = InternalAxiosRequestConfig & {
 let refreshing: Promise<void> | null = null;
 let generation = 0;
 let endingSession: Promise<void> | null = null;
+let sessionExpired = false;
 
 api.interceptors.request.use((config: RetriableRequest) => {
   config.sessionGeneration = generation;
@@ -35,7 +36,13 @@ async function endExpiredSession() {
 }
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (/\/auth\/login(?:$|[?])/.test(response.config.url ?? '')) {
+      sessionExpired = false;
+      generation += 1;
+    }
+    return response;
+  },
   async (error: AxiosError) => {
     const config = error.config as RetriableRequest | undefined;
     if (
@@ -44,7 +51,11 @@ api.interceptors.response.use(
       /\/auth\/(login|logout|refresh)(?:$|[?])/.test(config.url ?? '')
     )
       throw error;
+    // La navegación al login puede tardar. Los 401 que llegan en ese intervalo
+    // pertenecen a la sesión ya revocada y no deben iniciar otro refresh.
+    if (sessionExpired) throw error;
     if (config.sessionRetried) {
+      sessionExpired = true;
       await endExpiredSession();
       throw error;
     }
@@ -58,8 +69,10 @@ api.interceptors.response.use(
             generation += 1;
           })
           .catch(async (refreshError: unknown) => {
-            if (axios.isAxiosError(refreshError) && refreshError.response?.status === 401)
+            if (axios.isAxiosError(refreshError) && refreshError.response?.status === 401) {
+              sessionExpired = true;
               await endExpiredSession();
+            }
             throw refreshError;
           })
           .finally(() => {

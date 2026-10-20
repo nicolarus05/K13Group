@@ -203,45 +203,56 @@ export class SuscripcionesService implements OnApplicationBootstrap, OnModuleDes
     }
     return changed;
   }
-  async findAll(query: SubscriptionQueryDto) {
-    const context = await this.stateContext(this.prisma);
-    const where: Prisma.SuscripcionWhereInput = {
-      deletedAt: null,
-      ...(query.clienteId ? { clienteId: query.clienteId } : {}),
-      ...(query.productoId ? { productoId: query.productoId } : {}),
-      ...(query.servidorId ? { servidorId: query.servidorId } : {}),
-      ...(query.referenciaId ? { referenciaId: query.referenciaId } : {}),
-      ...(query.estado ? this.stateWhere(query.estado, context) : {}),
-      ...(query.search
-        ? {
-            OR: [
-              { cliente: { nombre: { contains: query.search.trim(), mode: 'insensitive' } } },
-              { cliente: { telefono: { contains: query.search.trim(), mode: 'insensitive' } } },
-              { producto: { nombre: { contains: query.search.trim(), mode: 'insensitive' } } },
-            ],
-          }
-        : {}),
+  async findAll(
+    query: SubscriptionQueryDto,
+    client?: Prisma.TransactionClient,
+    today = businessDay(),
+  ) {
+    const read = async (tx: Prisma.TransactionClient) => {
+      const context = await this.stateContext(tx, today);
+      const where: Prisma.SuscripcionWhereInput = {
+        deletedAt: null,
+        ...(query.clienteId ? { clienteId: query.clienteId } : {}),
+        ...(query.productoId ? { productoId: query.productoId } : {}),
+        ...(query.servidorId ? { servidorId: query.servidorId } : {}),
+        ...(query.referenciaId ? { referenciaId: query.referenciaId } : {}),
+        ...(query.estado ? this.stateWhere(query.estado, context) : {}),
+        ...(query.search
+          ? {
+              OR: [
+                { cliente: { nombre: { contains: query.search.trim(), mode: 'insensitive' } } },
+                { cliente: { telefono: { contains: query.search.trim(), mode: 'insensitive' } } },
+                { producto: { nombre: { contains: query.search.trim(), mode: 'insensitive' } } },
+              ],
+            }
+          : {}),
+      };
+      const [data, total] = await Promise.all([
+        tx.suscripcion.findMany({
+          where,
+          select: subscriptionSelect,
+          skip: (query.page - 1) * query.limit,
+          take: query.limit,
+          orderBy: [{ [query.sort]: query.order }, { id: 'asc' }],
+        }),
+        tx.suscripcion.count({ where }),
+      ]);
+      return {
+        success: true,
+        data: data.map((row) => this.currentState(row, context)),
+        pagination: {
+          page: query.page,
+          limit: query.limit,
+          total,
+          totalPages: Math.ceil(total / query.limit),
+        },
+      };
     };
-    const [data, total] = await this.prisma.$transaction([
-      this.prisma.suscripcion.findMany({
-        where,
-        select: subscriptionSelect,
-        skip: (query.page - 1) * query.limit,
-        take: query.limit,
-        orderBy: [{ [query.sort]: query.order }, { id: 'asc' }],
-      }),
-      this.prisma.suscripcion.count({ where }),
-    ]);
-    return {
-      success: true,
-      data: data.map((row) => this.currentState(row, context)),
-      pagination: {
-        page: query.page,
-        limit: query.limit,
-        total,
-        totalPages: Math.ceil(total / query.limit),
-      },
-    };
+    return client
+      ? read(client)
+      : this.prisma.$transaction(read, {
+          isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+        });
   }
   private async get(tx: Prisma.TransactionClient, id: string) {
     const row = await tx.suscripcion.findFirst({

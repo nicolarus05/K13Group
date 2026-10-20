@@ -165,6 +165,7 @@ export class ConfiguracionService {
         select: { createdAt: true, estado: true },
       }),
       this.prisma.exportacion.findFirst({
+        where: { estado: 'GENERADA' },
         orderBy: { createdAt: 'desc' },
         select: { createdAt: true, tipo: true },
       }),

@@ -31,6 +31,7 @@ const items = [
   { label: 'Estadísticas', href: '/estadisticas', icon: BarChart2 },
   { label: 'Recordatorios', href: '/recordatorios', icon: Bell },
   { label: 'Calendario', href: '/calendario', icon: CalendarDays },
+  { label: 'Exportaciones', href: '/exportaciones', icon: BookOpen },
   { label: 'Importar Excel', href: '/importaciones', icon: Upload },
 ];
 export function Sidebar({

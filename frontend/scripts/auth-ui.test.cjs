@@ -64,6 +64,11 @@ async function fixture(t, options = {}) {
       pagination: { page: 1, limit: 25, total: 0, totalPages: 0 },
     });
   });
+  if (options.holdLogin)
+    await page.route('**/login', async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+      await route.continue();
+    });
   return { page, calls, context };
 }
 
@@ -131,4 +136,12 @@ test('un 401 después de renovar termina la sesión sin repetir el refresh', asy
   await page.waitForURL('**/login');
   assert.equal(calls.refresh, 1);
   assert.ok(calls.logout >= 1);
+});
+
+test('un 401 tardío durante la limpieza de una sesión revocada no inicia otro refresh', async (t) => {
+  const { page, calls } = await fixture(t, { refreshStatus: 401, late401: true, holdLogin: true });
+  await page.goto(origin + '/clientes');
+  await page.waitForURL('**/login');
+  assert.equal(calls.refresh, 1);
+  assert.equal(calls.logout, 1);
 });

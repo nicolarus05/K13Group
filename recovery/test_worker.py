@@ -44,6 +44,8 @@ class RecoveryTests(unittest.TestCase):
         # El recibo de un lote aplicado también debe sobrevivir a la restauración.
         cls.batch=str(uuid.uuid4())
         w.query(f"INSERT INTO importacion_lotes(id,importacion_id,autor,solicitud_id,solicitud_hash,huella,seleccion,propuesta,resultado,estado,motivo,aplicado_at) VALUES ('{cls.batch}','{analysis}','{cls.user}','{uuid.uuid4()}','{'c'*64}','{'d'*64}','{{}}','{{}}','{{\"filas\":[]}}','APLICADO','Ensayo de recibo persistente',now())")
+        cls.export=str(uuid.uuid4())
+        w.query(f"INSERT INTO exportaciones(id,tipo,usuario_id,modulo,estado,registros,bytes) VALUES ('{cls.export}','xlsx','{cls.user}','clientes','GENERADA',1,4096)")
         (w.ASSETS/(cls.logo+'.webp')).write_bytes(b'fixture-image-bytes')
         cls.copy=w.backup()
         cls.before=w.digest(w.DB)
@@ -78,6 +80,7 @@ class RecoveryTests(unittest.TestCase):
         self.assertEqual(w.digest(w.DB),self.before)
         self.assertEqual(w.query('SELECT count(*) FROM sesiones'),'0')
         self.assertEqual(w.query(f"SELECT estado FROM importacion_lotes WHERE id='{self.batch}'"),'APLICADO')
+        self.assertEqual(w.query(f"SELECT estado || ':' || registros FROM exportaciones WHERE id='{self.export}'"),'GENERADA:1')
         self.assertFalse((w.ROOT/'maintenance').exists())
         self.assertTrue(job['safetyId'])
         self.assertGreaterEqual(int(w.query('SELECT count(*) FROM copias_seguridad')),2)

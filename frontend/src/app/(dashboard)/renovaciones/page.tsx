@@ -1,4 +1,5 @@
 'use client';
+import { ExportButton } from '@/modules/exportaciones/export-button';
 import { useConfiguredPage } from '@/modules/configuracion/preferences';
 import { useDateLabel, useRefreshInterval } from '@/modules/configuracion/preferences';
 import { Suspense, useState } from 'react';
@@ -65,6 +66,11 @@ function RenewalsPage() {
           </Button>
         ))}
       </div>
+      <ExportButton
+        module="renovaciones"
+        section={tab}
+        filters={tab === 'seguimiento' ? { ...filters, vista: view } : historyFilters}
+      />
       <Input
         label="Buscar cliente"
         value={search}

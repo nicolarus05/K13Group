@@ -16,6 +16,7 @@ const labels: Record<string, string> = {
   estadisticas: 'Estadísticas',
   catalogos: 'Catálogos',
   importaciones: 'Importaciones',
+  exportaciones: 'Exportaciones',
   recordatorios: 'Recordatorios',
   calendario: 'Calendario',
 };

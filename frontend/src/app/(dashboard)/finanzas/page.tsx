@@ -1,4 +1,5 @@
 'use client';
+import { ExportButton } from '@/modules/exportaciones/export-button';
 import { useListQuery } from '@/modules/configuracion/preferences';
 import { useDateLabel, useRefreshInterval } from '@/modules/configuracion/preferences';
 import Link from 'next/link';
@@ -55,6 +56,7 @@ export default function Page() {
         <h1 className="text-2xl font-semibold">Finanzas</h1>
         <Button onClick={() => setCreating(true)}>Nuevo gasto</Button>
       </header>
+      <ExportButton module="finanzas" filters={filters} />
       <p>
         Ingresos brutos y gastos pagados. Resultado operativo, sin comisiones automáticas ni cálculo
         fiscal.

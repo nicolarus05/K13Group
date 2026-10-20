@@ -1,4 +1,5 @@
 'use client';
+import { ExportButton } from '@/modules/exportaciones/export-button';
 import { useListQuery } from '@/modules/configuracion/preferences';
 import { useDateLabel, useRefreshInterval } from '@/modules/configuracion/preferences';
 import Link from 'next/link';
@@ -65,6 +66,7 @@ function SubscriptionsPage() {
           Nueva suscripción
         </Link>
       </header>
+      <ExportButton module="suscripciones" filters={query} />
       <div className="grid gap-3 md:grid-cols-3">
         <Input
           label="Buscar cliente, teléfono o producto"
