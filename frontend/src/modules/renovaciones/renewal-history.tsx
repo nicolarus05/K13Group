@@ -143,7 +143,7 @@ export function SubscriptionRenewals({ subscription }: { subscription: Subscript
             Registrar primer pago
           </Button>
         )}
-        {subscription.estado.valor !== 'CANCELADA' && (
+        {!['CANCELADA', 'HISTORICA'].includes(subscription.estado.valor) && (
           <Button
             variant="secondary"
             onClick={() => setAction({ kind: 'preferencia', subscription })}

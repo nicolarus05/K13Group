@@ -78,7 +78,7 @@ export default function Page() {
         <Link href="/suscripciones">Volver</Link>
       </div>
     );
-  const ended = row.estado.valor === 'CANCELADA';
+  const ended = ['CANCELADA', 'HISTORICA'].includes(row.estado.valor);
   return (
     <div className="space-y-5">
       <Link href="/suscripciones" className="text-primary underline">

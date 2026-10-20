@@ -47,7 +47,7 @@ export class EquivalenciasRevisionService {
     private readonly identities: IdentidadesService,
   ) {}
 
-  private async context(tx: Prisma.TransactionClient, id: string, lock = false) {
+  async context(tx: Prisma.TransactionClient, id: string, lock = false) {
     if (lock) {
       await tx.$queryRaw`SELECT id FROM importaciones WHERE id=${id}::uuid FOR UPDATE`;
       // Estabiliza los destinos entre la validación y el guardado de su huella.
@@ -339,6 +339,8 @@ export class EquivalenciasRevisionService {
       rows: reviewedRows,
       huellaRevision: fingerprint,
       simulate,
+      lecturas: rows,
+      identidades: identities,
     };
   }
 
@@ -465,6 +467,25 @@ export class EquivalenciasRevisionService {
       throw new BadRequestException('No hay filas elegibles con ese origen en este análisis.');
     if (affected.some((r) => r.campos[dto.tipo].ignorado))
       throw new BadRequestException('PA se ignora y no admite equivalencias.');
+    const mappingKeys = {
+      PRODUCTO: 'productoId',
+      TARIFA: 'tarifaId',
+      SERVIDOR: 'servidorId',
+      REFERENCIA: 'referenciaId',
+      PAGO: 'metodoPagoId',
+    };
+    for (const row of affected) {
+      if (dto.alcance === 'VALOR' && row.campos[dto.tipo].alcance === 'FILA') continue;
+      const source = ctx.lecturas.find((r) => r.id === row.id)!;
+      const locked = dto.tipo === 'PAGO' ? source.renovacionId : source.suscripcionId;
+      if (
+        locked &&
+        (dto.accion !== 'ASIGNAR' || dto.entidadId !== record(source.mapeo)[mappingKeys[dto.tipo]])
+      )
+        throw new ConflictException(
+          'La equivalencia afecta a datos ya importados. Revisa únicamente las filas pendientes.',
+        );
+    }
     const target = ctx.catalogs[dto.tipo].find((c) => c.id === dto.entidadId);
     if (dto.accion === 'ASIGNAR') {
       if (!target) throw new BadRequestException('El destino no está disponible en el catálogo.');

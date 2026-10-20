@@ -248,6 +248,7 @@ export class IdentidadesService {
               id: g.id,
               estado: statuses.get(g.id),
               decision: g.estado,
+              materializada: g.materializada,
               datos: source,
               problemas: reasons.get(g.id),
               clienteDestino: target ? this.publicClient(target) : null,
@@ -357,6 +358,21 @@ export class IdentidadesService {
         if (rows.length !== dto.filas.length || rows.some((r) => !r.identidadId))
           throw new BadRequestException('Selecciona filas de esta revisión preparada.');
         const previousIds = [...new Set(rows.map((r) => r.identidadId!))];
+        const materialized = await tx.importacionIdentidad.findMany({
+          where: { id: { in: previousIds }, materializada: true },
+          include: { filas: { select: { id: true } } },
+        });
+        if (
+          materialized.length &&
+          (materialized.length !== 1 ||
+            previousIds.length !== 1 ||
+            dto.accion !== 'VINCULAR' ||
+            dto.clienteDestinoId !== materialized[0].clienteDestinoId ||
+            materialized[0].filas.length !== rows.length)
+        )
+          throw new ConflictException(
+            'La identidad ya tiene datos importados. Solo se puede revisar de nuevo el mismo cliente con todas sus filas.',
+          );
         let canonical = identityData(rows[0].datosNormalizados);
         let target: Client | null = null;
         if (dto.accion === 'NUEVO') {
@@ -413,6 +429,51 @@ export class IdentidadesService {
               'El cliente de destino ha cambiado. Vuelve a seleccionarlo.',
             );
           canonical = identityData(target);
+        }
+        if (materialized.length && target) {
+          const g = materialized[0];
+          const user = await tx.usuario.findUniqueOrThrow({
+            where: { id: actor },
+            select: { nombre: true },
+          });
+          const event = {
+            id: randomUUID(),
+            accion: 'REVALIDAR_CLIENTE',
+            autor: user.nombre,
+            usuarioId: actor,
+            fecha: new Date().toISOString(),
+            motivo: dto.motivo,
+            filas: dto.filas,
+            clienteId: target.id,
+          };
+          await tx.importacionIdentidad.update({
+            where: { id: g.id },
+            data: {
+              huellaCliente: identityHash(target),
+              estado: 'VINCULADO',
+              datos: canonical as unknown as Prisma.InputJsonValue,
+              solicitudId: dto.solicitudId,
+              solicitudHash: hash,
+              historial: [
+                ...(Array.isArray(g.historial) ? g.historial : []),
+                event,
+              ] as Prisma.InputJsonValue,
+            },
+          });
+          await tx.importacion.update({
+            where: { id },
+            data: { versionIdentidades: { increment: 1 } },
+          });
+          await tx.actividad.create({
+            data: {
+              usuarioId: actor,
+              tabla: 'importaciones',
+              registroId: id,
+              accion: 'REVALIDAR_CLIENTE',
+              datosNuevos: event,
+            },
+          });
+          return { id: g.id, version: parent.versionIdentidades + 1 };
         }
         const previous = await tx.importacionIdentidad.findMany({
           where: { id: { in: previousIds } },

@@ -215,10 +215,53 @@ export class ImportacionesService {
       }),
       this.prisma.importacion.count(),
     ]);
+    const progress = await this.readingProgress(
+      items.filter((item) => item.versionMapeo === PARSER_VERSION).map((item) => item.id),
+    );
     return {
-      data: items.map((item) => this.toSummary(item, this.readReport(item.informe))),
+      data: items.map((item) =>
+        this.toSummary(item, { ...this.readReport(item.informe), ...progress.get(item.id) }),
+      ),
       pagination: { page, limit: safeLimit, total, totalPages: Math.ceil(total / safeLimit) },
     };
+  }
+
+  private async readingProgress(ids: string[]) {
+    if (!ids.length)
+      return new Map<
+        string,
+        { movimientosCreados: number; filasPendientesReconciliacion: number }
+      >();
+    return this.prisma.$transaction(
+      async (tx) => {
+        const movements = await tx.importacionFila.groupBy({
+          by: ['importacionId'],
+          where: { importacionId: { in: ids } },
+          _count: { movimientoId: true },
+        });
+        const pending = await tx.importacionFila.groupBy({
+          by: ['importacionId'],
+          where: {
+            importacionId: { in: ids },
+            renovacionId: null,
+            OR: [{ identidadId: null }, { identidad: { estado: { not: 'EXCLUIDO' } } }],
+          },
+          _count: { _all: true },
+        });
+        return new Map(
+          ids.map((id) => [
+            id,
+            {
+              movimientosCreados:
+                movements.find((r) => r.importacionId === id)?._count.movimientoId ?? 0,
+              filasPendientesReconciliacion:
+                pending.find((r) => r.importacionId === id)?._count._all ?? 0,
+            },
+          ]),
+        );
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
+    );
   }
 
   private countScopes(readings: RowReading[]) {
@@ -255,6 +298,18 @@ export class ImportacionesService {
         if (row.version !== dto.version)
           throw new ConflictException(
             'La fila ha cambiado. Recarga antes de guardar; tu borrador se conserva.',
+          );
+        const identity = row.identidadId
+          ? await tx.importacionIdentidad.findUnique({ where: { id: row.identidadId } })
+          : null;
+        const protectedFields = [
+          ...(identity?.materializada ? ['NOMBRE', 'TELEFONO', 'EMAIL', 'OBSERV'] : []),
+          ...(row.suscripcionId ? ['APP', 'SERVIDOR', 'REFERENCIA', 'FECHA'] : []),
+          ...(row.renovacionId ? ['PANO', 'PAGO', 'ESTADO'] : []),
+        ];
+        if (entries.some(([key]) => protectedFields.includes(key)))
+          throw new ConflictException(
+            'Este dato ya está importado. Revísalo desde su módulo; la lectura de origen queda protegida.',
           );
         const corrections: Corrections = {
           ...((row.correcciones as Corrections) ?? {}),
@@ -301,7 +356,7 @@ export class ImportacionesService {
             advertencias: validated.advertencias,
             estado: validated.errores.length ? ROW_STATUS.ERROR : ROW_STATUS.VALIDATED,
             decision: null,
-            mapeo: Prisma.DbNull,
+            ...(!row.suscripcionId ? { mapeo: Prisma.DbNull } : {}),
             revisadaPorId: actor,
             revisadaAt: new Date(),
             observacionRevision: dto.motivo,
@@ -590,6 +645,11 @@ export class ImportacionesService {
     });
     if (!importacion) throw new NotFoundException(`Importación ${id} no encontrada.`);
     const report = this.readReport(importacion.informe);
+    if (importacion.versionMapeo === PARSER_VERSION)
+      return this.toSummary(importacion, {
+        ...report,
+        ...(await this.readingProgress([id])).get(id),
+      });
     const pending = await this.prisma.importacionFila.count({
       where: { importacionId: id, estado: { notIn: [ROW_STATUS.IMPORTED, ROW_STATUS.REJECTED] } },
     });

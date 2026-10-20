@@ -503,8 +503,8 @@ export class RenovacionesService {
       await subscriptionLock(tx);
       const before = await this.subscription(tx, id);
       this.version(before.version, dto.version);
-      if (before.estado.valor === 'CANCELADA')
-        throw new ConflictException('Una suscripción cancelada es de solo lectura.');
+      if (['CANCELADA', 'HISTORICA'].includes(before.estado.valor))
+        throw new ConflictException('Una suscripción cancelada o histórica es de solo lectura.');
       if (before.noRenovar === dto.noRenovar) return before;
       const after = await tx.suscripcion.update({
         where: { id },

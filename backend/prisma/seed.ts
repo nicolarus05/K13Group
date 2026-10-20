@@ -60,6 +60,7 @@ const ESTADOS = [
   { tipo: 'suscripcion', valor: 'VENCIDA', etiqueta: 'Vencida', orden: 4 },
   { tipo: 'suscripcion', valor: 'SUSPENDIDA', etiqueta: 'Suspendida', orden: 5 },
   { tipo: 'suscripcion', valor: 'CANCELADA', etiqueta: 'Cancelada', orden: 6 },
+  { tipo: 'suscripcion', valor: 'HISTORICA', etiqueta: 'Histórica', orden: 7 },
   // Renovaciones
   { tipo: 'renovacion', valor: 'PENDIENTE', etiqueta: 'Pendiente', orden: 1 },
   { tipo: 'renovacion', valor: 'COMPLETADA', etiqueta: 'Completada', orden: 2 },

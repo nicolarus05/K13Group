@@ -22,6 +22,7 @@ import {
 import type { ImportacionSummary } from '@/modules/importaciones/types/importaciones.types';
 import { ReadingPreview, ReadingHistory } from '@/modules/importaciones/reading-preview';
 import { IdentityReview } from '@/modules/importaciones/identity-review';
+import { ApplicationReview } from '@/modules/importaciones/application-review';
 import { EquivalenceReview } from '@/modules/importaciones/equivalence-review';
 import { catalogError } from '@/modules/catalogos/services/catalogos.service';
 import { useQueryClient } from '@tanstack/react-query';
@@ -291,6 +292,15 @@ export default function ImportacionesPage() {
 
           {preview.soloLectura && (
             <>
+              <ApplicationReview
+                key={`application-${preview.importacionId}`}
+                onUpdate={(summary) =>
+                  setPreview((current) =>
+                    current?.importacionId === summary.importacionId ? summary : current,
+                  )
+                }
+                importId={preview.importacionId}
+              />
               <EquivalenceReview
                 key={`equivalence-${preview.importacionId}`}
                 importId={preview.importacionId}

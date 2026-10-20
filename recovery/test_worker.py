@@ -41,6 +41,9 @@ class RecoveryTests(unittest.TestCase):
         analysis=str(uuid.uuid4())
         w.query(f"INSERT INTO importaciones(id,archivo,usuario_id,estado,version_mapeo,version_equivalencias) VALUES ('{analysis}','ensayo.xlsx','{cls.user}','EN_REVISION','12.1.0',1)")
         w.query(f"INSERT INTO importacion_equivalencias_revision(id,importacion_id,version,tipo,alcance,clave,accion,origen,dependencias,autor,motivo,solicitud_id,solicitud_hash) VALUES ('{uuid.uuid4()}','{analysis}',1,'PAGO','VALOR','{'a'*64}','PENDIENTE','{{\"origen\":\"STR\"}}','{{}}','{cls.user}','Pendiente de revisión','{uuid.uuid4()}','{'b'*64}')")
+        # El recibo de un lote aplicado también debe sobrevivir a la restauración.
+        cls.batch=str(uuid.uuid4())
+        w.query(f"INSERT INTO importacion_lotes(id,importacion_id,autor,solicitud_id,solicitud_hash,huella,seleccion,propuesta,resultado,estado,motivo,aplicado_at) VALUES ('{cls.batch}','{analysis}','{cls.user}','{uuid.uuid4()}','{'c'*64}','{'d'*64}','{{}}','{{}}','{{\"filas\":[]}}','APLICADO','Ensayo de recibo persistente',now())")
         (w.ASSETS/(cls.logo+'.webp')).write_bytes(b'fixture-image-bytes')
         cls.copy=w.backup()
         cls.before=w.digest(w.DB)
@@ -74,6 +77,7 @@ class RecoveryTests(unittest.TestCase):
         self.assertEqual(job['state'],'COMPLETADA',job.get('error'))
         self.assertEqual(w.digest(w.DB),self.before)
         self.assertEqual(w.query('SELECT count(*) FROM sesiones'),'0')
+        self.assertEqual(w.query(f"SELECT estado FROM importacion_lotes WHERE id='{self.batch}'"),'APLICADO')
         self.assertFalse((w.ROOT/'maintenance').exists())
         self.assertTrue(job['safetyId'])
         self.assertGreaterEqual(int(w.query('SELECT count(*) FROM copias_seguridad')),2)

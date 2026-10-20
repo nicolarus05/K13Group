@@ -373,6 +373,7 @@ model Importacion {
   filas       ImportacionFila[]
   identidades ImportacionIdentidad[]
   revisionesEquivalencias ImportacionEquivalenciaRevision[]
+  lotes ImportacionLote[]
 
   @@unique([checksum, versionMapeo])
   @@map("importaciones")
@@ -423,11 +424,12 @@ model ImportacionFila {
   @@map("importacion_filas")
 }
 
-// Propuestas de identidad: no crean ni modifican clientes u operaciones.
+// Identidades revisadas y vínculo con el cliente materializado.
 model ImportacionIdentidad {
   id               String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   importacionId    String            @map("importacion_id") @db.Uuid
   estado           String            @default("PENDIENTE") @db.VarChar(20)
+  materializada    Boolean           @default(false)
   datos            Json
   clienteDestinoId String?           @map("cliente_destino_id") @db.Uuid
   huellaCliente    String?           @map("huella_cliente") @db.VarChar(64)
@@ -440,6 +442,27 @@ model ImportacionIdentidad {
 
   @@index([importacionId])
   @@map("importacion_identidades")
+}
+
+// Propuesta exacta y resultado durable de cada confirmación atómica.
+model ImportacionLote {
+  id            String      @id @default(uuid()) @db.Uuid
+  importacionId String      @map("importacion_id") @db.Uuid
+  autor         String      @db.Uuid
+  solicitudId   String      @unique @map("solicitud_id") @db.Uuid
+  solicitudHash String      @map("solicitud_hash") @db.VarChar(64)
+  huella        String      @db.VarChar(64)
+  seleccion     Json
+  propuesta     Json
+  resultado     Json?
+  estado        String      @default("PREPARADO") @db.VarChar(20)
+  motivo        String      @db.VarChar(1000)
+  createdAt     DateTime    @default(now()) @map("created_at")
+  aplicadoAt    DateTime?   @map("aplicado_at")
+  importacion   Importacion @relation(fields: [importacionId], references: [id], onDelete: Restrict)
+
+  @@index([importacionId, createdAt])
+  @@map("importacion_lotes")
 }
 
 // ─── 21. importacion_equivalencias ─────────────────────────────────────────

@@ -22,7 +22,7 @@ export class SubscriptionQueryDto {
   @IsOptional() @IsUUID() servidorId?: string;
   @IsOptional() @IsUUID() referenciaId?: string;
   @IsOptional()
-  @IsIn(['ACTIVA', 'PROXIMA_A_VENCER', 'VENCIDA', 'SUSPENDIDA', 'CANCELADA'])
+  @IsIn(['ACTIVA', 'PROXIMA_A_VENCER', 'VENCIDA', 'SUSPENDIDA', 'CANCELADA', 'HISTORICA'])
   estado?: string;
   @IsIn(['fechaFin', 'createdAt']) sort: 'fechaFin' | 'createdAt' = 'fechaFin';
   @IsIn(['asc', 'desc']) order: 'asc' | 'desc' = 'asc';

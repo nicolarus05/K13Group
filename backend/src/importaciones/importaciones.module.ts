@@ -1,3 +1,4 @@
+import { AplicacionService } from './aplicacion.service';
 import { Module } from '@nestjs/common';
 import { ImportacionesController } from './importaciones.controller';
 import { ImportacionesService } from './importaciones.service';
@@ -8,6 +9,7 @@ import { EquivalenciasRevisionService } from './equivalencias-revision.service';
 @Module({
   controllers: [ImportacionesController],
   providers: [
+    AplicacionService,
     ImportacionesService,
     ExcelParserService,
     IdentidadesService,

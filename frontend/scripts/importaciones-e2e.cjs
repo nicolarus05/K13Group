@@ -128,9 +128,83 @@ async function main() {
       assert.equal(response.status(), 200);
       assert.equal((await response.json()).pagination.total, 0);
     }
+    await page.getByText('12.4 · Confirmar e importar datos revisados', { exact: true }).click();
+    await page.getByLabel('Seleccionar OCT 4', { exact: true }).check();
+    await page.getByLabel('Servicio OCT 4', { exact: true }).selectOption('NUEVO');
+    await page.getByLabel('Finanzas OCT 4', { exact: true }).selectOption('DEUDA');
+    await page.getByLabel('Operación OCT 4', { exact: true }).selectOption('ALTA');
+    await page
+      .getByLabel('Motivo del lote', { exact: true })
+      .fill('Ensayo web aislado de confirmación');
+    await page.getByRole('button', { name: 'Previsualizar lote', exact: true }).click();
+    const proposal = page.getByRole('region', { name: 'Propuesta de importación' });
+    await proposal.getByText(/1 filas · 1 clientes nuevos/).waitFor();
+    await proposal.getByText('Revisar todas las filas del lote', { exact: true }).click();
+    await proposal.getByText(/Método de pago: Stripe/).waitFor();
+    assert.equal(
+      await proposal
+        .getByRole('button', { name: 'Confirmar importación del lote', exact: true })
+        .isDisabled(),
+      true,
+    );
+    await proposal
+      .getByLabel('He revisado los clientes, servicios, agrupaciones y fechas del lote.')
+      .check();
+    assert.equal(
+      await proposal
+        .getByRole('button', { name: 'Confirmar importación del lote', exact: true })
+        .isDisabled(),
+      true,
+    );
+    await proposal
+      .getByLabel(
+        'Confirmo expresamente los importes, tipos de operación, cobros y deudas indicados.',
+      )
+      .check();
+    await proposal
+      .getByRole('button', { name: 'Confirmar importación del lote', exact: true })
+      .click();
+    await proposal
+      .getByText(
+        /Importación completada: 1 clientes nuevos, 1 servicios nuevos, 1 operaciones y 1 movimientos/,
+      )
+      .waitFor();
+    const serviceLink = await proposal
+      .getByRole('link', { name: 'Servicio', exact: true })
+      .getAttribute('href');
+    const movementLink = await proposal
+      .getByRole('link', { name: 'Movimiento', exact: true })
+      .getAttribute('href');
+    const service = (
+      await (await context.request.get('http://localhost:3001/api/v1' + serviceLink)).json()
+    ).data;
+    assert.equal(service.estado.valor, 'HISTORICA');
+    const movement = (
+      await (await context.request.get('http://localhost:3001/api/v1' + movementLink)).json()
+    ).data;
+    assert.equal(movement.estado.valor, 'PENDIENTE');
+    assert.equal(Number(movement.importe), 75);
+    assert.equal(movement.fechaCobro, null);
+    await page.reload();
+    await page.getByText('Retomar un análisis guardado', { exact: true }).click();
+    await page.getByRole('button', { name: 'Abrir análisis', exact: true }).click();
+    await page.getByText('12.4 · Confirmar e importar datos revisados', { exact: true }).click();
+    await page.getByText('Lotes guardados (1)', { exact: true }).click();
+    await page.getByRole('button', { name: /Abrir lote / }).click();
+    await proposal.getByText(/Importación completada: 1 clientes nuevos/).waitFor();
+    assert.equal(
+      await proposal
+        .getByRole('button', { name: 'Confirmar importación del lote', exact: true })
+        .count(),
+      0,
+    );
+    for (const entity of ['clientes', 'suscripciones', 'finanzas']) {
+      const response = await context.request.get('http://localhost:3001/api/v1/' + entity);
+      assert.equal((await response.json()).pagination.total, 1);
+    }
     assert.deepEqual(errors, []);
     console.log(
-      'E2E 12.1–12.3: lectura, corrección, identidad, producto, tarifa anual, servidor histórico, PE, previsualización, historial y reanudación correctos; sin operaciones creadas.',
+      'E2E 12.1–12.4: lectura, identidad, equivalencias, confirmación explícita, deuda PE histórica y reanudación correctas. Un cliente, un servicio y una deuda en el entorno aislado.',
     );
   } finally {
     await browser.close();

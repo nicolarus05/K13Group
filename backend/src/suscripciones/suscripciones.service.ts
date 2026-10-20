@@ -387,8 +387,8 @@ export class SuscripcionesService implements OnApplicationBootstrap, OnModuleDes
         const stored = await this.get(tx, id);
         this.checkVersion(stored, dto.version);
         const before = await this.syncRow(tx, stored, await this.stateContext(tx));
-        if (before.estado.valor === 'CANCELADA')
-          throw new ConflictException('Una suscripción cancelada es de solo lectura.');
+        if (['CANCELADA', 'HISTORICA'].includes(before.estado.valor))
+          throw new ConflictException('Una suscripción cancelada o histórica es de solo lectura.');
         const { version: _version, motivoCorreccion, fechaInicio, ...changes } = dto;
         await this.validateLinks(tx, { ...before, ...changes }, before);
         const dates =

@@ -287,3 +287,53 @@ Las decisiones siguen en staging: no crean clientes, suscripciones, renovaciones
 referencias de catálogo ni movimientos. El ensayo web incluye ahora estas
 equivalencias; el ensayo del archivo completo comprueba sus cinco inventarios,
 el guardado idempotente y la ausencia de operaciones creadas.
+
+«12.4 · Confirmar e importar datos revisados» permite seleccionar hasta 500
+filas por lote, preparar una propuesta persistente y confirmar su aplicación.
+La propuesta muestra clientes y referencias propias, servicios, periodos,
+altas o renovaciones, ingresos confirmados, deudas PE y operaciones gratuitas.
+La selección se conserva entre páginas. Los periodos del mismo servicio se
+agrupan expresamente; las coincidencias con servicios existentes requieren
+vinculación o confirmación de que son servicios distintos. Los solapes y los
+periodos ya importados bloquean el lote.
+
+La confirmación es una transacción: un fallo revierte clientes, referencias,
+servicios, operaciones, movimientos y auditoría. El recibo queda guardado;
+retomar o repetir un lote aplicado devuelve ese resultado sin duplicarlo.
+El listado de lotes está paginado para poder recuperar también los antiguos.
+Los recuentos del resumen se calculan a partir de los vínculos importados y se
+actualizan al aplicar el lote; las filas excluidas no cuentan como pendientes.
+Cualquier cambio relevante en lectura, identidad, equivalencias, catálogos o
+datos de negocio exige preparar de nuevo la propuesta. Los lotes con finanzas
+requieren una segunda confirmación expresa. PE genera exclusivamente deuda,
+Gratis exige importe cero y no genera movimiento; PA y TOTAL no generan cobros.
+Las fechas históricas de operación se obtienen del vencimiento menos un año,
+ajustando el día al calendario. La deuda puede cobrarse después desde Renovaciones.
+
+Se pueden importar solo clientes, o clientes y servicios, dejando las finanzas
+pendientes. Teléfono, email y observaciones ausentes se guardan como `NULL`;
+el cliente nuevo se crea `ACTIVO`. La referencia propia se revisa por separado
+de la referencia de origen. Una identidad materializada no admite cambiar de
+cliente, excluirse o reagruparse. Si el cliente se edita posteriormente, puede
+revalidarse su misma vinculación con todas las filas de la identidad.
+Los datos de lectura y equivalencias que ya originaron un servicio o una
+operación quedan protegidos; las partes pendientes se pueden seguir revisando.
+Al conservar un servicio importado para completar únicamente sus finanzas,
+se mantienen sus fechas, estado y versión actuales, incluso si después se
+suspendió o canceló. El cliente puede estar inactivo si se ha revalidado su
+misma identidad. Los periodos ya conocidos se tienen en cuenta para impedir
+registrar como alta un periodo posterior. La propuesta conserva y muestra el
+método de pago antes de confirmar.
+
+Los servicios de COBRA/PROMAX importados con uso histórico reciben el estado
+`HISTORICA`: se consultan y filtran, pero no se reactivan, renuevan ni generan
+recordatorios operativos. Sus operaciones conservan los importes y nombres de
+catálogo revisados en sus snapshots.
+
+El ensayo web aislado cubre ahora la confirmación 12.4 y la recuperación del
+recibo tras recargar. El ensayo del XLSX completo mantiene todas sus filas en
+un esquema temporal y aplica una fila revisada con sus vínculos y finanzas;
+comprueba el reintento y elimina el esquema al terminar. Nunca realiza esa
+carga en el esquema principal. Las pruebas de recuperación incluyen el recibo
+de un lote aplicado. La carga definitiva del archivo se realiza por separado,
+después de revisar las propuestas y disponer de una copia de seguridad actual.

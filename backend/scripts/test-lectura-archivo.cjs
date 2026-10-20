@@ -9,6 +9,8 @@ const { ExcelParserService } = require('../dist/src/importaciones/excel-parser.s
 const { ImportacionesService } = require('../dist/src/importaciones/importaciones.service');
 const { IdentidadesService } = require('../dist/src/importaciones/identidades.service');
 const { EquivalenciasRevisionService } = require('../dist/src/importaciones/equivalencias-revision.service');
+const { AplicacionService } = require('../dist/src/importaciones/aplicacion.service');
+const { identityData } = require('../dist/src/importaciones/identity-matching');
 const { ImportacionFilasDto } = require('../dist/src/importaciones/dto/importacion-filas.dto');
 async function main() {
   const buffer = readFileSync(0);
@@ -71,8 +73,34 @@ async function main() {
     assert.equal(resumed.version,1);
     assert.equal(resumed.resumen.pendientesPago,payments.resumen.pendientesPago);
     for (const entity of ['cliente', 'suscripcion', 'renovacion', 'movimientoFinanciero']) assert.equal(await db[entity].count(), 0, entity);
+    const application = new AplicacionService(db,equivalences);
+    const current=await equivalences.context(db,summary.importacionId);
+    const eligible=current.rows.find(r=>r.fechaInicioPropuesta && r.importeAnual>0 && r.campos.PRODUCTO.sugerencias.length===1 && r.campos.SERVIDOR.sugerencias.length===1 && !r.campos.PAGO.ignorado && r.campos.PAGO.sugerencias.length===1 && (r.campos.REFERENCIA.ausente||String(r.campos.REFERENCIA.efectivo).trim().length<=150) && current.lecturas.some(x=>x.id===r.id&&identityData(x.datosNormalizados).nombre.length>=2));
+    assert.ok(eligible,'Existe una fila revisable para el ensayo aislado completo');
+    const source=current.lecturas.find(r=>r.id===eligible.id);
+    const idReview=await identities.list(summary.importacionId,{page:1,limit:25});
+    await identities.decide(summary.importacionId,actor.id,{version:idReview.version,solicitudId:randomUUID(),filas:[source.id],accion:'NUEVO',datos:identityData(source.datosNormalizados),motivo:'Ensayo aislado; no es una carga definitiva'});
+    for(const tipo of ['PRODUCTO','TARIFA','SERVIDOR','REFERENCIA','PAGO']) {
+      let context=await equivalences.context(db,summary.importacionId), row=context.rows.find(r=>r.id===source.id), cell=row.campos[tipo];
+      if(tipo==='REFERENCIA'&&!cell.ausente&&!cell.sugerencias.length) {
+        await db.referencia.create({data:{nombre:String(cell.efectivo).trim()}});
+        context=await equivalences.context(db,summary.importacionId);row=context.rows.find(r=>r.id===source.id);cell=row.campos[tipo];
+      }
+      if(tipo==='REFERENCIA'&&cell.ausente)continue;
+      const target=tipo==='TARIFA'?context.catalogs.TARIFA.find(t=>t.productoId===row.campos.PRODUCTO.destino.id&&t.duracionMeses===12):cell.sugerencias[0];
+      assert.ok(target,'Destino de ensayo disponible');
+      await equivalences.decide(summary.importacionId,actor.id,{huellaRevision:context.huellaRevision,solicitudId:randomUUID(),tipo,alcance:'FILA',filaId:source.id,clave:cell.clave,accion:'ASIGNAR',entidadId:target.id,historico:tipo==='SERVIDOR'&&!target.activo,motivo:'Equivalencia del ensayo aislado'});
+    }
+    const ready=await application.list(summary.importacionId,{page:1,limit:25});
+    const updated=(await equivalences.context(db,summary.importacionId)).rows.find(r=>r.id===source.id);
+    const batch=await application.propose(summary.importacionId,actor.id,{solicitudId:randomUUID(),huellaRevision:ready.huellaRevision,filas:[{filaId:source.id,servicio:'NUEVO',finanzas:updated.finanzas==='PENDIENTE_PAGO'?'DEUDA':'COBRADO',tipoOperacion:'ALTA',servicioDistinto:false}],motivo:'Confirmación de ensayo aislado'});
+    assert.equal(batch.propuesta.bloqueos.length,0,'Propuesta sin bloqueos');
+    const applied=await application.confirm(summary.importacionId,batch.id,actor.id,{confirmar:true,confirmarFinanzas:true});
+    assert.deepEqual(await application.confirm(summary.importacionId,batch.id,actor.id,{confirmar:true,confirmarFinanzas:true}),applied);
+    for(const entity of ['cliente','suscripcion','renovacion','movimientoFinanciero'])assert.equal(await db[entity].count(),1,entity);
+    assert.equal(await db.importacionFila.count({where:{clienteId:null}}),summary.filas-1);
     const withoutName = parsed.flatMap(s => s.filas).filter(r => !r.datosNormalizados.nombre).length;
-    console.log(JSON.stringify({ resultado: 'OK', hojas: parsed.length, filas: summary.filas, filasSinNombre: withoutName, bloqueos: summary.bloqueos, identidades:review.resumen, equivalencias:inventory, filasEnsayadas:before.total, milisegundos: Date.now() - started, datosOperativosCreados: 0 }));
+    console.log(JSON.stringify({ resultado: 'OK', hojas: parsed.length, filas: summary.filas, filasSinNombre: withoutName, bloqueos: summary.bloqueos, identidades:review.resumen, equivalencias:inventory, filasEnsayadas:before.total, milisegundos: Date.now() - started, datosOperativosCreados: {clientes:1,suscripciones:1,operaciones:1,movimientos:1}, soloEnEsquemaTemporal:true }));
   } finally {
     await db.$disconnect();
     assert.match(schema, /^catalogos_test_[a-f0-9]{32}$/);
@@ -80,4 +108,4 @@ async function main() {
     await admin.$disconnect();
   }
 }
-main().catch(() => { console.error('Falló el ensayo aislado de lectura. No se publican datos del archivo.'); process.exitCode = 1; });
+main().catch(error => { console.error(JSON.stringify({resultado:'FALLO',tipo:error.name,codigo:error.code,ubicacion:error.stack?.split('\n').find(line=>/^\s+at main \(/.test(line))?.trim()})); process.exitCode = 1; });

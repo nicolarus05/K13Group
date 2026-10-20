@@ -32,6 +32,7 @@ type Group = {
   id: string;
   estado: string;
   decision: string;
+  materializada?: boolean;
   datos: Data;
   filas: Row[];
   problemas: string[];
@@ -266,6 +267,12 @@ export function IdentityReview({ importId }: { importId: string }) {
                         Seleccionar {group.filas.length} filas de esta identidad
                       </Button>
                     </div>
+                    {group.materializada && (
+                      <p>
+                        Identidad importada: solo permite volver a validar el mismo cliente,
+                        seleccionando todas sus filas.
+                      </p>
+                    )}
                     {group.problemas.map((p) => (
                       <p key={p} role="alert">
                         {p}

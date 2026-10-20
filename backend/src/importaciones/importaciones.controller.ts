@@ -1,3 +1,5 @@
+import { AplicacionService } from './aplicacion.service';
+import { AplicacionQueryDto, ProponerImportacionDto, ConfirmarLoteDto } from './dto/aplicacion.dto';
 import {
   Controller,
   Body,
@@ -36,9 +38,32 @@ import { DecidirEquivalenciaDto, EquivalenciasQueryDto } from './dto/equivalenci
 export class ImportacionesController {
   constructor(
     private readonly importacionesService: ImportacionesService,
+    private readonly aplicacion: AplicacionService,
     private readonly identidades: IdentidadesService,
     private readonly equivalencias: EquivalenciasRevisionService,
   ) {}
+
+  @Get(':id/aplicacion')
+  application(@Param('id', ParseUUIDPipe) id: string, @Query() query: AplicacionQueryDto) {
+    return this.aplicacion.list(id, query);
+  }
+  @Post(':id/lotes')
+  proposeBatch(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ProponerImportacionDto,
+    @CurrentUser() user: Usuario,
+  ) {
+    return this.aplicacion.propose(id, user.id, dto);
+  }
+  @Post(':id/lotes/:loteId/confirmar')
+  confirmBatch(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('loteId', ParseUUIDPipe) loteId: string,
+    @Body() dto: ConfirmarLoteDto,
+    @CurrentUser() user: Usuario,
+  ) {
+    return this.aplicacion.confirm(id, loteId, user.id, dto);
+  }
 
   @Get(':id/equivalencias-revision')
   reviewEquivalences(

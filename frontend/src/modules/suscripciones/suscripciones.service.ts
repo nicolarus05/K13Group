@@ -8,6 +8,7 @@ export const subscriptionStates = [
   'VENCIDA',
   'SUSPENDIDA',
   'CANCELADA',
+  'HISTORICA',
 ] as const;
 export interface Subscription {
   noRenovar: boolean;
