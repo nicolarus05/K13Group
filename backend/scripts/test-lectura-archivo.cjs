@@ -1,7 +1,7 @@
 // Ensayo del archivo completo por stdin, siempre en un esquema temporal.
 const assert = require('node:assert/strict');
 const { readFileSync } = require('node:fs');
-const { randomUUID } = require('node:crypto');
+const { createHash, randomUUID } = require('node:crypto');
 const { spawnSync } = require('node:child_process');
 const { PrismaClient } = require('@prisma/client');
 const { seedBase } = require('../dist/prisma/seed');
@@ -99,8 +99,34 @@ async function main() {
     assert.deepEqual(await application.confirm(summary.importacionId,batch.id,actor.id,{confirmar:true,confirmarFinanzas:true}),applied);
     for(const entity of ['cliente','suscripcion','renovacion','movimientoFinanciero'])assert.equal(await db[entity].count(),1,entity);
     assert.equal(await db.importacionFila.count({where:{clienteId:null}}),summary.filas-1);
+    const finalReview=await application.list(summary.importacionId,{page:1,limit:25});
+    assert.deepEqual(finalReview.resumen,{
+      filas:summary.filas,clientesVinculados:1,serviciosVinculados:1,
+      operacionesCreadas:1,excluidas:0,
+    },'Los contadores de la interfaz coinciden con las filas materializadas');
+    assert.equal(applied.estado,'APLICADO');
+    assert.equal(finalReview.lotesPagination.total,1,'El reintento no duplica el lote');
+    const linked=await db.importacionFila.findUniqueOrThrow({where:{id:source.id}});
+    const renewal=await db.renovacion.findUniqueOrThrow({where:{id:linked.renovacionId}});
+    const movement=await db.movimientoFinanciero.findUniqueOrThrow({where:{id:linked.movimientoId},include:{estado:true}});
+    const proposed=batch.propuesta.filas[0];
+    const paid=proposed.finanzas==='COBRADO';
+    assert.equal(renewal.suscripcionId,linked.suscripcionId);
+    assert.equal(movement.suscripcionId,linked.suscripcionId);
+    assert.equal(movement.renovacionId,renewal.id);
+    assert.equal(Number(renewal.importe),proposed.importe);
+    assert.equal(Number(movement.importe),proposed.importe);
+    assert.equal(movement.estado.valor,paid?'CONFIRMADO':'PENDIENTE');
+    assert.equal(movement.fechaCobro?.toISOString().slice(0,10)??null,paid?proposed.fechaInicio:null);
+    assert.equal(movement.fechaPrevistaCobro?.toISOString().slice(0,10)??null,paid?null:proposed.fechaInicio);
+    const totals=await db.movimientoFinanciero.groupBy({by:['estadoId'],_sum:{importe:true}});
+    const states=await db.estado.findMany({where:{tipo:'movimiento_estado'}});
+    const totalFor=(value)=>Number(totals.find(t=>t.estadoId===states.find(s=>s.valor===value)?.id)?._sum.importe??0);
+    assert.equal(totalFor('CONFIRMADO'),batch.propuesta.resumen.ingresos);
+    assert.equal(totalFor('PENDIENTE'),batch.propuesta.resumen.deuda);
+    const reconciliation={filasImportadas:1,filasPendientes:summary.filas-1,filasExcluidas:0,ingresos:totalFor('CONFIRMADO'),deuda:totalFor('PENDIENTE')};
     const withoutName = parsed.flatMap(s => s.filas).filter(r => !r.datosNormalizados.nombre).length;
-    console.log(JSON.stringify({ resultado: 'OK', hojas: parsed.length, filas: summary.filas, filasSinNombre: withoutName, bloqueos: summary.bloqueos, identidades:review.resumen, equivalencias:inventory, filasEnsayadas:before.total, milisegundos: Date.now() - started, datosOperativosCreados: {clientes:1,suscripciones:1,operaciones:1,movimientos:1}, soloEnEsquemaTemporal:true }));
+    console.log(JSON.stringify({ resultado: 'OK', archivoSha256:createHash('sha256').update(buffer).digest('hex'), hojas: parsed.length, filas: summary.filas, filasSinNombre: withoutName, bloqueos: summary.bloqueos, identidades:review.resumen, equivalencias:inventory, filasConEquivalenciaPagoEnsayada:before.total, conciliacion:reconciliation, milisegundos: Date.now() - started, datosOperativosCreados: {clientes:1,suscripciones:1,operaciones:1,movimientos:1}, soloEnEsquemaTemporal:true }));
   } finally {
     await db.$disconnect();
     assert.match(schema, /^catalogos_test_[a-f0-9]{32}$/);

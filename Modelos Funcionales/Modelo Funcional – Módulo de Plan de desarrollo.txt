@@ -526,6 +526,14 @@ PDF.
 La importación definida en este sprint reutilizará el staging y el mapeo creado
 en el Sprint 3.5. No se permitirá una carga directa que omita la revisión de
 duplicados o la reconciliación financiera.
+
+Estado verificado el 21 de octubre de 2026: pasos 12.1–12.5 implementados y
+revisados en feat/sprint12-lectura-excel. Cierre técnico comprobado; integración
+en main e importación definitiva pendientes. Evidencia y límites del ensayo en
+DESARROLLO.md, apartado «Verificación de cierre técnico del sprint 12».
+El ensayo leyó el XLSX completo y materializó una fila en un esquema temporal;
+no se ha importado el histórico en el entorno principal.
+
 SPRINT 13 – Auditoría y Seguridad
 
 Implementación de:

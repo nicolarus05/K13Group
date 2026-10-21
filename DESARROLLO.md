@@ -221,16 +221,15 @@ y git diff --check correctos. No se han cambiado funcionalidades en este paso;
 se conservan los resultados de pruebas del paso 2, sin repetirlas.
 No se ha hecho push, merge ni despliegue.
 
-## Publicación y planificación del sprint 11
+## Publicación y estado del sprint 11
 
 Los commits del entorno y las correcciones se publicaron en GitHub y se integraron
 en `main` mediante el merge `8f631ec`. Esto publica el código, no despliega la web.
 
-La planificación completa del sprint 11, revisada el 8 de octubre de 2026, está en
-[backend/SPRINT11.md](backend/SPRINT11.md) y resumida en el plan general. Incluye
-contratos, datos, tareas, dependencias, API, pruebas y criterios de cierre, con
-restauración desde la web, orden de métodos de pago y parámetros técnicos editables.
-El sprint sigue pendiente de implementación.
+El sprint 11 está implementado en `81fd8bc`: configuración, cuenta, preferencias,
+catálogos y recuperación desde la web. La rama del sprint 12 incluye ese commit
+como dependencia. A fecha del 21 de octubre de 2026, ambos sprints están publicados
+en sus ramas de trabajo, pero todavía no se han integrado en `main`.
 
 ## Configuración y recuperación
 
@@ -261,7 +260,14 @@ de plazo; se admiten dos análisis simultáneos. No se recalculan fórmulas.
 Compose aislado `k13-lectura-test`, que se elimina al terminar. Tras compilar el
 backend, puede ensayarse un archivo completo por stdin con
 `docker compose exec -T backend node scripts/test-lectura-archivo.cjs < archivo.xlsx`.
-Ese comando crea y elimina su propio esquema temporal y solo imprime recuentos.
+Ese comando crea y elimina su propio esquema temporal e imprime un resumen sin
+datos identificativos de clientes ni credenciales.
+
+«12.2 · Revisar identidades y duplicados» prepara una identidad por fila sin
+fusionar clientes automáticamente por nombre. Permite agrupar, separar, excluir,
+proponer un cliente nuevo o vincular uno existente, conservando motivo, versión e
+historial. Los conflictos de teléfono y los cambios en el cliente de destino
+requieren revisión. Las decisiones siguen en staging hasta confirmar un lote.
 
 En la misma pantalla, «12.3 · Revisar equivalencias y operaciones propuestas»
 permite revisar producto, tarifa anual, servidor, referencia de origen y método
@@ -334,7 +340,11 @@ El ensayo web aislado cubre ahora la confirmación 12.4 y la recuperación del
 recibo tras recargar. El ensayo del XLSX completo mantiene todas sus filas en
 un esquema temporal y aplica una fila revisada con sus vínculos y finanzas;
 comprueba el reintento y elimina el esquema al terminar. Nunca realiza esa
-carga en el esquema principal. Las pruebas de recuperación incluyen el recibo
+carga en el esquema principal. El informe identifica el archivo mediante SHA-256
+y diferencia las filas con equivalencia de pago ensayada de las filas importadas.
+Concilia los contadores de la interfaz, los vínculos de la operación, sus importes,
+el estado y las fechas del movimiento, y los totales de ingresos y deuda con la
+propuesta confirmada. Las pruebas de recuperación incluyen el recibo
 de un lote aplicado. La carga definitiva del archivo se realiza por separado,
 después de revisar las propuestas y disponer de una copia de seguridad actual.
 
@@ -384,3 +394,50 @@ Comprueba el historial y que las exportaciones no cambian los datos de negocio.
 Deja únicamente un PDF ficticio de revisión en /tmp/k13-exportacion-ensayo.pdf.
 Las pruebas de integración utilizan esquemas temporales. Ninguna de estas
 pruebas carga datos ni genera exportaciones en el entorno principal.
+
+## Verificación de cierre técnico del sprint 12 — 21 de octubre de 2026
+
+Los pasos 12.1–12.5 están implementados y revisados en
+`feat/sprint12-lectura-excel`, hasta `e102b35`. La revisión de cierre contrastó el
+plan general con la lectura, las identidades, las equivalencias, la confirmación
+transaccional y las exportaciones. No se detectaron defectos funcionales nuevos.
+La integración en `main` y la importación definitiva siguen pendientes.
+
+Se conservan los resultados de la revisión final de 12.5 sobre ese mismo código:
+70 pruebas unitarias, 221 de integración, 101 de interfaz y 9 de recuperación
+(401 en total), además del recorrido web 12.1–12.4 y 15 descargas reales en 12.5.
+Tipos y compilaciones correctos; lint sin errores y con una advertencia previa
+por `UseGuards` sin usar en Auditoría. La prueba opcional de carga masiva de
+Suscripciones no forma parte de esos resultados. No se ha repetido la batería
+completa para cambios de documentación, ayuda y comprobaciones del ensayo.
+
+En el cierre se ejecutó de nuevo el ensayo del XLSX actual y se reforzó su
+conciliación. Archivo: `Modelos Funcionales/CLIENTES 2026(Actualizado).xlsx`;
+SHA-256: `47e158a3289fededa153b4c6eef30d04e6e7ba4816ed975d85e05a6c98191046`.
+Se leyeron 12 hojas y 3.135 filas. Se ensayó una equivalencia de pago sobre 141
+filas y se materializó **una sola fila revisada**: un cliente, un servicio, una
+operación y un movimiento. El resultado dejó 3.134 filas pendientes y ninguna
+excluida; los ingresos del ensayo fueron 30 EUR y la deuda 0 EUR, coincidentes
+con la propuesta. Esto no acredita una importación completa del archivo.
+
+El análisis inicial detectó 4 filas sin nombre y 75 identidades en conflicto.
+Los diagnósticos incluyen 936 incidencias financieras y 787 de suscripción;
+pueden coincidir en una misma fila y requieren revisión antes de la carga real.
+No se han resuelto mediante datos inventados ni aprobaciones automáticas.
+
+Las 18 migraciones están aplicadas. Tras el ensayo se comprobaron cero clientes,
+servicios, operaciones, movimientos, análisis, filas, identidades, decisiones de
+equivalencia, lotes y exportaciones en el esquema principal, y cero esquemas de
+ensayo pendientes. Los cuatro servicios Docker están saludables.
+
+La rama remota contiene los cinco commits de implementación del sprint 12 y
+depende de los dos commits del sprint 11 aún no integrados en `main` (`8f631ec`).
+La comprobación del remoto se realizó por GitHub y mediante `git fetch` desde WSL.
+En esta sesión, Git Credential Manager requirió propagar `PATH` a Windows con
+`WSLENV=PATH/lp` e incluir el directorio de `git.exe` del runtime; se aplicó solo
+al comando, sin cambiar la configuración persistente ni las credenciales.
+
+La carga definitiva requiere revisar las identidades, equivalencias y propuestas
+del archivo elegido y disponer de una copia de seguridad actual validada. Su
+conciliación deberá abarcar todos los lotes aplicados y las filas que se dejen
+pendientes o excluidas; los resultados del ensayo parcial no la sustituyen.
