@@ -61,8 +61,8 @@ model Cliente {
   recordatorios    Recordatorio[]
   importacionFilas ImportacionFila[]
 
-  // Unicidad solo entre no eliminados: índice parcial clientes_telefono_activo_key
-  // definido en la migración 20261007180000_clientes_telefono_unico.
+  // Contactos compartidos permitidos; este índice acelera búsquedas sin imponer unicidad.
+  // La migración 20261021120000_clientes_telefonos_compartidos retira el índice único anterior.
   @@index([telefonoNormalizado])
   @@map("clientes")
 }
@@ -185,6 +185,7 @@ model Tarifa {
 
 // ─── 8. servidores ──────────────────────────────────────────────────────────
 model Servidor {
+  observaciones String?
   id        String    @id @default(uuid()) @db.Uuid
   nombre    String    @unique @db.VarChar(100)
   activo    Boolean   @default(true)
@@ -264,6 +265,7 @@ model MovimientoFinanciero {
 
 // ─── 11. metodos_pago ───────────────────────────────────────────────────────
 model MetodoPago {
+  orden     Int       @default(0)
   id        String    @id @default(uuid()) @db.Uuid
   nombre    String    @unique @db.VarChar(100)
   activo    Boolean   @default(true)
@@ -351,23 +353,29 @@ model Configuracion {
 
 // ─── 16. importaciones ──────────────────────────────────────────────────────
 model Importacion {
-  id           String    @id @default(uuid()) @db.Uuid
-  archivo      String    @db.VarChar(255)
-  usuarioId    String    @map("usuario_id") @db.Uuid
-  checksum     String?   @unique @db.VarChar(64)
-  estado       String    @default("EN_PROCESO") @db.VarChar(40)
-  versionMapeo String    @default("1.1") @map("version_mapeo") @db.VarChar(20)
-  fechaInicio  DateTime? @map("fecha_inicio")
-  fechaFin     DateTime? @map("fecha_fin")
-  registros    Int       @default(0)
-  errores      Int       @default(0)
-  advertencias Int       @default(0)
-  informe      Json?
-  createdAt    DateTime  @default(now()) @map("created_at")
+  id                 String    @id @default(uuid()) @db.Uuid
+  archivo            String    @db.VarChar(255)
+  usuarioId          String    @map("usuario_id") @db.Uuid
+  checksum           String?   @db.VarChar(64)
+  estado             String    @default("EN_PROCESO") @db.VarChar(40)
+  versionMapeo       String    @default("1.1") @map("version_mapeo") @db.VarChar(20)
+  versionIdentidades Int       @default(0) @map("version_identidades")
+  versionEquivalencias Int     @default(0) @map("version_equivalencias")
+  fechaInicio        DateTime? @map("fecha_inicio")
+  fechaFin           DateTime? @map("fecha_fin")
+  registros          Int       @default(0)
+  errores            Int       @default(0)
+  advertencias       Int       @default(0)
+  informe            Json?
+  createdAt          DateTime  @default(now()) @map("created_at")
 
-  usuario Usuario           @relation(fields: [usuarioId], references: [id])
-  filas   ImportacionFila[]
+  usuario     Usuario                @relation(fields: [usuarioId], references: [id])
+  filas       ImportacionFila[]
+  identidades ImportacionIdentidad[]
+  revisionesEquivalencias ImportacionEquivalenciaRevision[]
+  lotes ImportacionLote[]
 
+  @@unique([checksum, versionMapeo])
   @@map("importaciones")
 }
 
@@ -375,11 +383,16 @@ model Importacion {
 model ImportacionFila {
   id                  String    @id @default(uuid()) @db.Uuid
   importacionId       String    @map("importacion_id") @db.Uuid
-  hojaOrigen          String    @map("hoja_origen") @db.VarChar(20)
+  hojaOrigen          String    @map("hoja_origen") @db.VarChar(31)
   filaOrigen          Int       @map("fila_origen")
   hashFila            String    @map("hash_fila") @db.VarChar(64)
   datosOriginales     Json      @map("datos_originales")
   datosNormalizados   Json?     @map("datos_normalizados")
+  lectura             Json?
+  correcciones        Json?
+  historialLectura    Json?     @map("historial_lectura")
+  version             Int       @default(1)
+  identidadId         String?   @map("identidad_id") @db.Uuid
   mapeo               Json?
   estado              String    @default("PENDIENTE") @db.VarChar(30)
   errores             Json?
@@ -396,6 +409,7 @@ model ImportacionFila {
   updatedAt           DateTime  @updatedAt @map("updated_at")
 
   importacion Importacion           @relation(fields: [importacionId], references: [id], onDelete: Cascade)
+  identidad   ImportacionIdentidad? @relation(fields: [identidadId], references: [id])
   cliente     Cliente?              @relation(fields: [clienteId], references: [id])
   suscripcion Suscripcion?          @relation(fields: [suscripcionId], references: [id])
   renovacion  Renovacion?           @relation("ImportacionFilaRenovacion", fields: [renovacionId], references: [id])
@@ -406,7 +420,49 @@ model ImportacionFila {
   @@index([importacionId, estado])
   @@index([importacionId, decision])
   @@index([hashFila])
+  @@index([identidadId])
   @@map("importacion_filas")
+}
+
+// Identidades revisadas y vínculo con el cliente materializado.
+model ImportacionIdentidad {
+  id               String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  importacionId    String            @map("importacion_id") @db.Uuid
+  estado           String            @default("PENDIENTE") @db.VarChar(20)
+  materializada    Boolean           @default(false)
+  datos            Json
+  clienteDestinoId String?           @map("cliente_destino_id") @db.Uuid
+  huellaCliente    String?           @map("huella_cliente") @db.VarChar(64)
+  historial        Json
+  solicitudId      String?           @unique @map("solicitud_id") @db.Uuid
+  solicitudHash    String?           @map("solicitud_hash") @db.VarChar(64)
+  createdAt        DateTime          @default(now()) @map("created_at")
+  importacion      Importacion       @relation(fields: [importacionId], references: [id], onDelete: Cascade)
+  filas            ImportacionFila[]
+
+  @@index([importacionId])
+  @@map("importacion_identidades")
+}
+
+// Propuesta exacta y resultado durable de cada confirmación atómica.
+model ImportacionLote {
+  id            String      @id @default(uuid()) @db.Uuid
+  importacionId String      @map("importacion_id") @db.Uuid
+  autor         String      @db.Uuid
+  solicitudId   String      @unique @map("solicitud_id") @db.Uuid
+  solicitudHash String      @map("solicitud_hash") @db.VarChar(64)
+  huella        String      @db.VarChar(64)
+  seleccion     Json
+  propuesta     Json
+  resultado     Json?
+  estado        String      @default("PREPARADO") @db.VarChar(20)
+  motivo        String      @db.VarChar(1000)
+  createdAt     DateTime    @default(now()) @map("created_at")
+  aplicadoAt    DateTime?   @map("aplicado_at")
+  importacion   Importacion @relation(fields: [importacionId], references: [id], onDelete: Restrict)
+
+  @@index([importacionId, createdAt])
+  @@map("importacion_lotes")
 }
 
 // ─── 21. importacion_equivalencias ─────────────────────────────────────────
@@ -428,12 +484,45 @@ model ImportacionEquivalencia {
   @@map("importacion_equivalencias")
 }
 
+// Decisiones de staging, inmutables y limitadas a un análisis. No crean operaciones.
+model ImportacionEquivalenciaRevision {
+  id            String      @id @default(uuid()) @db.Uuid
+  importacionId String      @map("importacion_id") @db.Uuid
+  version       Int
+  tipo          String      @db.VarChar(20)
+  alcance       String      @db.VarChar(10)
+  clave         String      @db.VarChar(64)
+  filaId        String?     @map("fila_id") @db.Uuid
+  accion        String      @db.VarChar(20)
+  entidadId     String?     @map("entidad_id") @db.Uuid
+  historico     Boolean     @default(false)
+  huellaDestino String?     @map("huella_destino") @db.VarChar(64)
+  origen        Json
+  dependencias  Json
+  autor         String      @db.Uuid
+  motivo        String      @db.VarChar(1000)
+  solicitudId   String      @unique @map("solicitud_id") @db.Uuid
+  solicitudHash String      @map("solicitud_hash") @db.VarChar(64)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  importacion   Importacion @relation(fields: [importacionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([importacionId, version])
+  @@index([importacionId, tipo, clave], map: "importacion_equivalencias_revision_origen_idx")
+  @@map("importacion_equivalencias_revision")
+}
+
 // ─── 17. exportaciones ──────────────────────────────────────────────────────
 model Exportacion {
   id        String   @id @default(uuid()) @db.Uuid
   tipo      String   @db.VarChar(20)
   usuarioId String   @map("usuario_id") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at")
+  modulo    String?  @db.VarChar(30)
+  seccion   String?  @db.VarChar(30)
+  estado    String   @default("GENERADA") @db.VarChar(20)
+  registros Int?
+  bytes     Int?
+  error     String?  @db.VarChar(200)
 
   usuario Usuario @relation(fields: [usuarioId], references: [id])
 

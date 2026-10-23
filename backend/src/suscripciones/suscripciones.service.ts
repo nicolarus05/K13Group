@@ -1,3 +1,5 @@
+import { acquireOperation } from '../recovery/maintenance';
+import { readSettings, warningDays as configuredWarningDays } from '../configuracion/settings';
 import {
   BadRequestException,
   ConflictException,
@@ -34,6 +36,7 @@ type StateContext = {
 export class SuscripcionesService implements OnApplicationBootstrap, OnModuleDestroy {
   private timer?: ReturnType<typeof setInterval>;
   private running = false;
+  private lastRun = 0;
   private stopping = false;
   private readonly logger = new Logger(SuscripcionesService.name);
   constructor(
@@ -46,15 +49,22 @@ export class SuscripcionesService implements OnApplicationBootstrap, OnModuleDes
     const tick = async () => {
       if (this.running) return;
       this.running = true;
+      let release: (() => Promise<void>) | null = null;
       try {
+        release = await acquireOperation();
+        if (!release) return;
+        const minutes = (await readSettings(this.prisma))['sistema.intervalo_comprobacion_minutos'];
+        if (Date.now() - this.lastRun < minutes * 60000) return;
         await this.syncStates();
+        this.lastRun = Date.now();
       } catch {
         this.logger.error('No se pudieron actualizar los estados de suscripción; se reintentará.');
       } finally {
+        await release?.();
         this.running = false;
       }
     };
-    this.timer = setInterval(() => void tick(), 60_000);
+    this.timer = setInterval(() => void tick(), 10_000);
     this.timer.unref();
     void tick();
   }
@@ -69,11 +79,7 @@ export class SuscripcionesService implements OnApplicationBootstrap, OnModuleDes
     );
   }
   private async warningDays(tx: Prisma.TransactionClient) {
-    const config = await tx.configuracion.findUnique({
-      where: { clave: 'suscripciones.dias_proxima' },
-    });
-    const value = config ? Number(config.valor) : 7;
-    return Number.isInteger(value) && value >= 1 && value <= 365 ? value : 7;
+    return configuredWarningDays(tx);
   }
   private async stateId(tx: Prisma.TransactionClient, valor: string) {
     return (
@@ -197,45 +203,56 @@ export class SuscripcionesService implements OnApplicationBootstrap, OnModuleDes
     }
     return changed;
   }
-  async findAll(query: SubscriptionQueryDto) {
-    const context = await this.stateContext(this.prisma);
-    const where: Prisma.SuscripcionWhereInput = {
-      deletedAt: null,
-      ...(query.clienteId ? { clienteId: query.clienteId } : {}),
-      ...(query.productoId ? { productoId: query.productoId } : {}),
-      ...(query.servidorId ? { servidorId: query.servidorId } : {}),
-      ...(query.referenciaId ? { referenciaId: query.referenciaId } : {}),
-      ...(query.estado ? this.stateWhere(query.estado, context) : {}),
-      ...(query.search
-        ? {
-            OR: [
-              { cliente: { nombre: { contains: query.search.trim(), mode: 'insensitive' } } },
-              { cliente: { telefono: { contains: query.search.trim(), mode: 'insensitive' } } },
-              { producto: { nombre: { contains: query.search.trim(), mode: 'insensitive' } } },
-            ],
-          }
-        : {}),
+  async findAll(
+    query: SubscriptionQueryDto,
+    client?: Prisma.TransactionClient,
+    today = businessDay(),
+  ) {
+    const read = async (tx: Prisma.TransactionClient) => {
+      const context = await this.stateContext(tx, today);
+      const where: Prisma.SuscripcionWhereInput = {
+        deletedAt: null,
+        ...(query.clienteId ? { clienteId: query.clienteId } : {}),
+        ...(query.productoId ? { productoId: query.productoId } : {}),
+        ...(query.servidorId ? { servidorId: query.servidorId } : {}),
+        ...(query.referenciaId ? { referenciaId: query.referenciaId } : {}),
+        ...(query.estado ? this.stateWhere(query.estado, context) : {}),
+        ...(query.search
+          ? {
+              OR: [
+                { cliente: { nombre: { contains: query.search.trim(), mode: 'insensitive' } } },
+                { cliente: { telefono: { contains: query.search.trim(), mode: 'insensitive' } } },
+                { producto: { nombre: { contains: query.search.trim(), mode: 'insensitive' } } },
+              ],
+            }
+          : {}),
+      };
+      const [data, total] = await Promise.all([
+        tx.suscripcion.findMany({
+          where,
+          select: subscriptionSelect,
+          skip: (query.page - 1) * query.limit,
+          take: query.limit,
+          orderBy: [{ [query.sort]: query.order }, { id: 'asc' }],
+        }),
+        tx.suscripcion.count({ where }),
+      ]);
+      return {
+        success: true,
+        data: data.map((row) => this.currentState(row, context)),
+        pagination: {
+          page: query.page,
+          limit: query.limit,
+          total,
+          totalPages: Math.ceil(total / query.limit),
+        },
+      };
     };
-    const [data, total] = await this.prisma.$transaction([
-      this.prisma.suscripcion.findMany({
-        where,
-        select: subscriptionSelect,
-        skip: (query.page - 1) * query.limit,
-        take: query.limit,
-        orderBy: [{ [query.sort]: query.order }, { id: 'asc' }],
-      }),
-      this.prisma.suscripcion.count({ where }),
-    ]);
-    return {
-      success: true,
-      data: data.map((row) => this.currentState(row, context)),
-      pagination: {
-        page: query.page,
-        limit: query.limit,
-        total,
-        totalPages: Math.ceil(total / query.limit),
-      },
-    };
+    return client
+      ? read(client)
+      : this.prisma.$transaction(read, {
+          isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+        });
   }
   private async get(tx: Prisma.TransactionClient, id: string) {
     const row = await tx.suscripcion.findFirst({
@@ -381,8 +398,8 @@ export class SuscripcionesService implements OnApplicationBootstrap, OnModuleDes
         const stored = await this.get(tx, id);
         this.checkVersion(stored, dto.version);
         const before = await this.syncRow(tx, stored, await this.stateContext(tx));
-        if (before.estado.valor === 'CANCELADA')
-          throw new ConflictException('Una suscripción cancelada es de solo lectura.');
+        if (['CANCELADA', 'HISTORICA'].includes(before.estado.valor))
+          throw new ConflictException('Una suscripción cancelada o histórica es de solo lectura.');
         const { version: _version, motivoCorreccion, fechaInicio, ...changes } = dto;
         await this.validateLinks(tx, { ...before, ...changes }, before);
         const dates =

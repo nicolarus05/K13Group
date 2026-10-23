@@ -27,6 +27,10 @@ export class ReferenciasController {
   list(@Query() query: CatalogQueryDto) {
     return this.service.findAll(query);
   }
+  @Get(':id/resumen')
+  async summary(@Param('id', ParseUUIDPipe) id: string) {
+    return { success: true, data: await this.service.summary(id) };
+  }
   @Get(':id')
   async get(@Param('id', ParseUUIDPipe) id: string) {
     return { success: true, data: await this.service.findOne(id) };

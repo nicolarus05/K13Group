@@ -96,7 +96,13 @@ export interface StatsReport {
 export const stats = {
   get: (
     section: Section,
-    params: Filters & { desde: string; hasta: string; agrupacion: Grain; page: number },
+    params: Filters & {
+      desde: string;
+      hasta: string;
+      agrupacion: Grain;
+      page: number;
+      limit?: number;
+    },
   ) =>
     api
       .get<{ data: StatsReport }>('/estadisticas' + (section === 'resumen' ? '' : '/' + section), {

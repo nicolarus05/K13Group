@@ -1,5 +1,6 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { bumpRevision, revision } from '../configuracion/settings';
 import { PrismaService } from '../database/prisma.service';
 import { normalizeComparable } from '../common/helpers/normalization';
 import { CatalogQueryDto, CreateCatalogDto, UpdateCatalogDto } from './catalogo.dto';
@@ -96,7 +97,7 @@ export class CatalogService {
           'nombre',
           'activo',
           ...(this.kind === 'productos' ? ['descripcion'] : []),
-          ...(this.kind === 'referencias' ? ['observaciones'] : []),
+          ...(['referencias', 'servidores'].includes(this.kind) ? ['observaciones'] : []),
           ...(this.kind === 'tarifas' ? ['productoId', 'precio', 'duracionMeses'] : []),
           ...(this.kind === 'metodos-pago' ? ['esGratuito'] : []),
         ]);
@@ -143,6 +144,12 @@ export class CatalogService {
         const after = id
           ? await repo.update(id, data)
           : await repo.create({ ...data, nombre: name });
+        if (this.kind === 'metodos-pago')
+          await bumpRevision(
+            tx,
+            (await revision(tx, 'metodos_pago.revision')) + 1,
+            'metodos_pago.revision',
+          );
         const accion = !id
           ? 'CREAR'
           : dto.activo === false

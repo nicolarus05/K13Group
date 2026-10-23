@@ -7,6 +7,8 @@ import { Request, Response } from 'express';
 import { isUUID } from 'class-validator';
 import { UsersService } from '../users/users.service';
 import { PrismaService } from '../database/prisma.service';
+import { lockUser } from '../users/account';
+import { readSettings } from '../configuracion/settings';
 import { LoginDto } from './dto/login.dto';
 
 const ACCESS_COOKIE = 'access_token';
@@ -32,19 +34,38 @@ export class AuthService {
     if (!user || !(await bcrypt.compare(dto.password, user.passwordHash)) || !user.activo)
       throw new UnauthorizedException('Credenciales incorrectas');
 
-    const sid = randomUUID();
-    const refresh = this.sign(user.id, sid, 'JWT_REFRESH_SECRET', 'JWT_REFRESH_EXPIRES_IN', '7d');
-    const expiresAt = new Date(this.jwtService.decode<SessionPayload>(refresh).exp * 1000);
-    // Persistir antes de emitir cookies. Cada login tiene una sesión independiente.
-    await this.prisma.$transaction([
-      this.prisma.sesion.create({
+    const { sid, refresh, expiresAt, profile } = await this.prisma.$transaction(async (tx) => {
+      await lockUser(tx, user.id);
+      const current = await tx.usuario.findUniqueOrThrow({ where: { id: user.id } });
+      if (
+        !current.activo ||
+        current.passwordHash !== user.passwordHash ||
+        current.username !== dto.username
+      )
+        throw new UnauthorizedException('Credenciales incorrectas');
+      const sid = randomUUID();
+      const days = await tx.configuracion.findUnique({ where: { clave: 'seguridad.sesion_dias' } });
+      const refresh = this.sign(
+        user.id,
+        sid,
+        'JWT_REFRESH_SECRET',
+        'JWT_REFRESH_EXPIRES_IN',
+        '7d',
+        days ? `${(await readSettings(tx))['seguridad.sesion_dias']}d` : undefined,
+      );
+      const expiresAt = new Date(this.jwtService.decode<SessionPayload>(refresh).exp * 1000);
+      await tx.sesion.create({
         data: { id: sid, usuarioId: user.id, token: tokenHash(refresh), expiresAt },
-      }),
-      this.prisma.usuario.update({ where: { id: user.id }, data: { ultimoLogin: new Date() } }),
-    ]);
-    this.setAccess(res, user.id, sid);
+      });
+      const profile = await tx.usuario.update({
+        where: { id: user.id },
+        data: { ultimoLogin: new Date() },
+      });
+      return { sid, refresh, expiresAt, profile };
+    });
+    await this.setAccess(res, user.id, sid, expiresAt);
     this.setCookie(res, REFRESH_COOKIE, refresh);
-    const { passwordHash: _, ...safe } = user;
+    const { passwordHash: _, ...safe } = profile;
     return safe;
   }
 
@@ -89,18 +110,36 @@ export class AuthService {
     res.clearCookie(REFRESH_COOKIE, { path: '/' });
   }
 
-  refresh(req: Request, res: Response) {
+  async refresh(req: Request, res: Response) {
     // El guard ya ha comprobado firma, caducidad, hash, sesión y usuario.
     const payload = this.jwtService.decode<SessionPayload>(req.cookies[REFRESH_COOKIE]);
-    this.setAccess(res, payload.sub, payload.sid);
+    const session = await this.prisma.sesion.findUnique({ where: { id: payload.sid } });
+    if (!session || session.expiresAt <= new Date()) throw new UnauthorizedException();
+    await this.setAccess(res, payload.sub, payload.sid, session.expiresAt);
     // La sesión conserva su vencimiento absoluto; refrescar no lo prolonga.
   }
 
-  private setAccess(res: Response, userId: string, sid: string) {
+  private async setAccess(res: Response, userId: string, sid: string, expiresAt: Date) {
+    const minutes = await this.prisma.configuracion.findUnique({
+      where: { clave: 'seguridad.access_minutos' },
+    });
+    const token = this.sign(
+      userId,
+      sid,
+      'JWT_SECRET',
+      'JWT_EXPIRES_IN',
+      '15m',
+      minutes ? `${(await readSettings(this.prisma))['seguridad.access_minutos']}m` : undefined,
+    );
+    const decoded = this.jwtService.decode<SessionPayload>(token);
+    const exp = Math.min(decoded.exp, Math.floor(expiresAt.getTime() / 1000));
     this.setCookie(
       res,
       ACCESS_COOKIE,
-      this.sign(userId, sid, 'JWT_SECRET', 'JWT_EXPIRES_IN', '15m'),
+      this.jwtService.sign(
+        { sub: userId, sid, exp },
+        { secret: this.config.getOrThrow<string>('JWT_SECRET') },
+      ),
     );
   }
 
@@ -121,12 +160,14 @@ export class AuthService {
     secretKey: string,
     durationKey: string,
     fallback: string,
+    duration?: string,
   ) {
     return this.jwtService.sign(
       { sub: userId, sid },
       {
         secret: this.config.getOrThrow<string>(secretKey),
-        expiresIn: this.config.get<string>(durationKey, fallback) as JwtSignOptions['expiresIn'],
+        expiresIn: (duration ??
+          this.config.get<string>(durationKey, fallback)) as JwtSignOptions['expiresIn'],
       },
     );
   }

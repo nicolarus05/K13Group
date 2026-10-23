@@ -15,6 +15,8 @@ async function runSuite(spec) {
     const env = {
       ...process.env,
       NODE_ENV: 'test',
+      RECOVERY_DIR: '',
+      ASSET_DIR: '/tmp/k13-test-assets',
       DATABASE_URL: url.toString(),
       TEST_DATABASE_URL: url.toString(),
       JWT_SECRET: 'catalogos-test-only',
@@ -44,9 +46,11 @@ async function main() {
   const load = 'suscripciones/suscripciones-load.integration.spec.ts';
   const suites = readdirSync(path.resolve('src'), { recursive: true })
     .filter((file) => file.endsWith('.integration.spec.ts'))
+    .filter((file) => !process.env.INTEGRATION_SUITE || file === process.env.INTEGRATION_SUITE)
     .filter((file) => file !== load || process.env.SUBSCRIPTIONS_LOAD_TEST === '1')
     .sort((a, b) => (a === load ? -1 : b === load ? 1 : a.localeCompare(b)))
     .map((file) => path.join('src', file));
+  if (!suites.length) throw new Error('No se ha encontrado la suite solicitada.');
   for (const spec of suites) await runSuite(spec);
 }
 main().catch((error) => {

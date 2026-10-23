@@ -42,70 +42,76 @@ const live = Prisma.sql`s.deleted_at IS NULL AND c.deleted_at IS NULL AND ce.val
 @Injectable()
 export class EstadisticasService {
   constructor(private readonly prisma: PrismaService) {}
-  async report(section: Section, q: StatsQuery) {
+  async report(
+    section: Section,
+    q: StatsQuery,
+    client?: Prisma.TransactionClient,
+    hoy = businessDay(),
+  ) {
     validateFilters(section, q);
-    const hoy = businessDay(),
-      p = statsPeriod(q, hoy);
-    return this.prisma.$transaction(
-      async (tx) => {
-        const common = {
-          seccion: section,
-          hoy,
-          periodo: p,
-          actualizado: new Date().toISOString(),
-          calidad: {
-            filasSinConciliar: await tx.importacionFila.count({
-              where: { estado: { notIn: ['IMPORTADA', 'RECHAZADA'] } },
+    const p = statsPeriod(q, hoy);
+    const read = async (tx: Prisma.TransactionClient) => {
+      const common = {
+        seccion: section,
+        hoy,
+        periodo: p,
+        actualizado: new Date().toISOString(),
+        calidad: {
+          filasSinConciliar: await tx.importacionFila.count({
+            where: { estado: { notIn: ['IMPORTADA', 'RECHAZADA'] } },
+          }),
+        },
+      };
+      if (['productos', 'servidores', 'referencias', 'metodos-pago'].includes(section))
+        return { ...common, ranking: await this.ranking(tx, section as Dimension, q, p, hoy) };
+      if (section === 'clientes') return { ...common, clientes: await this.clients(tx, q, p, hoy) };
+      if (section === 'renovaciones')
+        return { ...common, renovaciones: await this.renewals(tx, q, p, hoy) };
+      const actual = await this.finances(tx, q, p.desde, p.hasta),
+        anterior = await this.finances(tx, q, p.anteriorDesde, p.anteriorHasta);
+      const financiero = {
+        ...actual,
+        anterior,
+        variacion: {
+          ingresos:
+            actual.ingresos !== null && anterior.ingresos !== null
+              ? variation(actual.ingresos, anterior.ingresos)
+              : null,
+          gastos:
+            actual.gastos !== null && anterior.gastos !== null
+              ? variation(actual.gastos, anterior.gastos)
+              : null,
+          resultado:
+            actual.resultado !== null && anterior.resultado !== null
+              ? variation(actual.resultado, anterior.resultado)
+              : null,
+        },
+      };
+      return {
+        ...common,
+        finanzas: financiero,
+        ...(section === 'resumen'
+          ? {
+              clientes: await this.clients(tx, q, p, hoy),
+              renovaciones: await this.renewals(tx, q, p, hoy),
+            }
+          : {
+              ranking: await this.ranking(
+                tx,
+                q.metodoPagoId ? 'metodos-pago' : 'categorias',
+                q,
+                p,
+                hoy,
+              ),
             }),
-          },
-        };
-        if (['productos', 'servidores', 'referencias', 'metodos-pago'].includes(section))
-          return { ...common, ranking: await this.ranking(tx, section as Dimension, q, p, hoy) };
-        if (section === 'clientes')
-          return { ...common, clientes: await this.clients(tx, q, p, hoy) };
-        if (section === 'renovaciones')
-          return { ...common, renovaciones: await this.renewals(tx, q, p, hoy) };
-        const actual = await this.finances(tx, q, p.desde, p.hasta),
-          anterior = await this.finances(tx, q, p.anteriorDesde, p.anteriorHasta);
-        const financiero = {
-          ...actual,
-          anterior,
-          variacion: {
-            ingresos:
-              actual.ingresos !== null && anterior.ingresos !== null
-                ? variation(actual.ingresos, anterior.ingresos)
-                : null,
-            gastos:
-              actual.gastos !== null && anterior.gastos !== null
-                ? variation(actual.gastos, anterior.gastos)
-                : null,
-            resultado:
-              actual.resultado !== null && anterior.resultado !== null
-                ? variation(actual.resultado, anterior.resultado)
-                : null,
-          },
-        };
-        return {
-          ...common,
-          finanzas: financiero,
-          ...(section === 'resumen'
-            ? {
-                clientes: await this.clients(tx, q, p, hoy),
-                renovaciones: await this.renewals(tx, q, p, hoy),
-              }
-            : {
-                ranking: await this.ranking(
-                  tx,
-                  q.metodoPagoId ? 'metodos-pago' : 'categorias',
-                  q,
-                  p,
-                  hoy,
-                ),
-              }),
-        };
-      },
-      { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead, timeout: 30000 },
-    );
+      };
+    };
+    return client
+      ? read(client)
+      : this.prisma.$transaction(read, {
+          isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+          timeout: 30000,
+        });
   }
 
   private async finances(tx: Tx, q: StatsQuery, desde: string, hasta: string) {

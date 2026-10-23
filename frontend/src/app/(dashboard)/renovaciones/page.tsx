@@ -1,4 +1,7 @@
 'use client';
+import { ExportButton } from '@/modules/exportaciones/export-button';
+import { useConfiguredPage } from '@/modules/configuracion/preferences';
+import { useDateLabel, useRefreshInterval } from '@/modules/configuracion/preferences';
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -7,17 +10,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { EstadoBadge } from '@/components/ui/badge';
 import { catalogError } from '@/modules/catalogos/services/catalogos.service';
-import { dateLabel } from '@/modules/suscripciones/suscripciones.service';
+
 import { renewals, money } from '@/modules/renovaciones/renovaciones.service';
 import { RenewalHistory } from '@/modules/renovaciones/renewal-history';
 import { RenewalDialog, type RenewalAction } from '@/modules/renovaciones/renewal-dialog';
 
 function RenewalsPage() {
+  const dateLabel = useDateLabel();
+  const refreshInterval = useRefreshInterval();
+
   const params = useSearchParams();
   const [tab, setTab] = useState(params.get('historial') === '1' ? 'historial' : 'seguimiento');
   const [view, setView] = useState('hoy');
   const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
+  const [page, setPage, pageLimit] = useConfiguredPage();
   const [payment, setPayment] = useState('');
   const [state, setState] = useState('');
   const [from, setFrom] = useState('');
@@ -28,10 +34,10 @@ function RenewalsPage() {
     ...(params.get('clienteId') ? { clienteId: params.get('clienteId')! } : {}),
   };
   const queue = useQuery({
-    queryKey: ['renovaciones', 'seguimiento', filters, view, page],
-    queryFn: () => renewals.queue({ ...filters, vista: view, page }),
+    queryKey: ['renovaciones', 'seguimiento', filters, view, page, pageLimit],
+    queryFn: () => renewals.queue({ ...filters, vista: view, page, limit: pageLimit }),
     enabled: tab === 'seguimiento',
-    refetchInterval: action ? false : 60000,
+    refetchInterval: action ? false : refreshInterval,
   });
   const historyFilters = {
     ...filters,
@@ -60,6 +66,11 @@ function RenewalsPage() {
           </Button>
         ))}
       </div>
+      <ExportButton
+        module="renovaciones"
+        section={tab}
+        filters={tab === 'seguimiento' ? { ...filters, vista: view } : historyFilters}
+      />
       <Input
         label="Buscar cliente"
         value={search}
@@ -101,7 +112,7 @@ function RenewalsPage() {
           )}
           {queue.data && !queue.data.data.length && <p>No hay suscripciones en esta vista.</p>}
           {queue.data?.data.map((row) => (
-            <article key={row.id} className="space-y-2 rounded border border-hover p-4">
+            <article key={row.id} className="border-hover space-y-2 rounded border p-4">
               <div className="flex flex-wrap gap-3">
                 <Link className="text-primary underline" href={'/suscripciones/' + row.id}>
                   {row.cliente.nombre} · {row.producto.nombre}
@@ -148,7 +159,7 @@ function RenewalsPage() {
               Cobro
               <select
                 aria-label="Filtrar cobro"
-                className="block w-full rounded border border-hover bg-background p-2"
+                className="border-hover bg-background block w-full rounded border p-2"
                 value={payment}
                 onChange={(e) => setPayment(e.target.value)}
               >
@@ -162,7 +173,7 @@ function RenewalsPage() {
               Operación
               <select
                 aria-label="Filtrar operación"
-                className="block w-full rounded border border-hover bg-background p-2"
+                className="border-hover bg-background block w-full rounded border p-2"
                 value={state}
                 onChange={(e) => setState(e.target.value)}
               >

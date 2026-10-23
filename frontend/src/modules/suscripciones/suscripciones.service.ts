@@ -8,6 +8,7 @@ export const subscriptionStates = [
   'VENCIDA',
   'SUSPENDIDA',
   'CANCELADA',
+  'HISTORICA',
 ] as const;
 export interface Subscription {
   noRenovar: boolean;
@@ -126,11 +127,11 @@ export function todayMadrid() {
 export function dateLabel(value: string) {
   return new Intl.DateTimeFormat('es-ES', { timeZone: 'UTC' }).format(new Date(value));
 }
-export function annualPreview(value: string) {
+export function annualPreview(value: string, render = dateLabel) {
   const start = new Date(value + 'T00:00:00Z');
   if (!Number.isFinite(start.getTime())) return '—';
   const year = start.getUTCFullYear() + 1;
   const month = start.getUTCMonth();
   const day = Math.min(start.getUTCDate(), new Date(Date.UTC(year, month + 1, 0)).getUTCDate());
-  return dateLabel(new Date(Date.UTC(year, month, day)).toISOString());
+  return render(new Date(Date.UTC(year, month, day)).toISOString());
 }

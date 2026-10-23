@@ -1,22 +1,26 @@
 'use client';
+import { useDateLabel, useRefreshInterval } from '@/modules/configuracion/preferences';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { catalogError } from '@/modules/catalogos/services/catalogos.service';
-import { dateLabel } from '@/modules/suscripciones/suscripciones.service';
+
 import { money } from '@/modules/renovaciones/renovaciones.service';
 import { finances } from '@/modules/finanzas/finanzas.service';
 import { ExpenseDialog, type ExpenseAction } from '@/modules/finanzas/expense-dialog';
 export default function Page() {
+  const dateLabel = useDateLabel();
+  const refreshInterval = useRefreshInterval();
+
   const { id } = useParams<{ id: string }>();
   const [action, setAction] = useState<ExpenseAction | null>(null);
   const [page, setPage] = useState(1);
   const query = useQuery({
     queryKey: ['finanzas', id],
     queryFn: () => finances.get(id),
-    refetchInterval: action ? false : 60000,
+    refetchInterval: action ? false : refreshInterval,
   });
   const history = useQuery({
     queryKey: ['finanzas', id, 'historial', page],

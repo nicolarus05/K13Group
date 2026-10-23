@@ -224,7 +224,7 @@ for (const calendar of [false, true]) {
     'reajusta página al reducir resultados y al quedar vacío: ' + (calendar ? 'agenda' : 'lista'),
     { timeout: 60000 },
     async (t) => {
-      const f = await fixture(t, { calendar, total: 26, agendaTotal: 11 }),
+      const f = await fixture(t, { calendar, total: 26, agendaTotal: 26 }),
         { page } = f;
       const endpoint = calendar ? '/recordatorios/agenda' : '/recordatorios';
       await page.getByText('Página 1 de 2', { exact: true }).waitFor();
@@ -234,12 +234,12 @@ for (const calendar of [false, true]) {
       }
       await page.getByRole('button', { name: 'Siguiente', exact: true }).click();
       await page.getByText('Página 2 de 2', { exact: true }).waitFor();
-      calendar ? f.setAgendaTotal(10) : f.setTotal(25);
+      calendar ? f.setAgendaTotal(25) : f.setTotal(25);
       await refresh(page, endpoint);
       await page.getByText('Página 1 de 1', { exact: true }).waitFor();
       await page.waitForFunction(
         () =>
-          document.querySelectorAll('.rem-agenda').length === 10 ||
+          document.querySelectorAll('.rem-agenda').length === 25 ||
           document.querySelectorAll('tbody tr').length === 25,
       );
       if (!calendar) {
@@ -252,7 +252,7 @@ for (const calendar of [false, true]) {
           'Cliente',
         );
       }
-      calendar ? f.setAgendaTotal(11) : f.setTotal(26);
+      calendar ? f.setAgendaTotal(26) : f.setTotal(26);
       await refresh(page, endpoint);
       await page.getByText('Página 1 de 2', { exact: true }).waitFor();
       await page.getByRole('button', { name: 'Siguiente', exact: true }).click();

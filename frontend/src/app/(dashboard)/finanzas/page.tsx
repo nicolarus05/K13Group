@@ -1,22 +1,24 @@
 'use client';
+import { ExportButton } from '@/modules/exportaciones/export-button';
+import { useListQuery } from '@/modules/configuracion/preferences';
+import { useDateLabel, useRefreshInterval } from '@/modules/configuracion/preferences';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { catalogError } from '@/modules/catalogos/services/catalogos.service';
-import {
-  catalogOptions,
-  dateLabel,
-  todayMadrid,
-} from '@/modules/suscripciones/suscripciones.service';
+import { catalogOptions, todayMadrid } from '@/modules/suscripciones/suscripciones.service';
 import { clientesService } from '@/modules/clientes/services/clientes.service';
 import { selectStyle } from '@/modules/suscripciones/subscription-form';
 import { money } from '@/modules/renovaciones/renovaciones.service';
 import { finances, periodRange, type FinanceQuery } from '@/modules/finanzas/finanzas.service';
 import { ExpenseDialog } from '@/modules/finanzas/expense-dialog';
 export default function Page() {
-  const [query, setQuery] = useState<FinanceQuery>({
+  const dateLabel = useDateLabel();
+  const refreshInterval = useRefreshInterval();
+
+  const [query, setQuery] = useListQuery<FinanceQuery>({
     page: 1,
     ...periodRange('mes', todayMadrid()),
   });
@@ -29,12 +31,12 @@ export default function Page() {
   const list = useQuery({
     queryKey: ['finanzas', 'list', filters],
     queryFn: () => finances.list(filters),
-    refetchInterval: creating ? false : 60000,
+    refetchInterval: creating ? false : refreshInterval,
   });
   const summary = useQuery({
     queryKey: ['finanzas', 'balance', filters],
     queryFn: () => finances.balance(filters),
-    refetchInterval: creating ? false : 60000,
+    refetchInterval: creating ? false : refreshInterval,
   });
   const options = useQuery({
     queryKey: ['catalogos', 'finanzas-filtros'],
@@ -54,6 +56,7 @@ export default function Page() {
         <h1 className="text-2xl font-semibold">Finanzas</h1>
         <Button onClick={() => setCreating(true)}>Nuevo gasto</Button>
       </header>
+      <ExportButton module="finanzas" filters={filters} />
       <p>
         Ingresos brutos y gastos pagados. Resultado operativo, sin comisiones automáticas ni cálculo
         fiscal.

@@ -1,3 +1,5 @@
+import { AplicacionService } from './aplicacion.service';
+import { AplicacionQueryDto, ProponerImportacionDto, ConfirmarLoteDto } from './dto/aplicacion.dto';
 import {
   Controller,
   Body,
@@ -7,6 +9,7 @@ import {
   Param,
   Post,
   ParseIntPipe,
+  ParseUUIDPipe,
   Query,
   UploadedFile,
   UseGuards,
@@ -23,12 +26,99 @@ import { ImportacionFilasDto } from './dto/importacion-filas.dto';
 import { ReconciliarImportacionDto } from './dto/reconciliar-importacion.dto';
 import { RevisarImportacionFilaDto } from './dto/revisar-importacion-fila.dto';
 import { ImportacionesService } from './importaciones.service';
+import { CorregirLecturaDto } from './dto/corregir-lectura.dto';
+import { IdentidadesService } from './identidades.service';
+import { DecidirIdentidadDto, IdentidadesQueryDto } from './dto/identidades.dto';
+import { EquivalenciasRevisionService } from './equivalencias-revision.service';
+import { DecidirEquivalenciaDto, EquivalenciasQueryDto } from './dto/equivalencias-revision.dto';
 
 @ApiTags('importaciones')
 @UseGuards(JwtAuthGuard)
 @Controller('importaciones')
 export class ImportacionesController {
-  constructor(private readonly importacionesService: ImportacionesService) {}
+  constructor(
+    private readonly importacionesService: ImportacionesService,
+    private readonly aplicacion: AplicacionService,
+    private readonly identidades: IdentidadesService,
+    private readonly equivalencias: EquivalenciasRevisionService,
+  ) {}
+
+  @Get(':id/aplicacion')
+  application(@Param('id', ParseUUIDPipe) id: string, @Query() query: AplicacionQueryDto) {
+    return this.aplicacion.list(id, query);
+  }
+  @Post(':id/lotes')
+  proposeBatch(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ProponerImportacionDto,
+    @CurrentUser() user: Usuario,
+  ) {
+    return this.aplicacion.propose(id, user.id, dto);
+  }
+  @Post(':id/lotes/:loteId/confirmar')
+  confirmBatch(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('loteId', ParseUUIDPipe) loteId: string,
+    @Body() dto: ConfirmarLoteDto,
+    @CurrentUser() user: Usuario,
+  ) {
+    return this.aplicacion.confirm(id, loteId, user.id, dto);
+  }
+
+  @Get(':id/equivalencias-revision')
+  reviewEquivalences(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query() query: EquivalenciasQueryDto,
+  ) {
+    return this.equivalencias.list(id, query);
+  }
+
+  @Post(':id/equivalencias-revision/previsualizar')
+  previewEquivalence(@Param('id', ParseUUIDPipe) id: string, @Body() dto: DecidirEquivalenciaDto) {
+    return this.equivalencias.preview(id, dto);
+  }
+
+  @Patch(':id/equivalencias-revision')
+  decideEquivalence(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: DecidirEquivalenciaDto,
+    @CurrentUser() user: Usuario,
+  ) {
+    return this.equivalencias.decide(id, user.id, dto);
+  }
+
+  @Get(':id/identidades')
+  identities(@Param('id', ParseUUIDPipe) id: string, @Query() query: IdentidadesQueryDto) {
+    return this.identidades.list(id, query);
+  }
+  @Get(':id/identidades/clientes')
+  identityClients(@Param('id', ParseUUIDPipe) id: string, @Query() query: IdentidadesQueryDto) {
+    return this.identidades.clients(id, query);
+  }
+  @Post(':id/identidades/preparar')
+  prepareIdentities(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: Usuario) {
+    return this.identidades.prepare(id, user.id);
+  }
+  @Patch(':id/identidades/decidir')
+  decideIdentity(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: Usuario,
+    @Body() dto: DecidirIdentidadDto,
+  ) {
+    return this.identidades.decide(id, user.id, dto);
+  }
+
+  @Patch(':id/filas/:filaId/lectura')
+  correct(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('filaId', ParseUUIDPipe) filaId: string,
+    @Body() dto: CorregirLecturaDto,
+    @CurrentUser() user: Usuario,
+  ) {
+    return this.importacionesService
+      .correctReading(id, filaId, user.id, dto)
+      .then((data) => ({ success: true, data }));
+  }
 
   @Get()
   @ApiOperation({ summary: 'Listar importaciones históricas' })
@@ -51,7 +141,9 @@ export class ImportacionesController {
   })
   @ApiOperation({ summary: 'Previsualizar importación de CLIENTES 2026' })
   preview(@UploadedFile() file: Express.Multer.File, @CurrentUser() user: Usuario) {
-    return this.importacionesService.preview(file, user.id).then((data) => ({ success: true, data }));
+    return this.importacionesService
+      .preview(file, user.id)
+      .then((data) => ({ success: true, data }));
   }
 
   @Post(':id/confirmar')
@@ -74,7 +166,9 @@ export class ImportacionesController {
     @Body() dto: ReconciliarImportacionDto,
     @CurrentUser() user: Usuario,
   ) {
-    return this.importacionesService.reconcile(id, user.id, dto).then((data) => ({ success: true, data }));
+    return this.importacionesService
+      .reconcile(id, user.id, dto)
+      .then((data) => ({ success: true, data }));
   }
 
   @Get(':id')
@@ -109,8 +203,14 @@ export class ImportacionesController {
 
   @Post(':id/equivalencias')
   @ApiOperation({ summary: 'Crear o actualizar una equivalencia revisada' })
-  saveEquivalence(@Param('id') id: string, @Body() dto: EquivalenciaImportacionDto, @CurrentUser() user: Usuario) {
-    return this.importacionesService.saveEquivalence(id, user.id, dto).then((data) => ({ success: true, data }));
+  saveEquivalence(
+    @Param('id') id: string,
+    @Body() dto: EquivalenciaImportacionDto,
+    @CurrentUser() user: Usuario,
+  ) {
+    return this.importacionesService
+      .saveEquivalence(id, user.id, dto)
+      .then((data) => ({ success: true, data }));
   }
 
   @Patch(':id/filas/:filaId/revisar')
@@ -121,6 +221,8 @@ export class ImportacionesController {
     @Body() dto: RevisarImportacionFilaDto,
     @CurrentUser() user: Usuario,
   ) {
-    return this.importacionesService.reviewRow(id, filaId, user.id, dto).then((data) => ({ success: true, data }));
+    return this.importacionesService
+      .reviewRow(id, filaId, user.id, dto)
+      .then((data) => ({ success: true, data }));
   }
 }

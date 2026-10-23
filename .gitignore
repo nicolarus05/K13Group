@@ -45,3 +45,8 @@ coverage/
 # Exclusiones versionadas del contexto Docker
 !backend/.dockerignore
 !frontend/.dockerignore
+
+# Python recovery tooling
+__pycache__/
+*.pyc
+!recovery/.dockerignore

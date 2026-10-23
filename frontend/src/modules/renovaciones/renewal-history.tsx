@@ -1,11 +1,13 @@
 'use client';
+import { useConfiguredPage } from '@/modules/configuracion/preferences';
+import { useDateLabel, useRefreshInterval } from '@/modules/configuracion/preferences';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { EstadoBadge } from '@/components/ui/badge';
 import { catalogError } from '@/modules/catalogos/services/catalogos.service';
-import { dateLabel, type Subscription } from '@/modules/suscripciones/suscripciones.service';
+import { type Subscription } from '@/modules/suscripciones/suscripciones.service';
 import { renewals, money, type Renewal, type RenewalQuery } from './renovaciones.service';
 import { RenewalDialog, type RenewalAction } from './renewal-dialog';
 
@@ -16,10 +18,12 @@ export function RenewalRecord({
   row: Renewal;
   onAction: (action: RenewalAction) => void;
 }) {
+  const dateLabel = useDateLabel();
+
   const movement = row.movimientos[0];
   const done = row.estado?.valor === 'COMPLETADA';
   return (
-    <article className="space-y-2 rounded border border-hover p-4">
+    <article className="border-hover space-y-2 rounded border p-4">
       <div className="flex flex-wrap items-center gap-2">
         <Link className="text-primary underline" href={'/renovaciones/' + row.id}>
           {row.tipoOperacion === 'ALTA' ? 'Primer pago' : 'Renovación'} ·{' '}
@@ -73,12 +77,14 @@ export function RenewalRecord({
   );
 }
 export function RenewalHistory({ filters = {} }: { filters?: RenewalQuery }) {
-  const [page, setPage] = useState(1);
+  const refreshInterval = useRefreshInterval();
+
+  const [page, setPage, pageLimit] = useConfiguredPage();
   const [action, setAction] = useState<RenewalAction | null>(null);
   const query = useQuery({
-    queryKey: ['renovaciones', 'historial', filters, page],
-    queryFn: () => renewals.list({ ...filters, page, limit: 10 }),
-    refetchInterval: action ? false : 60000,
+    queryKey: ['renovaciones', 'historial', filters, page, pageLimit],
+    queryFn: () => renewals.list({ ...filters, page, limit: pageLimit }),
+    refetchInterval: action ? false : refreshInterval,
   });
   return (
     <section className="space-y-3">
@@ -123,7 +129,7 @@ export function SubscriptionRenewals({ subscription }: { subscription: Subscript
   });
   const allowed = ['ACTIVA', 'PROXIMA_A_VENCER', 'VENCIDA'].includes(subscription.estado.valor);
   return (
-    <section className="space-y-4 rounded border border-hover p-4">
+    <section className="border-hover space-y-4 rounded border p-4">
       <h2 className="text-lg font-semibold">Renovaciones y cobros</h2>
       {subscription.noRenovar && (
         <p className="text-warning">No renovar: esta suscripción está excluida del seguimiento.</p>
@@ -137,7 +143,7 @@ export function SubscriptionRenewals({ subscription }: { subscription: Subscript
             Registrar primer pago
           </Button>
         )}
-        {subscription.estado.valor !== 'CANCELADA' && (
+        {!['CANCELADA', 'HISTORICA'].includes(subscription.estado.valor) && (
           <Button
             variant="secondary"
             onClick={() => setAction({ kind: 'preferencia', subscription })}

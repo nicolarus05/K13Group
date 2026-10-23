@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { initialSettings } from '../src/configuracion/settings';
 import * as bcrypt from 'bcrypt';
 const METODOS_PAGO = [
   ['EF', 'Efectivo'],
@@ -59,6 +60,7 @@ const ESTADOS = [
   { tipo: 'suscripcion', valor: 'VENCIDA', etiqueta: 'Vencida', orden: 4 },
   { tipo: 'suscripcion', valor: 'SUSPENDIDA', etiqueta: 'Suspendida', orden: 5 },
   { tipo: 'suscripcion', valor: 'CANCELADA', etiqueta: 'Cancelada', orden: 6 },
+  { tipo: 'suscripcion', valor: 'HISTORICA', etiqueta: 'Histórica', orden: 7 },
   // Renovaciones
   { tipo: 'renovacion', valor: 'PENDIENTE', etiqueta: 'Pendiente', orden: 1 },
   { tipo: 'renovacion', valor: 'COMPLETADA', etiqueta: 'Completada', orden: 2 },
@@ -87,6 +89,13 @@ const ESTADOS = [
 ];
 
 export async function seedBase(prisma: PrismaClient) {
+  for (const [clave, valor] of Object.entries(initialSettings()))
+    await prisma.configuracion.upsert({
+      where: { clave },
+      create: { clave, valor: String(valor) },
+      update: {},
+    });
+
   for (const estado of ESTADOS) {
     await prisma.estado.upsert({
       where: { tipo_valor: { tipo: estado.tipo, valor: estado.valor } },
@@ -94,7 +103,8 @@ export async function seedBase(prisma: PrismaClient) {
       create: { ...estado, activo: true },
     });
   }
-  const admin = await prisma.usuario.findUnique({ where: { username: 'admin' } });
+  // Un cambio de username no debe volver a habilitar la cuenta inicial.
+  const admin = await prisma.usuario.findFirst({ select: { id: true } });
   if (!admin)
     await prisma.usuario.create({
       data: {

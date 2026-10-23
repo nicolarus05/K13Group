@@ -1,6 +1,10 @@
 'use client';
+import { ExportButton } from '@/modules/exportaciones/export-button';
+import { useListQuery } from '@/modules/configuracion/preferences';
+import { useDateLabel, useRefreshInterval } from '@/modules/configuracion/preferences';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Suspense, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +12,6 @@ import { EstadoBadge } from '@/components/ui/badge';
 import { catalogError } from '@/modules/catalogos/services/catalogos.service';
 import {
   catalogOptions,
-  dateLabel,
   subscriptions,
   subscriptionStates,
   type SubscriptionQuery,
@@ -17,9 +20,20 @@ import { selectStyle } from '@/modules/suscripciones/subscription-form';
 import { clientesService } from '@/modules/clientes/services/clientes.service';
 
 export default function Page() {
-  const [query, setQuery] = useState<SubscriptionQuery>({
+  return (
+    <Suspense fallback={<p>Cargando suscripciones…</p>}>
+      <SubscriptionsPage />
+    </Suspense>
+  );
+}
+function SubscriptionsPage() {
+  const params = useSearchParams();
+  const dateLabel = useDateLabel();
+  const refreshInterval = useRefreshInterval();
+
+  const [query, setQuery] = useListQuery<SubscriptionQuery>({
     page: 1,
-    limit: 25,
+    ...(params.get('referenciaId') ? { referenciaId: params.get('referenciaId')! } : {}),
     sort: 'fechaFin',
     order: 'asc',
   });
@@ -27,7 +41,7 @@ export default function Page() {
   const result = useQuery({
     queryKey: ['suscripciones', query],
     queryFn: () => subscriptions.list(query),
-    refetchInterval: 60000,
+    refetchInterval: refreshInterval,
   });
   const options = useQuery({
     queryKey: ['catalogos', 'filtros-suscripciones'],
@@ -52,6 +66,7 @@ export default function Page() {
           Nueva suscripción
         </Link>
       </header>
+      <ExportButton module="suscripciones" filters={query} />
       <div className="grid gap-3 md:grid-cols-3">
         <Input
           label="Buscar cliente, teléfono o producto"
@@ -165,16 +180,16 @@ export default function Page() {
           {result.data.data.map((row) => (
             <article
               key={row.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded border border-hover p-4"
+              className="border-hover flex flex-wrap items-center justify-between gap-3 rounded border p-4"
             >
               <div>
                 <Link
-                  className="font-medium text-primary underline"
+                  className="text-primary font-medium underline"
                   href={'/suscripciones/' + row.id}
                 >
                   {row.cliente.nombre} · {row.producto.nombre}
                 </Link>
-                <p className="text-sm text-text-secondary">
+                <p className="text-text-secondary text-sm">
                   {row.tarifa.nombre} · {row.servidor.nombre} · Renovación:{' '}
                   {dateLabel(row.fechaFin)}
                 </p>

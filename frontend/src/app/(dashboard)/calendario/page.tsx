@@ -1,21 +1,21 @@
 'use client';
+import { useConfiguredPage } from '@/modules/configuracion/preferences';
+import { useDateLabel, useRefreshInterval } from '@/modules/configuracion/preferences';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import {
-  reminders,
-  madridToday,
-  dateLabel,
-  kindLabel,
-} from '@/modules/recordatorios/recordatorios.service';
+import { reminders, madridToday, kindLabel } from '@/modules/recordatorios/recordatorios.service';
 import { Failure, Pager } from '@/modules/recordatorios/reminders-ui';
 import { usePageBounds } from '@/modules/recordatorios/use-page-bounds';
 
 const iso = (date: Date) => date.toISOString().slice(0, 10);
 export default function CalendarPage() {
+  const dateLabel = useDateLabel();
+  const refreshInterval = useRefreshInterval();
+
   const [month, setMonth] = useState(() => madridToday().slice(0, 7)),
     [day, setDay] = useState(madridToday),
-    [page, setPage] = useState(1),
+    [page, setPage, pageLimit] = useConfiguredPage(),
     [tipo, setTipo] = useState('');
   const first = new Date(month + '-01T00:00:00Z');
   const start = new Date(first.getTime() - ((first.getUTCDay() + 6) % 7) * 86400000);
@@ -25,14 +25,14 @@ export default function CalendarPage() {
     queryKey: ['recordatorios', 'calendar', params],
     queryFn: () => reminders.calendar(params),
     staleTime: 0,
-    refetchInterval: 60000,
+    refetchInterval: refreshInterval,
   });
-  const agendaParams = { desde: day, hasta: day, tipo: tipo || undefined, page, limit: 10 };
+  const agendaParams = { desde: day, hasta: day, tipo: tipo || undefined, page, limit: pageLimit };
   const agenda = useQuery({
     queryKey: ['recordatorios', 'agenda', agendaParams],
     queryFn: () => reminders.agenda(agendaParams),
     staleTime: 0,
-    refetchInterval: 60000,
+    refetchInterval: refreshInterval,
   });
   const adjusting = usePageBounds(
     page,

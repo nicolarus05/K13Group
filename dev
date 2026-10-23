@@ -19,9 +19,22 @@ case "${1:-help}" in
     docker compose run --rm --no-deps -e NODE_ENV=production frontend npm run build
     ;;
   test-ui) docker compose up -d --wait frontend; docker compose exec frontend npm run test:ui ;;
+  test-e2e-configuracion) ./recovery/test-e2e.sh ;;
+  test-e2e-lectura) bash ./recovery/test-lectura-e2e.sh ;;
+  test-e2e-exportaciones) E2E_EXPORTACIONES=1 bash ./recovery/test-lectura-e2e.sh ;;
+  test-recovery) docker compose run --rm --no-deps -v "$PWD/recovery:/tests:ro" -v "$PWD/backend/prisma/migrations:/migrations:ro" --entrypoint python3 recovery /tests/test_worker.py ;;
   test-backend) docker compose exec backend npm test -- --runInBand ;;
   test-integration) docker compose exec backend npm run test:integration ;;
   migrate) docker compose exec backend npx prisma migrate deploy ;;
+  backup) docker compose exec recovery python3 /opt/recovery/worker.py backup ;;
+  restore-check) docker compose exec recovery python3 /opt/recovery/worker.py validate "${2:?Indica el ID de copia}" ;;
+  restore) docker compose exec recovery python3 /opt/recovery/worker.py restore "${2:?Indica el ID de copia}" ;;
+  recovery-clear-leases)
+    docker compose stop backend
+    trap 'docker compose up -d --wait backend' EXIT
+    docker compose exec recovery python3 -c 'from pathlib import Path; [p.unlink() for p in Path("/recovery/leases").iterdir() if p.is_file()]'
+    ;;
+  recovery-resume) docker compose restart recovery ;;
   seed) docker compose exec backend npm run db:seed ;;
-  *) echo 'Uso: ./dev {start|stop|status|logs|backend comando...|frontend comando...|build-backend|build-frontend|test-ui|test-backend|test-integration|migrate|seed}' ;;
+  *) echo 'Uso: ./dev {start|stop|status|logs|backend comando...|frontend comando...|build-backend|build-frontend|test-ui|test-backend|test-integration|test-recovery|test-e2e-configuracion|test-e2e-lectura|test-e2e-exportaciones|migrate|seed|backup|restore-check ID|restore ID|recovery-resume|recovery-clear-leases}' ;;
 esac

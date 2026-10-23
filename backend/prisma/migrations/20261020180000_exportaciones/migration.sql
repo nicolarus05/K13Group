@@ -1,0 +1,7 @@
+ALTER TABLE "exportaciones"
+  ADD COLUMN "modulo" VARCHAR(30),
+  ADD COLUMN "seccion" VARCHAR(30),
+  ADD COLUMN "estado" VARCHAR(20) NOT NULL DEFAULT 'GENERADA',
+  ADD COLUMN "registros" INTEGER,
+  ADD COLUMN "bytes" INTEGER,
+  ADD COLUMN "error" VARCHAR(200);

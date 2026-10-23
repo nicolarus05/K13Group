@@ -1,4 +1,5 @@
 'use client';
+import { useDateLabel } from '@/modules/configuracion/preferences';
 import { useRef, useState, type FormEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
@@ -6,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 import {
   catalogOptions,
-  dateLabel,
   annualPreview,
   todayMadrid,
   type Subscription,
@@ -19,6 +19,8 @@ export type RenewalAction =
   | { kind: 'renovar' | 'alta' | 'preferencia'; subscription: Subscription }
   | { kind: 'cobrar' | 'anular'; renewal: Renewal };
 export function RenewalDialog({ action, onClose }: { action: RenewalAction; onClose: () => void }) {
+  const dateLabel = useDateLabel();
+
   const cache = useQueryClient();
   const toast = useToast();
   const sub = 'subscription' in action ? action.subscription : action.renewal.suscripcion;
@@ -129,7 +131,10 @@ export function RenewalDialog({ action, onClose }: { action: RenewalAction; onCl
         {(initial || action.kind === 'renovar') && (
           <div className="border-hover rounded border p-3 text-sm">
             <p>Vencimiento actual: {dateLabel(sub.fechaFin)}</p>
-            <p>Nuevo vencimiento: {initial ? dateLabel(sub.fechaFin) : annualPreview(base)}</p>
+            <p>
+              Nuevo vencimiento:{' '}
+              {initial ? dateLabel(sub.fechaFin) : annualPreview(base, dateLabel)}
+            </p>
             <p>
               {initial
                 ? 'El primer pago no amplía el periodo inicial.'

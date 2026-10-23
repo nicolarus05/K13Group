@@ -182,7 +182,7 @@ test(
     const { page, writes, method } = await fixture(t);
     await page.getByRole('button', { name: 'Renovar', exact: true }).click();
     const dialog = page.getByRole('dialog');
-    assert.match(await dialog.innerText(), /25\/9\/2027/);
+    assert.match(await dialog.innerText(), /25\/09\/2027/);
     await dialog.getByLabel('Método de pago').selectOption(method.id);
     await dialog.getByLabel('Dejar cobro pendiente').check();
     await dialog.getByLabel('Fecha prevista de cobro').fill('2026-09-30');
@@ -203,7 +203,7 @@ test(
     await page.getByRole('button', { name: 'Registrar primer pago', exact: true }).click();
     const dialog = page.getByRole('dialog');
     assert.match(await dialog.innerText(), /El primer pago no amplía/);
-    assert.match(await dialog.innerText(), /15\/9\/2026/);
+    assert.match(await dialog.innerText(), /15\/09\/2026/);
     await dialog.getByLabel('Método de pago').selectOption(method.id);
     await dialog.getByRole('button', { name: 'Confirmar', exact: true }).click();
     await dialog.waitFor({ state: 'hidden' });

@@ -1,4 +1,5 @@
 'use client';
+import { useRefreshInterval } from '@/modules/configuracion/preferences';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
@@ -9,12 +10,14 @@ import { renewals } from '@/modules/renovaciones/renovaciones.service';
 import { RenewalRecord } from '@/modules/renovaciones/renewal-history';
 import { RenewalDialog, type RenewalAction } from '@/modules/renovaciones/renewal-dialog';
 export default function Page() {
+  const refreshInterval = useRefreshInterval();
+
   const { id } = useParams<{ id: string }>();
   const [action, setAction] = useState<RenewalAction | null>(null);
   const query = useQuery({
     queryKey: ['renovaciones', id],
     queryFn: () => renewals.get(id),
-    refetchInterval: action ? false : 60000,
+    refetchInterval: action ? false : refreshInterval,
   });
   return (
     <div className="space-y-4">

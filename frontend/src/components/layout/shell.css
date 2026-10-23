@@ -40,10 +40,19 @@
 }
 .k13-brand {
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
   justify-content: center;
   background: #000;
   padding: 10px 12px;
   border-bottom: 1px solid #ffffff12;
+}
+.k13-brand > span {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: center;
+  font-size: 13px;
 }
 .k13-brand img {
   width: 150px;

@@ -1,8 +1,10 @@
+import { RecoveryModule } from '../recovery/recovery.module';
 import { Module } from '@nestjs/common';
 import { ConfiguracionController } from './configuracion.controller';
 import { ConfiguracionService } from './configuracion.service';
 
 @Module({
+  imports: [RecoveryModule],
   controllers: [ConfiguracionController],
   providers: [ConfiguracionService],
   exports: [ConfiguracionService],

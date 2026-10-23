@@ -1,3 +1,5 @@
+import { acquireOperation } from '../recovery/maintenance';
+import { readSettings, warningDays as configuredWarningDays } from '../configuracion/settings';
 import { Injectable, Logger, OnApplicationBootstrap, OnModuleDestroy } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
@@ -13,11 +15,7 @@ export async function stateId(tx: Prisma.TransactionClient, tipo: string, valor:
   return (await tx.estado.findUniqueOrThrow({ where: { tipo_valor: { tipo, valor } } })).id;
 }
 export async function warningDays(tx: Prisma.TransactionClient) {
-  const config = await tx.configuracion.findUnique({
-    where: { clave: 'suscripciones.dias_proxima' },
-  });
-  const days = config ? Number(config.valor) : 7;
-  return Number.isInteger(days) && days >= 1 && days <= 365 ? days : 7;
+  return configuredWarningDays(tx);
 }
 export async function audit(
   tx: Prisma.TransactionClient,
@@ -44,6 +42,7 @@ export async function audit(
 export class RecordatoriosService implements OnApplicationBootstrap, OnModuleDestroy {
   private timer?: ReturnType<typeof setInterval>;
   private running = false;
+  private lastRun = 0;
   private stopped = false;
   private readonly logger = new Logger(RecordatoriosService.name);
   constructor(private readonly prisma: PrismaService) {}
@@ -52,15 +51,22 @@ export class RecordatoriosService implements OnApplicationBootstrap, OnModuleDes
     const tick = async () => {
       if (this.running) return;
       this.running = true;
+      let release: (() => Promise<void>) | null = null;
       try {
+        release = await acquireOperation();
+        if (!release) return;
+        const minutes = (await readSettings(this.prisma))['sistema.intervalo_comprobacion_minutos'];
+        if (Date.now() - this.lastRun < minutes * 60000) return;
         await this.sync();
+        this.lastRun = Date.now();
       } catch {
         this.logger.error('No se pudieron actualizar los avisos internos; se reintentará.');
       } finally {
+        await release?.();
         this.running = false;
       }
     };
-    this.timer = setInterval(() => void tick(), 60_000);
+    this.timer = setInterval(() => void tick(), 10_000);
     this.timer.unref();
     void tick();
   }

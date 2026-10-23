@@ -8,9 +8,15 @@ RN-001.002 — Nombre obligatorio
 
 El nombre del cliente es obligatorio.
 
-RN-001.003 — Teléfono único (opcional)
+RN-001.003 — Teléfono opcional y compartido
 
-Si se introduce un teléfono, no podrá existir otro cliente con el mismo número.
+El teléfono es opcional. Distintos clientes pueden compartir el mismo número.
+Se conserva el valor original y su normalización para buscar coincidencias;
+el teléfono por sí solo no identifica al cliente ni permite fusionar fichas.
+
+Criterio confirmado para el histórico XLSX el 22/10/2026: solo se agrupan filas
+con el mismo NOMBRE, teléfono informado y referente informado. Nombres o
+referentes distintos conservan clientes separados y sus nombres originales.
 
 RN-001.004 — Borrado lógico
 

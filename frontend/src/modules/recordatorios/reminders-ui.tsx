@@ -1,16 +1,12 @@
 'use client';
+import { useConfiguredPage } from '@/modules/configuracion/preferences';
+import { useDateLabel, useRefreshInterval } from '@/modules/configuracion/preferences';
 import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
 import { clientesService } from '@/modules/clientes/services/clientes.service';
-import {
-  reminders,
-  madridToday,
-  dateLabel,
-  kindLabel,
-  type Reminder,
-} from './recordatorios.service';
+import { reminders, madridToday, kindLabel, type Reminder } from './recordatorios.service';
 import { usePageBounds } from './use-page-bounds';
 import '@/app/(dashboard)/dashboard/dashboard.css';
 import './recordatorios.css';
@@ -145,13 +141,16 @@ export function ReminderCreate({ done }: { done: () => void }) {
   );
 }
 export function ReminderList() {
+  const dateLabel = useDateLabel();
+  const refreshInterval = useRefreshInterval();
+
   const [vista, setVista] = useState('atencion'),
     [tipo, setTipo] = useState(''),
     [estado, setEstado] = useState(''),
     [search, setSearch] = useState('');
   const [desde, setDesde] = useState(''),
     [hasta, setHasta] = useState(''),
-    [page, setPage] = useState(1),
+    [page, setPage, pageLimit] = useConfiguredPage(),
     [create, setCreate] = useState(false);
   const filters = {
     vista,
@@ -161,12 +160,13 @@ export function ReminderList() {
     desde: desde || undefined,
     hasta: hasta || undefined,
     page,
+    limit: pageLimit,
   };
   const query = useQuery({
     queryKey: ['recordatorios', 'list', filters],
     queryFn: () => reminders.list(filters),
     staleTime: 0,
-    refetchInterval: 60000,
+    refetchInterval: refreshInterval,
   });
   const adjusting = usePageBounds(
     page,
@@ -462,12 +462,15 @@ function ReminderActionForm({
   );
 }
 export function ReminderDetail({ id }: { id: string }) {
+  const dateLabel = useDateLabel();
+  const refreshInterval = useRefreshInterval();
+
   const [page, setPage] = useState(1);
   const query = useQuery({
     queryKey: ['recordatorios', id],
     queryFn: () => reminders.detail(id),
     staleTime: 0,
-    refetchInterval: 60000,
+    refetchInterval: refreshInterval,
   });
   const history = useQuery({
     queryKey: ['recordatorios', id, 'history', page],

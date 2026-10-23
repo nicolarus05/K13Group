@@ -1,4 +1,5 @@
 'use client';
+import { useDateLabel, useRefreshInterval } from '@/modules/configuracion/preferences';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useRef, useState, type FormEvent } from 'react';
@@ -7,15 +8,14 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { EstadoBadge } from '@/components/ui/badge';
 import { catalogError } from '@/modules/catalogos/services/catalogos.service';
-import {
-  dateLabel,
-  subscriptions,
-  type Subscription,
-} from '@/modules/suscripciones/suscripciones.service';
+import { subscriptions, type Subscription } from '@/modules/suscripciones/suscripciones.service';
 import { SubscriptionForm } from '@/modules/suscripciones/subscription-form';
 import { SubscriptionRenewals } from '@/modules/renovaciones/renewal-history';
 
 export default function Page() {
+  const dateLabel = useDateLabel();
+  const refreshInterval = useRefreshInterval();
+
   const { id } = useParams<{ id: string }>();
   const cache = useQueryClient();
   const [edit, setEdit] = useState<Subscription | null>(null);
@@ -33,13 +33,13 @@ export default function Page() {
     queryKey: ['suscripciones', id],
     queryFn: () => subscriptions.get(id),
     enabled: !edit && !action,
-    refetchInterval: edit || action ? false : 60000,
+    refetchInterval: edit || action ? false : refreshInterval,
   });
   const history = useQuery({
     queryKey: ['suscripciones', id, 'historial', page],
     queryFn: () => subscriptions.history(id, page),
     enabled: Boolean(detail.data) && !edit && !action,
-    refetchInterval: edit || action ? false : 60000,
+    refetchInterval: edit || action ? false : refreshInterval,
   });
   // Una respuesta tardía no debe sustituir la copia sobre la que el usuario trabaja.
   const row = edit ?? action?.record ?? detail.data;
@@ -78,7 +78,7 @@ export default function Page() {
         <Link href="/suscripciones">Volver</Link>
       </div>
     );
-  const ended = row.estado.valor === 'CANCELADA';
+  const ended = ['CANCELADA', 'HISTORICA'].includes(row.estado.valor);
   return (
     <div className="space-y-5">
       <Link href="/suscripciones" className="text-primary underline">
