@@ -133,12 +133,8 @@ export class IdentidadesService {
             'El cliente de destino ha cambiado o ya no está disponible. Revisa la vinculación.',
           );
       }
-      if (
-        g.estado === 'NUEVO' &&
-        phone &&
-        byPhone.get(phone)?.some((x) => x.id !== g.id && ['CLIENTE', 'NUEVO'].includes(x.kind))
-      )
-        why.push('El teléfono ya pertenece a un cliente o a otra propuesta de cliente nuevo.');
+      // Las coincidencias se revisan antes de decidir. Una decisión NUEVO explícita
+      // puede conservar un teléfono compartido sin fusionar clientes por ese dato.
       if (g.estado === 'PENDIENTE') {
         why.push(...identityProblems(data));
         if (phone && byPhone.get(phone)?.some((x) => x.id !== g.id && x.name !== name))
@@ -392,30 +388,6 @@ export class IdentidadesService {
           canonical = identityData(dto.datos);
           const errors = identityProblems(canonical);
           if (errors.length) throw new BadRequestException(errors);
-          const phone = identityPhone(canonical.telefono);
-          if (phone) {
-            const existing = await tx.cliente.findFirst({
-              where: { deletedAt: null, telefonoNormalizado: phone },
-              select: { id: true },
-            });
-            const others = await tx.importacionIdentidad.findMany({
-              where: {
-                importacionId: id,
-                estado: 'NUEVO',
-                // Los grupos afectados quedan pendientes al separar sus filas.
-                id: { notIn: previousIds },
-                filas: { some: { id: { notIn: dto.filas } } },
-              },
-              select: { datos: true },
-            });
-            if (
-              existing ||
-              others.some((g) => identityPhone(identityData(g.datos).telefono) === phone)
-            )
-              throw new ConflictException(
-                'Teléfono ocupado por un cliente o por otra propuesta. Revisa la agrupación o vinculación.',
-              );
-          }
         } else if (dto.accion === 'VINCULAR') {
           if (!dto.clienteDestinoId || !dto.huellaCliente)
             throw new BadRequestException('Selecciona y revisa el cliente de destino.');

@@ -8,6 +8,7 @@ import { randomUUID } from 'node:crypto';
 import { AppModule } from '../app.module';
 import { PrismaService } from '../database/prisma.service';
 import { seedBase } from '../../prisma/seed';
+import { normalizeComparable } from '../common/helpers/normalization';
 
 const isolated = process.env.TEST_DATABASE_URL;
 (isolated ? describe : describe.skip)('Equivalencias 12.3 aisladas', () => {
@@ -338,6 +339,52 @@ const isolated = process.env.TEST_DATABASE_URL;
     expect(r.data[0].advertencias.join(' ')).toMatch(/difiere/);
     expect(r.data[0].importeAnual).toBe(75);
     await db.tarifa.update({ where: { id: annual.id }, data: { precio: 75 } });
+  });
+  it('conserva sugerencias ambiguas, orden y deduplicación al indexar los catálogos', async () => {
+    const refName = `Referencia índice ${++serial}`;
+    const first = await db.referencia.create({ data: { nombre: refName } });
+    const second = await db.referencia.create({ data: { nombre: refName.toUpperCase() } });
+    const { id, result } = await fixture([
+      ['2026-10-17', 'Cliente índices', 'MAXPLAYER', 'DEAD', 'STR', 75, null, refName, 75],
+    ]);
+    await db.importacionEquivalencia.create({
+      data: {
+        tipo: 'REFERENCIA',
+        valorOrigen: refName,
+        valorClave: normalizeComparable(refName),
+        valorCanonico: first.nombre,
+        entidadId: first.id,
+      },
+    });
+    // La normalización del catálogo conserva ambos candidatos; el histórico
+    // no debe duplicar el candidato que también coincide por nombre.
+    let r = await list(id);
+    expect(r.data[0].campos.REFERENCIA.sugerencias.map((v: { id: string }) => v.id)).toEqual(
+      r.catalogos.REFERENCIA.filter((v: { id: string }) =>
+        [first.id, second.id].includes(v.id),
+      ).map((v: { id: string }) => v.id),
+    );
+    await save(id, body(r)).expect(200);
+    const product = result.catalogos.PRODUCTO.find(
+      (p: { nombre: string }) => p.nombre === 'MAXPLAYER',
+    );
+    const duplicatePrice = await db.tarifa.create({
+      data: {
+        nombre: 'Otro precio equivalente',
+        productoId: product.id,
+        duracionMeses: 12,
+        precio: 75,
+      },
+    });
+    r = await list(id);
+    expect(r.data[0].campos.TARIFA.sugerencias).toEqual(
+      r.catalogos.TARIFA.filter(
+        (t: { productoId: string; precio: number }) =>
+          t.productoId === product.id && t.precio === 75,
+      ),
+    );
+    expect(r.data[0].campos.TARIFA.sugerencias.length).toBeGreaterThan(1);
+    await db.tarifa.delete({ where: { id: duplicatePrice.id } });
   });
   it('invalida solo dependencias, conserva historial tras corregir y rechaza revisiones obsoletas', async () => {
     const { id, result } = await fixture();

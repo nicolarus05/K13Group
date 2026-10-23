@@ -110,6 +110,29 @@ export class EquivalenciasRevisionService {
         .map((p) => ({ ...catalog(p), esGratuito: p.esGratuito })),
     };
     const latest = new Map<string, Decision>();
+    // Los catálogos pueden contener miles de referencias. Indexar una vez evita
+    // normalizar y recorrer todo el catálogo por cada celda del archivo.
+    const catalogIds = new Map<string, Catalog>();
+    const catalogNames = new Map<string, Catalog[]>();
+    const catalogOrder = new Map<string, number>();
+    const tariffPrices = new Map<string, Catalog[]>();
+    for (const type of EQUIVALENCE_TYPES)
+      catalogs[type].forEach((item, index) => {
+        catalogIds.set(`${type}:${item.id}`, item);
+        catalogOrder.set(`${type}:${item.id}`, index);
+        const key = `${type}:${normalizeComparable(item.nombre)}`;
+        catalogNames.set(key, [...(catalogNames.get(key) ?? []), item]);
+        if (type === 'TARIFA') {
+          const priceKey = `${item.productoId}:${item.precio}`;
+          tariffPrices.set(priceKey, [...(tariffPrices.get(priceKey) ?? []), item]);
+        }
+      });
+    const legacyIds = new Map<string, string[]>();
+    for (const mapping of legacy) {
+      if (!mapping.entidadId) continue;
+      const key = `${mapping.tipo}:${mapping.valorClave}`;
+      legacyIds.set(key, [...(legacyIds.get(key) ?? []), mapping.entidadId]);
+    }
     const lastValueForRow = new Map<string, Decision>();
     for (const d of decisions) {
       latest.set(`${d.tipo}:${d.alcance}:${d.filaId ?? d.clave}`, d);
@@ -129,26 +152,27 @@ export class EquivalenciasRevisionService {
           ? override
           : (latest.get(`${tipo}:VALOR:${source.clave}`) ??
             lastValueForRow.get(`${tipo}:${row.id}`));
-      const target = catalogs[tipo].find((c) => c.id === d?.entidadId) ?? null;
+      const target = catalogIds.get(`${tipo}:${d?.entidadId}`) ?? null;
       const eligible = (c: Catalog) =>
         tipo !== 'TARIFA' || (product && c.productoId === product.id && c.duracionMeses === 12);
-      const suggestionIds = legacy
-        .filter(
-          (l) =>
-            l.tipo === tipo &&
-            l.valorClave ===
-              (tipo === 'TARIFA'
-                ? `${record(row.datosNormalizados).productoClave}|${record(row.datosNormalizados).importeAnual}`
-                : source.etiqueta),
-        )
-        .map((l) => l.entidadId);
-      const suggestions = catalogs[tipo].filter(
-        (c) =>
-          eligible(c) &&
-          (suggestionIds.includes(c.id) ||
-            normalizeComparable(c.nombre) === source.etiqueta ||
-            (tipo === 'TARIFA' && c.precio === record(row.datosNormalizados).importeAnual)),
-      );
+      const data = record(row.datosNormalizados);
+      const legacyKey =
+        tipo === 'TARIFA' ? `${data.productoClave}|${data.importeAnual}` : source.etiqueta;
+      const candidates = [
+        ...(catalogNames.get(`${tipo}:${source.etiqueta}`) ?? []),
+        ...(legacyIds.get(`${tipo}:${legacyKey}`) ?? []).flatMap((id) => {
+          const item = catalogIds.get(`${tipo}:${id}`);
+          return item ? [item] : [];
+        }),
+        ...(tipo === 'TARIFA' && product && typeof data.importeAnual === 'number'
+          ? (tariffPrices.get(`${product.id}:${data.importeAnual}`) ?? [])
+          : []),
+      ];
+      const suggestions = [...new Map(candidates.map((c) => [c.id, c])).values()]
+        .filter(eligible)
+        .sort(
+          (a, b) => catalogOrder.get(`${tipo}:${a.id}`)! - catalogOrder.get(`${tipo}:${b.id}`)!,
+        );
       let estado = source.ignorado
         ? 'IGNORADO'
         : tipo === 'REFERENCIA' && source.ausente

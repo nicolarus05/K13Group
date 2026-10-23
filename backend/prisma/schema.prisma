@@ -61,8 +61,8 @@ model Cliente {
   recordatorios    Recordatorio[]
   importacionFilas ImportacionFila[]
 
-  // Unicidad solo entre no eliminados: índice parcial clientes_telefono_activo_key
-  // definido en la migración 20261007180000_clientes_telefono_unico.
+  // Contactos compartidos permitidos; este índice acelera búsquedas sin imponer unicidad.
+  // La migración 20261021120000_clientes_telefonos_compartidos retira el índice único anterior.
   @@index([telefonoNormalizado])
   @@map("clientes")
 }

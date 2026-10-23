@@ -211,7 +211,7 @@ const isolated = process.env.TEST_DATABASE_URL;
     expect(response.headers['access-control-allow-credentials']).toBe('true');
   });
 
-  it('dos altas concurrentes con teléfonos equivalentes crean un único cliente y devuelven 409', async () => {
+  it('dos clientes distintos pueden darse de alta con un teléfono compartido normalizado', async () => {
     const jar = await login();
     const results = await Promise.all(
       ['0034 612 345 678', '+34-612-345-678'].map((telefono, i) =>
@@ -221,15 +221,19 @@ const isolated = process.env.TEST_DATABASE_URL;
           .send({ nombre: 'Concurrente ' + i, telefono }),
       ),
     );
-    expect(results.map((r) => r.status).sort()).toEqual([201, 409]);
+    expect(results.map((r) => r.status)).toEqual([201, 201]);
+    expect(new Set(results.map((r) => r.body.data.id)).size).toBe(2);
     expect(
       await db.cliente.count({ where: { telefonoNormalizado: '34612345678', deletedAt: null } }),
-    ).toBe(1);
-    const loser = results.find((r) => r.status === 409)!;
-    expect(loser.body.message).toContain('teléfono');
+    ).toBe(2);
+    const found = await api()
+      .get('/api/v1/clientes?search=34612345678')
+      .set('Cookie', jar)
+      .expect(200);
+    expect(found.body.pagination.total).toBe(2);
   });
 
-  it('dos ediciones concurrentes tampoco pueden asignar el mismo teléfono', async () => {
+  it('editar un teléfono compartido conserva las dos fichas independientes', async () => {
     const jar = await login();
     const rows = await Promise.all(
       ['Edición A', 'Edición B'].map(
@@ -246,7 +250,12 @@ const isolated = process.env.TEST_DATABASE_URL;
           .send({ telefono: '677889900' }),
       ),
     );
-    expect(results.map((r) => r.status).sort()).toEqual([200, 409]);
+    expect(results.map((r) => r.status)).toEqual([200, 200]);
+    expect(
+      await db.cliente.count({
+        where: { id: { in: rows.map((r) => r.id) }, telefonoNormalizado: '677889900' },
+      }),
+    ).toBe(2);
   });
 
   it('audita un único borrado y permite reutilizar su teléfono sin perder el histórico', async () => {

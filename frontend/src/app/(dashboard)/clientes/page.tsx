@@ -89,11 +89,8 @@ export default function ClientesPage() {
       setFormOpen(false);
       setEditCliente(undefined);
     } catch (cause) {
-      error(
-        isAxiosError(cause) && cause.response?.status === 409
-          ? 'Ya existe un cliente con ese teléfono.'
-          : 'Error al guardar el cliente.',
-      );
+      const message: unknown = isAxiosError(cause) ? cause.response?.data?.message : undefined;
+      error(typeof message === 'string' ? message : 'Error al guardar el cliente.');
     }
   }
 

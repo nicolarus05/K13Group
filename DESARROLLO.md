@@ -182,15 +182,17 @@ dependencias ni realizado commit, push o despliegue.
   cada proceso; un despliegue con varias réplicas necesitará almacenamiento compartido.
   Referencia: https://docs.nestjs.com/security/rate-limiting.
 - CORS admite `Idempotency-Key` para confirmar importaciones desde la web.
-- Índice único parcial para teléfonos normalizados de clientes no eliminados.
-  Altas/ediciones concurrentes duplicadas devuelven 409 y un mensaje visible.
+- En este paso se añadió un índice único parcial para teléfonos normalizados.
+  La importación definitiva del 22/10/2026 sustituye esa regla por contactos
+  compartidos, según la decisión del usuario (véase actualización al final).
   El borrado lógico y su auditoría son atómicos; si la auditoría falla se revierte
   el borrado. Un cliente eliminado no puede editarse y su teléfono puede reutilizarse.
 
 Migración `20261007180000_clientes_telefono_unico` aplicada: 12 migraciones al día.
 Normaliza los teléfonos existentes con las mismas reglas que la API. Si encuentra
 duplicados, aborta toda la migración sin fusionar ni borrar clientes. El índice
-parcial se mantiene en SQL, ya que no se expresa como un `@unique` global en Prisma.
+parcial se definió en SQL y se retira mediante la migración posterior
+`20261021120000_clientes_telefonos_compartidos`; la normalización se conserva.
 Copia previa de PostgreSQL en
 `/home/nicolas/backups/k13group/antes-paso2-20261007.dump` (fuera del repositorio).
 
@@ -441,3 +443,245 @@ La carga definitiva requiere revisar las identidades, equivalencias y propuestas
 del archivo elegido y disponer de una copia de seguridad actual validada. Su
 conciliación deberá abarcar todos los lotes aplicados y las filas que se dejen
 pendientes o excluidas; los resultados del ensayo parcial no la sustituyen.
+
+
+## Adaptación para la carga definitiva — 22 de octubre de 2026
+
+Los clientes pueden compartir teléfono. Se conserva su normalización para buscar
+coincidencias, pero ya no es una clave única ni provoca fusiones automáticas. La
+migración `20261021120000_clientes_telefonos_compartidos` retira únicamente el
+índice único; no cambia nombres, contactos ni fichas existentes.
+
+Las decisiones explícitas de 12.2 permiten crear clientes distintos con el mismo
+contacto. La ruta antigua de confirmación exige volver a analizar los archivos
+pendientes porque deducía identidades por teléfono/nombre. Los análisis antiguos
+ya completados siguen siendo consultables sin repetir escrituras.
+
+Verificación de esta adaptación: 70 pruebas unitarias, 223 de integración y 9 de
+recuperación aprobadas. Incluye altas y ediciones concurrentes con teléfono
+compartido, decisiones de identidad independientes y dos importaciones con el
+mismo teléfono cuyos reintentos no duplican clientes, servicios ni cobros. La
+compilación del backend es correcta. Las 19 migraciones están aplicadas. Estos
+resultados no sustituyen la conciliación de la carga completa del XLSX.
+
+La revisión de equivalencias indexa los catálogos por identificador, nombre y
+precio anual para evitar recorrer todas las referencias por cada celda. Se
+compararon las filas, catálogos, sugerencias y huella de las 3.135 filas antes y
+después: resultados idénticos. Las 16 pruebas de equivalencias, 23 de aplicación
+y 26 de exportaciones pasan con esta optimización; tipos y lint sin errores
+(permanece el aviso previo de `UseGuards` en Auditoría).
+
+El ensayo completo se realizó en una base PostgreSQL aislada con una copia de la
+revisión real. El piloto se confirmó desde Chromium contra la API real; después
+se aplicó el resto de la selección. Resultado: 3.123 clientes, 2.655 servicios y
+2.652 altas históricas, con 2.647 cobros por 211.710 EUR y cinco deudas PE por
+370 EUR. Los 23 lotes del ensayo soportaron reintentos sin duplicados. Se
+conciliaron nombres, teléfonos, fechas, tarifas, referencias e importes fila por
+fila; Importaciones, Clientes, Suscripciones, Finanzas y Dashboard se verificaron
+desde el navegador sin errores JavaScript ni respuestas HTTP 5xx.
+
+La revisión registra 767 asignaciones individuales a DEAD para servidores vacíos,
+las equivalencias de las aplicaciones reconocidas, 1.517 referencias de origen y
+70 tarifas anuales adicionales con los importes positivos del Excel. COBRA y
+PROMAX permanecen inactivos: sus servicios importables son históricos.
+
+Se conservaron en el historial estas correcciones autorizadas: MAY 5 vence el
+12/05/2026; SEP 125 no lleva la coma en ESTADO; OCT 291 y SEP 186 usan Gratis
+(código GR) con importe cero. El XLSX original no se ha sobrescrito. Los periodos
+se registran como altas iniciales con fecha de operación/cobro igual al
+vencimiento menos un año. PA no genera un movimiento y PE nunca se marca cobrado.
+
+Copia previa a la carga principal: `7cdd2313-03ad-4568-80bf-0db59d6b2d00`, con
+19 migraciones y validación de restauración completada. TAR e inventario firmado
+con SHA-256 comprobado en
+`/home/nicolas/.local/share/k13group/backups/pre-importacion-20261022/`.
+Es almacenamiento local del equipo, además del volumen Docker de recuperación.
+
+La carga definitiva se aplicó al esquema principal en 22 lotes, después del
+ensayo. La conciliación independiente y los reintentos verificaron exactamente
+los mismos 3.123 clientes, 2.655 servicios, 2.647 cobros (211.710 EUR) y cinco
+deudas (370 EUR). Las 2.652 operaciones son altas históricas. La web principal
+se comprobó de nuevo en los cinco módulos sin errores detectados. El entorno
+principal **ya contiene datos importados**; no está vacío.
+
+Al terminar la carga inicial, las 3.135 filas seguían trazables: 3.131 tenían cliente vinculado, ocho pares
+comparten la identidad revisada y OCT 312–315 continúan pendientes por falta de
+nombre. No hay filas excluidas. Quedan 480 filas sin servicio y 483 sin operación
+financiera (categorías solapadas). Entre las primeras hay 461 sin importe, siete
+con importe cero y 19 sin aplicación reconocida; las cifras también se solapan.
+Las seis gratuidades confirmadas necesitan una tarifa antes de importar su
+servicio. MAY 165 conserva la contradicción entre cero y Stripe. Los tres
+servicios pendientes solo de finanzas son JUL 8, OCT 17 y ENE 143 (PA ignorada).
+No se han creado importes, teléfonos, aplicaciones ni pagos ficticios.
+
+Copia posterior a la carga: `1da37675-2a17-4b35-82f9-2353f152975f`, con
+validación de restauración completada. TAR e inventario firmado descargados con
+SHA-256 comprobado en
+`/home/nicolas/.local/share/k13group/backups/post-importacion-20261022/`. La base
+aislada y los dumps temporales del ensayo se han eliminado; permanecen las copias
+previa y posterior.
+
+## Exclusión de clientes sin renovación — 23 de octubre de 2026
+
+El usuario confirmó que las filas sin P.AÑO **y** sin método de pago corresponden
+a clientes que no han renovado y autorizó excluir las 461 filas afectadas y
+retirar las 457 fichas ya creadas. La regla exige ambos campos ausentes: no
+incluye importes cero, gratuidades, PE ni filas con solo uno de los datos ausente.
+Las cuatro filas sin ficha (OCT 312–315) también quedan excluidas, sustituyendo
+la decisión anterior de mantenerlas pendientes.
+
+Se aplicó una corrección administrativa atómica al análisis
+`f6cf3b87-2d6b-4453-9639-e9085d7bb6a0`, identificada por
+`bca7e391-95f0-49ca-b85c-96ca621cae84`. Antes de retirar las fichas se verificó
+que no tuvieran suscripciones, recordatorios ni otras filas vinculadas. Las
+457 fichas conservan sus datos mediante borrado lógico; las 461 identidades
+quedan excluidas con historial y auditoría. Se mantienen las 3.135 filas de
+origen, sus vínculos históricos y el XLSX original. La corrección genera 457
+eventos de retirada, 461 de exclusión y un evento conjunto de auditoría.
+
+Resultado tras esta retirada: **2.666 clientes visibles**, 461 filas excluidas, **19 filas
+pendientes de servicio y 22 pendientes de operación financiera**. Estos dos
+últimos conjuntos se solapan. Permanecen 2.655 servicios, 2.652 altas históricas,
+2.647 cobros por 211.710 EUR y cinco deudas por 370 EUR. Las huellas SHA-256 de
+servicios, operaciones, movimientos, referencias y lotes coinciden exactamente
+antes y después de la corrección.
+
+El ensayo en una copia aislada comprobó la reversión íntegra al provocar un
+fallo dentro de la transacción y la repetición sin nuevas escrituras después de
+aplicarla. La API y Chromium contra el entorno principal verificaron Clientes,
+el análisis guardado, las identidades excluidas y la revisión de aplicación,
+sin errores JavaScript ni respuestas HTTP 5xx. No aparecieron identidades en
+conflicto ni pendientes de revalidación por esta corrección.
+
+Copias previa `54f49673-e150-4198-bc12-123bc99ab924` y posterior
+`b938c4b3-ba59-479c-84c2-6748031462b6`, ambas con prueba de restauración
+completada. TAR e inventarios firmados se conservaron fuera del volumen Docker,
+con SHA-256 comprobado, en los directorios locales
+`/home/nicolas/.local/share/k13group/backups/pre-retirada-20261023/` y
+`/home/nicolas/.local/share/k13group/backups/post-retirada-20261023/`.
+La base aislada y su dump temporal se eliminaron tras las comprobaciones.
+
+## Resolución de las últimas filas del XLSX — 23 de octubre de 2026
+
+El usuario confirmó las equivalencias BOB → BOB PLAYER, KDSLPAYER → KDSPLAYER,
+O PLAYER → 0 PLAYER (producto existente del catálogo), y 20 PLATFORM, ONE y
+APPLE TV → MAXPLAYER. Se guardaron decisiones por fila, conservando los valores
+originales del Excel. Para ENE 9 se creó una tarifa anual de BOB PLAYER de 10 EUR,
+conforme a P.AÑO. Los servicios de importe cero utilizan la tarifa anual de
+referencia de 75 EUR de su producto, pero su operación histórica permanece
+gratuita, sin movimiento financiero ni cobro.
+
+Las correcciones de pago conservan el historial: MAY 165 usa Gratis (GR) con
+importe cero; ENE 143 usa Bizum Revolut (B-RE), por 75 EUR; JUL 8 usa Efectivo
+(EF), por 10 EUR. El usuario confirmó que FEB 9 duplica la operación de ENE 9:
+se conservó ENE 9 y se excluyó FEB 9, retirando su ficha duplicada mediante
+borrado lógico. Los servicios de Alfonso en SEP 278 y OCT 282 se conservaron
+como dos servicios distintos, tal como confirmó el usuario.
+
+OCT 17 quedó excluida por no renovación. Se comprobó que su cliente solo tenía
+ese servicio y que no había operaciones ni movimientos asociados. La ficha y
+el servicio se retiraron mediante borrado lógico; el servicio quedó cancelado
+y su recordatorio automático cerrado. Se conservaron los vínculos originales,
+los recibos de los lotes anteriores y los eventos de auditoría. Estas retiradas
+están identificadas por la corrección `f7a5d310-754c-4953-8b55-12003a205081`.
+
+Después del ensayo aislado se aplicó al entorno principal el lote
+`94fdd9e0-095c-4fad-b71b-c268896f1d0b`: **20 operaciones históricas**, con
+**18 servicios nuevos**, **siete gratuidades sin movimiento financiero** y
+**13 cobros por 910 EUR**. Dos operaciones completan servicios ya existentes.
+El reintento de confirmación devuelve el mismo resultado sin duplicados.
+
+Resultado actual de las 3.135 filas: **2.672 completadas y 463 excluidas; cero
+pendientes de servicio u operación financiera**. Hay **2.664 clientes visibles**,
+**2.672 servicios visibles**, **2.672 operaciones** y **2.665 movimientos**:
+2.660 cobros confirmados por **212.620 EUR** y cinco deudas PE por **370 EUR**.
+Las 459 fichas retiradas y el servicio retirado permanecen físicamente para
+conservar el historial. El análisis sigue consultable en su flujo de revisión.
+
+La conciliación independiente verificó cada una de las 20 filas: producto,
+importe, método, fechas históricas, operación ALTA y ausencia de movimiento
+para las gratuidades. Las operaciones y movimientos preexistentes no cambiaron.
+Se comprobó la cancelación del recordatorio de OCT 17 y que los servicios de
+Alfonso fueran distintos. Clientes, Importaciones, Suscripciones y Finanzas
+se verificaron con Chromium y la API reales, sin errores JavaScript ni HTTP 5xx.
+El SHA-256 del XLSX original sigue siendo
+`47e158a3289fededa153b4c6eef30d04e6e7ba4816ed975d85e05a6c98191046`.
+
+Copia previa `5bdd6b61-6496-49b9-a580-2fdb979424b9` y posterior
+`bf204d38-39d6-4a7f-b803-44771331ab55`, ambas con restauración de prueba
+completada. TAR e inventarios firmados descargados con checksum verificado en
+`/home/nicolas/.local/share/k13group/backups/pre-resolver-pendientes-20261023/`
+y `post-resolver-pendientes-20261023/` bajo el mismo directorio de copias.
+Se eliminaron la base aislada y el dump temporal del ensayo.
+
+## Revisión completa posterior a la importación — 23 de octubre de 2026
+
+Se volvió a leer el XLSX original y se conciliaron sus 3.135 filas de las 12
+hojas con la base principal. Se verificaron los datos originales, las siete
+correcciones de lectura autorizadas, los nombres y contactos, las agrupaciones,
+las 463 exclusiones, las equivalencias, las fechas, los importes, los métodos
+de pago, las instantáneas históricas y los vínculos de los 23 lotes. No se
+detectaron discrepancias ni registros huérfanos. Tres teléfonos de filas
+agrupadas difieren únicamente en los espacios; conservan el mismo número y
+su representación original en el análisis.
+
+La revisión detectó y corrigió dos defectos de código:
+
+- Reintentar una propuesta reconstruida desde JSONB podía rechazarla por el
+  orden de sus claves. Ahora se compara también el contenido estructural,
+  normalizando el valor predeterminado `servicioDistinto=false`. Se mantienen
+  las comprobaciones de autor, importación y contenido: un cambio real sigue
+  rechazándose. No es necesario reescribir los lotes ni sus recibos históricos.
+- El formulario de clientes atribuía cualquier respuesta 409 a un teléfono
+  duplicado, aunque los contactos compartidos están permitidos. Ahora muestra
+  el mensaje real del servidor. Se probó el rechazo simulado en navegador sin
+  enviar altas reales a la API.
+
+Se actualizó el comentario del esquema sobre teléfonos compartidos y se retiró
+la importación sin uso de `UseGuards` en Auditoría. No se modificaron los datos
+de clientes, servicios ni finanzas durante esta revisión.
+
+Verificación: 70 pruebas unitarias, 224 casos distintos de integración (batería
+general de 223 y repetición de los 24 casos de aplicación, incluida la nueva
+regresión), 101 pruebas de interfaz y nueve de recuperación aprobadas. Tipos
+de frontend y backend correctos; lint del backend y del archivo frontend
+modificado sin errores ni avisos.
+
+En una copia aislada se ejecutaron 69 reintentos sobre los 23 lotes: propuesta
+guardada, propuesta con transformación del DTO HTTP y confirmación. Las huellas
+de las 13 tablas comprobadas permanecieron idénticas. Chromium verificó
+Clientes, Importaciones, Suscripciones, Finanzas, Dashboard, Estadísticas y
+Recordatorios sin errores JavaScript ni HTTP 5xx. Las exportaciones completas
+de clientes, servicios, operaciones y finanzas coinciden con sus recuentos;
+las operaciones incluyen siete gratuidades y las finanzas suman 212.620 EUR
+cobrados y 370 EUR pendientes. Las fichas y el servicio retirados no son
+accesibles desde sus rutas operativas.
+
+La copia `bf204d38-39d6-4a7f-b803-44771331ab55` volvió a superar la restauración
+de prueba. Las 19 migraciones están aplicadas y el índice de teléfono es no
+único. Se eliminaron la base aislada, su dump y la copia temporal del XLSX.
+El resultado sigue siendo 2.672 filas completadas, 463 excluidas y cero
+pendientes de servicio u operación financiera.
+
+## Cierre de la integración del XLSX — 23 de octubre de 2026
+
+La última revisión volvió a conciliar las 3.135 filas con el XLSX original y
+verificó individualmente las 20 operaciones del lote final. No aparecieron
+discrepancias, periodos repetidos para el mismo dispositivo, lotes sin aplicar
+ni recordatorios abiertos de fichas retiradas. Se conserva el resultado:
+2.664 clientes visibles, 2.672 servicios y operaciones, siete gratuidades sin
+movimiento, 2.660 cobros por 212.620 EUR y cinco deudas PE por 370 EUR.
+Las 463 filas excluidas conservan trazabilidad; no quedan filas pendientes.
+
+La batería completa de integración, con las correcciones de la revisión
+anterior incluidas, pasó sus 224 pruebas en 14 suites. Las comprobaciones de
+tipos de ambos proyectos y lint del backend terminaron correctamente.
+Se repitió la verificación de las siete pantallas desde Chromium y la API real,
+incluida la comprobación del mensaje de conflicto sin altas reales de prueba.
+No se detectaron nuevas incidencias.
+
+Copia de cierre: `e569fcc6-bf81-4f5b-8054-1755ef04cbde`, con restauración de
+prueba completada. TAR e inventario firmado guardados también en
+`/home/nicolas/.local/share/k13group/backups/cierre-integracion-20261023/`,
+con checksum verificado. La integración queda finalizada y validada; las
+deudas PE son saldos de negocio pendientes de cobro, no tareas de importación.

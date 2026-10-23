@@ -79,16 +79,7 @@ export class ClientesService {
     const telefono = dto.telefono?.trim() || null;
     const telefonoNormalizado = normalizePhone(telefono);
 
-    // RN-001.003: teléfono normalizado único si se proporciona
-    if (telefonoNormalizado) {
-      const existe = await this.prisma.cliente.findFirst({
-        where: {
-          deletedAt: null,
-          OR: [{ telefonoNormalizado }, { telefono: telefonoNormalizado }, { telefono }],
-        },
-      });
-      if (existe) throw new ConflictException('Ya existe un cliente con ese teléfono');
-    }
+    // Un contacto puede atender a varios clientes; el teléfono no identifica una ficha.
 
     const estadoActivo = await this.prisma.estado.findFirstOrThrow({
       where: { tipo: 'cliente', valor: 'ACTIVO' },
@@ -116,18 +107,6 @@ export class ClientesService {
     const hasTelefono = dto.telefono !== undefined;
     const telefono = hasTelefono ? dto.telefono?.trim() || null : undefined;
     const telefonoNormalizado = hasTelefono ? normalizePhone(telefono) : undefined;
-
-    // RN-001.003: teléfono normalizado único si se proporciona
-    if (telefonoNormalizado) {
-      const existe = await this.prisma.cliente.findFirst({
-        where: {
-          deletedAt: null,
-          NOT: { id },
-          OR: [{ telefonoNormalizado }, { telefono: telefonoNormalizado }, { telefono }],
-        },
-      });
-      if (existe) throw new ConflictException('Ya existe un cliente con ese teléfono');
-    }
 
     return this.prisma
       .$transaction(async (tx) => {
@@ -165,7 +144,7 @@ export class ClientesService {
   private writeError(error: unknown): never {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2002')
-        throw new ConflictException('Ya existe un cliente con ese teléfono');
+        throw new ConflictException('Existe un registro con los mismos datos únicos.');
       if (error.code === 'P2025') throw new NotFoundException('Cliente no encontrado');
     }
     throw error;

@@ -227,6 +227,15 @@ const isolated = process.env.TEST_DATABASE_URL;
       },
     });
     await db.importacion.update({ where: { id: parent.id }, data: { versionMapeo: '1.1' } });
+    const before = await db.cliente.count();
+    const legacy = await api()
+      .post(`/api/v1/importaciones/${parent.id}/confirmar`)
+      .set('Cookie', cookies)
+      .set('Idempotency-Key', 'legacy-phone-review')
+      .send({ confirmar: true, permitirAdvertencias: true })
+      .expect(409);
+    expect(legacy.body.message).toContain('contactos compartidos');
+    expect(await db.cliente.count()).toBe(before);
     const matching = (await upload(buffer).expect(201)).body.data;
     expect(matching.importacionId).not.toBe(parent.id);
     expect(matching.versionMapeo).toBe(PARSER_VERSION);

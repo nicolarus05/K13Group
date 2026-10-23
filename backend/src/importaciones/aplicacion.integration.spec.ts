@@ -8,6 +8,8 @@ import { randomUUID } from 'node:crypto';
 import { AppModule } from '../app.module';
 import { PrismaService } from '../database/prisma.service';
 import { seedBase } from '../../prisma/seed';
+import { AplicacionService } from './aplicacion.service';
+import { ProponerImportacionDto } from './dto/aplicacion.dto';
 
 const isolated = process.env.TEST_DATABASE_URL;
 (isolated ? describe : describe.skip)('Confirmación 12.4 aislada', () => {
@@ -38,12 +40,13 @@ const isolated = process.env.TEST_DATABASE_URL;
     ready = true,
     group = true,
     name = `Ensayo confirmación ${++serial}`,
+    phone = '',
   } = {}) => {
     const book = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(
       book,
       XLSX.utils.aoa_to_sheet([
-        ['FECHA', 'NOMBRE', 'APP', 'SERVIDOR', 'PAGO', 'P.AÑO', 'ESTADO', 'TOTAL'],
+        ['FECHA', 'NOMBRE', 'APP', 'SERVIDOR', 'PAGO', 'P.AÑO', 'ESTADO', 'TOTAL', 'TELEFONO'],
         ...periods.map((date) => [
           date,
           name,
@@ -53,6 +56,7 @@ const isolated = process.env.TEST_DATABASE_URL;
           amount,
           status,
           9999,
+          phone,
         ]),
       ]),
       'OCT',
@@ -81,7 +85,7 @@ const isolated = process.env.TEST_DATABASE_URL;
         solicitudId: randomUUID(),
         filas: rows.map((r) => r.id),
         accion: 'NUEVO',
-        datos: { nombre: name, telefono: null, email: null, observaciones: null },
+        datos: { nombre: name, telefono: phone || null, email: null, observaciones: null },
         motivo: 'Identidad comprobada',
       }).expect(200);
     }
@@ -166,6 +170,25 @@ const isolated = process.env.TEST_DATABASE_URL;
     await app?.close();
     await db?.$disconnect();
   });
+  it('importa y reintenta dos clientes con teléfono compartido sin fusionar fichas ni duplicar cobros', async () => {
+    const first = await fixture({ name: 'Contacto compartido A', phone: '612340099' });
+    const second = await fixture({ name: 'Contacto compartido B', phone: '612340099' });
+    const before = await counts();
+    const results = [];
+    for (const f of [first, second]) {
+      const proposal = await propose(f.id, [choice(f.rows[0].id, 'COBRADO')]);
+      expect(proposal.propuesta.bloqueos).toEqual([]);
+      const response = await confirm(f.id, proposal.id).expect(201);
+      expect((await confirm(f.id, proposal.id).expect(201)).body).toEqual(response.body);
+      results.push(response.body.resultado.filas[0]);
+    }
+    expect(results[0].clienteId).not.toBe(results[1].clienteId);
+    expect(results[0].suscripcionId).not.toBe(results[1].suscripcionId);
+    expect(results[0].movimientoId).not.toBe(results[1].movimientoId);
+    expect(await db.cliente.count({ where: { telefonoNormalizado: '612340099' } })).toBe(2);
+    expect(await counts()).toEqual(before.map((n) => n + 2));
+  }, 30000);
+
   it('exige autenticación y valida selección única, límites y confirmación expresa', async () => {
     await api()
       .get(root(randomUUID()) + '/aplicacion')
@@ -273,6 +296,55 @@ const isolated = process.env.TEST_DATABASE_URL;
     await confirm(f.id, batch.id).expect(201);
     expect(await counts()).toEqual(before);
     expect((await get(root(f.id) + '/aplicacion')).lotes[0].resultado).toEqual(result);
+  });
+  it('reintenta propuestas reconstruidas desde JSONB sin depender del orden de claves ni aceptar cambios', async () => {
+    const f = await fixture();
+    const batch = await propose(f.id, [choice(f.rows[0].id, 'COBRADO')]);
+    const stored = await db.importacionLote.findUniqueOrThrow({ where: { id: batch.id } });
+    const selection = stored.seleccion as unknown as ProponerImportacionDto;
+    // Los lotes históricos pueden omitir el valor predeterminado que añade el DTO HTTP.
+    await db.importacionLote.update({
+      where: { id: batch.id },
+      data: {
+        seleccion: JSON.parse(
+          JSON.stringify({
+            ...selection,
+            filas: selection.filas.map(({ servicioDistinto: _, ...row }) => row),
+          }),
+        ),
+      },
+    });
+    const reordered = {
+      motivo: selection.motivo,
+      filas: selection.filas.map((row) => Object.fromEntries(Object.entries(row).reverse())),
+      solicitudId: selection.solicitudId,
+      huellaRevision: selection.huellaRevision,
+    };
+    const snapshot = async () => [
+      ...(await counts()),
+      await db.importacionLote.count(),
+      await db.actividad.count(),
+    ];
+    const preparedCounts = await snapshot();
+    expect((await post(root(f.id) + '/lotes', reordered).expect(201)).body).toEqual(batch);
+    expect(await snapshot()).toEqual(preparedCounts);
+    const applied = (await confirm(f.id, batch.id).expect(201)).body;
+    const appliedCounts = await snapshot();
+    expect((await post(root(f.id) + '/lotes', reordered).expect(201)).body).toEqual(applied);
+    await post(root(f.id) + '/lotes', { ...reordered, motivo: 'Contenido diferente' }).expect(409);
+    await post(root(f.id) + '/lotes', {
+      ...reordered,
+      filas: selection.filas.map((row) => ({ ...row, finanzas: 'DEUDA' })),
+    }).expect(409);
+    await post(root(f.id) + '/lotes', {
+      ...reordered,
+      filas: selection.filas.map((row) => ({ ...row, servicioDistinto: true })),
+    }).expect(409);
+    await post(root(randomUUID()) + '/lotes', reordered).expect(409);
+    await expect(
+      app.get(AplicacionService).propose(f.id, randomUUID(), selection),
+    ).rejects.toThrow('La solicitud ya se utilizó con otros datos.');
+    expect(await snapshot()).toEqual(appliedCounts);
   });
   it('PE nunca permite cobro; deuda histórica no reactiva COBRA ni permite renovar o editar el servicio', async () => {
     const f = await fixture({ status: 'PE', historical: true });

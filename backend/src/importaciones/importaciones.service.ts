@@ -483,7 +483,7 @@ export class ImportacionesService {
 
   async confirm(
     id: string,
-    usuarioId: string,
+    _usuarioId: string,
     idempotencyKey: string | undefined,
     dto: ConfirmarImportacionDto,
   ) {
@@ -494,7 +494,7 @@ export class ImportacionesService {
     if (!current) throw new NotFoundException(`Importación ${id} no encontrada.`);
     if (current.versionMapeo === PARSER_VERSION)
       throw new ConflictException(
-        'Este análisis corresponde a lectura y validación (12.1). La creación de clientes se habilitará al completar la revisión de identidades.',
+        'Revisa las identidades y equivalencias y confirma los lotes desde el paso 12.4.',
       );
     if (
       [IMPORT_STATUS.COMPLETED, IMPORT_STATUS.COMPLETED_WITH_ERRORS].includes(
@@ -502,140 +502,9 @@ export class ImportacionesService {
       )
     )
       return this.getImportacion(id);
-    if (current.estado !== IMPORT_STATUS.REVIEW)
-      throw new ConflictException(`La importación está en estado ${current.estado}.`);
-    if (current.errores > 0)
-      throw new BadRequestException('La importación contiene errores bloqueantes.');
-    if (current.advertencias > 0 && !dto.permitirAdvertencias)
-      throw new BadRequestException('Debes aceptar las advertencias antes de confirmar.');
-
-    const result = await this.prisma.$transaction(async (tx) => {
-      const claimed = await tx.importacion.updateMany({
-        where: { id, estado: IMPORT_STATUS.REVIEW },
-        data: { estado: IMPORT_STATUS.PROCESSING },
-      });
-      const importacion = await tx.importacion.findUnique({
-        where: { id },
-        include: { filas: { orderBy: [{ hojaOrigen: 'asc' }, { filaOrigen: 'asc' }] } },
-      });
-      if (!importacion) throw new NotFoundException(`Importación ${id} no encontrada.`);
-      if (!claimed.count) return importacion;
-      const estadoActivo = await tx.estado.findFirstOrThrow({
-        where: { tipo: 'cliente', valor: 'ACTIVO' },
-      });
-      const clients = await tx.cliente.findMany({
-        where: { deletedAt: null },
-        select: { id: true, nombre: true, telefono: true, telefonoNormalizado: true },
-      });
-      const byPhone = new Map<string, string | null>();
-      const byName = new Map<string, string | null>();
-      for (const client of clients) {
-        const phone = normalizePhone(client.telefonoNormalizado ?? client.telefono);
-        if (phone) byPhone.set(phone, byPhone.has(phone) ? null : client.id);
-        const name = normalizeName(client.nombre);
-        if (name) byName.set(name, byName.has(name) ? null : client.id);
-      }
-      let createdClients = 0;
-      let omittedRows = 0;
-      let pendingReviewRows = 0;
-      for (const row of importacion.filas) {
-        if (row.estado === ROW_STATUS.IMPORTED) continue;
-        if (row.estado === ROW_STATUS.ERROR) {
-          omittedRows += 1;
-          continue;
-        }
-        const normalized = row.datosNormalizados as unknown as NormalizedExcelRow;
-        const phone = normalizePhone(normalized.telefonoNormalizado ?? normalized.telefono);
-        const name = normalizeName(normalized.nombre);
-        let clienteId = phone ? (byPhone.get(phone) ?? undefined) : undefined;
-        if (!clienteId && phone && byPhone.has(phone)) {
-          await this.setConflict(tx, row, 'Teléfono asociado a más de un cliente.');
-          omittedRows += 1;
-          pendingReviewRows += 1;
-          continue;
-        }
-        if (!clienteId && name) clienteId = byName.get(name) ?? undefined;
-        if (!clienteId && name && byName.has(name)) {
-          await this.setConflict(tx, row, 'Nombre asociado a más de un cliente.');
-          omittedRows += 1;
-          pendingReviewRows += 1;
-          continue;
-        }
-        if (!clienteId && name) {
-          const created = await tx.cliente.create({
-            data: {
-              nombre: normalized.nombre.slice(0, 150),
-              telefono: normalized.telefono?.slice(0, 30) ?? null,
-              telefonoNormalizado: phone,
-              estadoId: estadoActivo.id,
-            },
-          });
-          clienteId = created.id;
-          byName.set(name, created.id);
-          if (phone) byPhone.set(phone, created.id);
-          createdClients += 1;
-        }
-        if (clienteId && normalized.nombre) {
-          await tx.referencia.upsert({
-            where: { nombre: normalized.nombre.slice(0, 100) },
-            update: { activo: true, deletedAt: null },
-            create: { nombre: normalized.nombre.slice(0, 100), activo: true },
-          });
-        }
-        const warnings = this.jsonStringArray(row.advertencias);
-        if (!phone)
-          warnings.push('Cliente creado o vinculado sin teléfono normalizado; revisar identidad.');
-        await tx.importacionFila.update({
-          where: { id: row.id },
-          data: {
-            clienteId: clienteId ?? null,
-            estado: clienteId ? ROW_STATUS.PENDING : ROW_STATUS.ERROR,
-            decision: clienteId ? null : 'RECHAZAR',
-            advertencias: [...new Set(warnings)] as unknown as Prisma.InputJsonValue,
-          },
-        });
-        if (!clienteId) omittedRows += 1;
-        else pendingReviewRows += 1;
-      }
-      const report = this.readReport(importacion.informe);
-      const finalReport = {
-        ...report,
-        clientesNuevos: createdClients,
-        filasPendientesReconciliacion: pendingReviewRows,
-        movimientosCreados: 0,
-      };
-      // Las filas pendientes de revisión no son errores de importación. La
-      // importación queda completada y el contador de pendientes informa del
-      // trabajo de reconciliación que aún queda por hacer.
-      const finalStatus =
-        omittedRows > 0 ? IMPORT_STATUS.COMPLETED_WITH_ERRORS : IMPORT_STATUS.COMPLETED;
-      const updated = await tx.importacion.update({
-        where: { id },
-        data: {
-          estado: finalStatus,
-          fechaFin: new Date(),
-          errores: omittedRows,
-          informe: finalReport as unknown as Prisma.InputJsonValue,
-        },
-        include: { filas: true },
-      });
-      await tx.actividad.create({
-        data: {
-          usuarioId,
-          tabla: 'importaciones',
-          registroId: id,
-          accion: 'CONFIRMAR',
-          datosNuevos: {
-            idempotencyKey,
-            estado: finalStatus,
-            clientesCreados: createdClients,
-            filasPendientesReconciliacion: pendingReviewRows,
-          },
-        },
-      });
-      return updated;
-    });
-    return this.toSummary(result, this.readReport(result.informe));
+    throw new ConflictException(
+      'La confirmación antigua deducía identidades por teléfono y ya no es válida con contactos compartidos. Analiza de nuevo el archivo y revisa las identidades antes de confirmar los lotes.',
+    );
   }
 
   async getImportacion(id: string) {
@@ -1217,17 +1086,6 @@ export class ImportacionesService {
     }
   }
 
-  private async setConflict(tx: Prisma.TransactionClient, row: ImportacionFila, warning: string) {
-    await tx.importacionFila.update({
-      where: { id: row.id },
-      data: {
-        estado: ROW_STATUS.CONFLICT,
-        advertencias: [
-          ...new Set([...this.jsonStringArray(row.advertencias), warning]),
-        ] as unknown as Prisma.InputJsonValue,
-      },
-    });
-  }
   private async loadReconciliationStates(tx: Prisma.TransactionClient) {
     const find = async (tipo: string, valor: string) => {
       const state = await tx.estado.findFirst({ where: { tipo, valor } });

@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
+import { isDeepStrictEqual } from 'node:util';
 import { PrismaService } from '../database/prisma.service';
 import { lockCatalog } from '../catalogos/catalogos.service';
 import {
@@ -24,6 +25,11 @@ import { AplicacionQueryDto, ConfirmarLoteDto, ProponerImportacionDto } from './
 // Invalida propuestas anteriores cuando cambia el contrato de confirmación.
 const APPLICATION_REVISION = '12.4.1';
 const json = (value: unknown): Prisma.InputJsonValue => JSON.parse(JSON.stringify(value));
+const selectionContent = (value: ProponerImportacionDto) =>
+  json({
+    ...value,
+    filas: value.filas.map((row) => ({ ...row, servicioDistinto: row.servicioDistinto ?? false })),
+  });
 const day = (date: Date) => date.toISOString().slice(0, 10);
 const overlap = (a: string, b: string, c: string, d: string) => a < d && c < b;
 
@@ -600,7 +606,17 @@ export class AplicacionService {
             where: { solicitudId: dto.solicitudId },
           });
           if (previous) {
-            if (previous.solicitudHash !== hash)
+            // JSONB puede reordenar las claves de la selección guardada. Una
+            // reconstrucción equivalente debe recuperar también los lotes antiguos.
+            if (
+              previous.importacionId !== id ||
+              previous.autor !== actor ||
+              (previous.solicitudHash !== hash &&
+                !isDeepStrictEqual(
+                  selectionContent(previous.seleccion as unknown as ProponerImportacionDto),
+                  selectionContent(dto),
+                ))
+            )
               throw new ConflictException('La solicitud ya se utilizó con otros datos.');
             return this.publicBatch(previous);
           }

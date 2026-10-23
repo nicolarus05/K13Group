@@ -171,7 +171,7 @@ const isolated = process.env.TEST_DATABASE_URL;
     ).toBe(true);
   }, 30000);
 
-  it('bloquea propuestas con teléfono ocupado y permite resolver agrupando las filas', async () => {
+  it('avisa de teléfonos compartidos y respeta la decisión explícita de separar o agrupar clientes', async () => {
     const { id, result } = await fixture([
       ['2026-10-17', 'Ana Uno', '612340001'],
       ['2026-10-17', 'Luis Dos', '612340001'],
@@ -180,8 +180,12 @@ const isolated = process.env.TEST_DATABASE_URL;
     const ids = result.data.map((g: { filas: Array<{ id: string }> }) => g.filas[0].id);
     const datos = { nombre: 'Ana Uno', telefono: '612340001', email: null, observaciones: null };
     await decide(id, body(1, [ids[0]], 'NUEVO', { datos })).expect(200);
-    await decide(id, body(2, [ids[1]], 'NUEVO', { datos })).expect(409);
-    await decide(id, body(2, ids, 'NUEVO', { datos })).expect(200);
+    await decide(
+      id,
+      body(2, [ids[1]], 'NUEVO', { datos: { ...datos, nombre: 'Luis Dos' } }),
+    ).expect(200);
+    expect((await list(id)).resumen.NUEVO).toBe(2);
+    await decide(id, body(3, ids, 'NUEVO', { datos })).expect(200);
     expect((await list(id)).resumen.NUEVO).toBe(1);
     expect(await db.cliente.count()).toBe(0);
   }, 30000);
@@ -211,19 +215,19 @@ const isolated = process.env.TEST_DATABASE_URL;
       body(1, [row], 'NUEVO', {
         datos: { nombre: 'Existente', telefono: '612340002', email: null, observaciones: null },
       }),
-    ).expect(409);
+    ).expect(200);
     await db.cliente.update({
       where: { id: client.id },
       data: { observaciones: 'Dato actualizado' },
     });
     await decide(
       id,
-      body(1, [row], 'VINCULAR', { clienteDestinoId: client.id, huellaCliente: original.huella }),
+      body(2, [row], 'VINCULAR', { clienteDestinoId: client.id, huellaCliente: original.huella }),
     ).expect(409);
     const current = await search();
     await decide(
       id,
-      body(1, [row], 'VINCULAR', { clienteDestinoId: client.id, huellaCliente: current.huella }),
+      body(2, [row], 'VINCULAR', { clienteDestinoId: client.id, huellaCliente: current.huella }),
     ).expect(200);
     expect((await list(id)).resumen.VINCULADO).toBe(1);
     expect((await db.cliente.findUniqueOrThrow({ where: { id: client.id } })).observaciones).toBe(
@@ -313,7 +317,8 @@ const isolated = process.env.TEST_DATABASE_URL;
     await decide(id, body(2, [ids[0]], 'NUEVO', { datos })).expect(200);
     const after = await list(id);
     expect(after.resumen).toMatchObject({ NUEVO: 1, PENDIENTE: 1 });
-    await decide(id, body(3, [ids[1]], 'NUEVO', { datos })).expect(409);
+    await decide(id, body(3, [ids[1]], 'NUEVO', { datos })).expect(200);
+    expect((await list(id)).resumen).toMatchObject({ NUEVO: 2, PENDIENTE: 0 });
   }, 30000);
 
   it('conserva las decisiones y las separaciones al volver a agrupar', async () => {
