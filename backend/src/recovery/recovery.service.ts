@@ -11,6 +11,7 @@ import { join } from 'node:path';
 import { PrismaService } from '../database/prisma.service';
 import { verifyPassword } from '../users/account';
 import { RecoveryDto } from './recovery.dto';
+import { readSettings } from '../configuracion/settings';
 export type Job = {
   id: string;
   action: string;
@@ -29,6 +30,7 @@ export type Backup = {
   checksum: string;
   validatedAt?: string;
   automatic?: boolean;
+  scheduled?: boolean;
 };
 @Injectable()
 export class RecoveryService {
@@ -57,7 +59,7 @@ export class RecoveryService {
     const rows = await Promise.all(files.map((f) => this.json<Backup>('copies/' + f)));
     return rows
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-      .map(({ id, state, size, createdAt, checksum, validatedAt, automatic }) => ({
+      .map(({ id, state, size, createdAt, checksum, validatedAt, automatic, scheduled }) => ({
         id,
         state,
         size,
@@ -65,7 +67,43 @@ export class RecoveryService {
         checksum,
         validatedAt,
         automatic,
+        scheduled,
       }));
+  }
+  async schedule() {
+    const settings = await readSettings(this.prisma);
+    const active = settings['copias.automaticas_activas'] === 1;
+    const last = (await this.list()).find((c) => c.scheduled && c.state === 'COMPLETADA');
+    const state = await this.json<{
+      state?: string;
+      error?: string;
+      finishedAt?: string;
+      retryAt?: number;
+    }>('schedule.json').catch(() => null);
+    return {
+      activa: active,
+      intervaloHoras: settings['copias.intervalo_horas'],
+      conservar: settings['copias.conservar'],
+      disponible: await this.heartbeat(),
+      ultimaCopia: last?.createdAt ?? null,
+      proxima: active
+        ? new Date(
+            Math.max(
+              last
+                ? new Date(last.createdAt).getTime() + settings['copias.intervalo_horas'] * 3600000
+                : 0,
+              (state?.retryAt ?? 0) * 1000,
+            ),
+          ).toISOString()
+        : null,
+      estado: state?.state ?? null,
+      error: state?.error ?? null,
+      reintento:
+        state?.state === 'FALLIDA' && state.retryAt && Number.isFinite(state.retryAt)
+          ? new Date(state.retryAt * 1000).toISOString()
+          : null,
+      revisadoAt: state?.finishedAt ?? null,
+    };
   }
   async metadata(id: string) {
     const rows = await this.list();

@@ -17,27 +17,8 @@ export async function stateId(tx: Prisma.TransactionClient, tipo: string, valor:
 export async function warningDays(tx: Prisma.TransactionClient) {
   return configuredWarningDays(tx);
 }
-export async function audit(
-  tx: Prisma.TransactionClient,
-  actor: string | null,
-  tabla: string,
-  id: string,
-  accion: string,
-  before: unknown,
-  after: unknown,
-) {
-  const json = (v: unknown) => (v == null ? Prisma.JsonNull : JSON.parse(JSON.stringify(v)));
-  await tx.actividad.create({
-    data: {
-      usuarioId: actor,
-      tabla,
-      registroId: id,
-      accion,
-      datosAnteriores: json(before),
-      datosNuevos: json(after),
-    },
-  });
-}
+export { writeAudit as audit } from '../auditoria/audit-data';
+import { writeAudit as audit } from '../auditoria/audit-data';
 @Injectable()
 export class RecordatoriosService implements OnApplicationBootstrap, OnModuleDestroy {
   private timer?: ReturnType<typeof setInterval>;

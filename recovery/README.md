@@ -1,7 +1,7 @@
 # Copias y recuperación local
 
 La pantalla **Configuración → Copias** crea, descarga, valida, restaura y elimina
-copias manuales. Las operaciones requieren la contraseña actual; restaurar exige
+copias manuales y programadas. Las operaciones requieren la contraseña actual; restaurar exige
 además escribir el identificador de la copia. El progreso sigue disponible durante
 el mantenimiento mediante una credencial limitada al trabajo.
 
@@ -10,6 +10,30 @@ Windows ni accede al socket Docker. Comparte con la API dos volúmenes persisten
 `recovery_data` (archivos, inventario, cola y registro de recuperación) y
 `assets_data` (logos). `RECOVERY_SECRET` debe mantenerse en `.env`, fuera de Git.
 Conservar esa clave: firma el inventario y las autorizaciones de recuperación.
+
+## Programación automática
+
+En **Configuración → Copias → Copias automáticas** se configura la activación,
+el intervalo (1–168 horas) y cuántas copias programadas conservar (1–90).
+Los valores iniciales son desactivada, cada 24 horas y siete copias. Guardar
+requiere contraseña, motivo y la versión vigente de los ajustes; queda auditado.
+
+El worker comprueba la programación cada 30 segundos. Si Windows, WSL o Docker
+estaban apagados, crea una sola copia pendiente al volver. El inventario durable
+evita duplicarla tras reiniciar. Una restauración, un mantenimiento o un trabajo
+en curso posponen la copia. Un fallo se muestra en la pantalla y retrasa el
+reintento 15 minutos. La pantalla muestra cuándo se reintentará, también si falló
+la limpieza después de crear la copia. Reintentar esa limpieza no crea otra copia.
+La programación no envía avisos externos.
+
+La limpieza se ejecuta después de una nueva copia completada y solo afecta a
+copias programadas antiguas. Conserva las manuales y las copias previas a una
+restauración. Antes de limpiar relee la activación y conservación vigentes, por si
+cambiaron durante la copia, y verifica el archivo que permite retirar los antiguos.
+Un fallo al leer o guardar el estado de programación no detiene el trabajador.
+Los archivos siguen estando en este equipo; esta programación no
+sustituye una copia externa. No se ha activado automáticamente en el entorno
+principal al instalar el sprint 13.
 
 ## Operación desde WSL
 
@@ -57,11 +81,14 @@ en este equipo no protege frente a pérdida del equipo.
 ```bash
 ./dev test-recovery
 ./dev test-e2e-configuracion
+./dev test-e2e-auditoria
 ```
 
 El primer comando crea una base con nombre `k13_recovery_test_<uuid>`, aplica las
 migraciones e introduce datos ficticios. Comprueba integridad, sustitución, sesiones,
 rollback, reinicio, archivo corrupto/ausente/incompatible y falta de espacio.
+También prueba la programación, suspensión, conservación, reintentos y arranque
+anterior a las migraciones, con archivos de prueba y sin activar copias reales.
 
 El segundo crea el proyecto Compose `k13-sprint11-test`, sin puertos publicados y
 con PostgreSQL/volúmenes exclusivos. Chromium realiza login, ajustes, logo,

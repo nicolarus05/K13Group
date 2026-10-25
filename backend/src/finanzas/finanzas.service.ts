@@ -1,3 +1,4 @@
+import { safeAuditData } from '../auditoria/audit-data';
 import {
   BadRequestException,
   ConflictException,
@@ -107,20 +108,26 @@ export class FinanzasService {
     return this.prisma.$transaction(
       async (tx) =>
         buildPaginatedResponse(
-          await tx.actividad.findMany({
-            where,
-            skip: (q.page - 1) * q.limit,
-            take: q.limit,
-            orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-            select: {
-              id: true,
-              accion: true,
-              createdAt: true,
-              datosAnteriores: true,
-              datosNuevos: true,
-              usuario: { select: { nombre: true } },
-            },
-          }),
+          (
+            await tx.actividad.findMany({
+              where,
+              skip: (q.page - 1) * q.limit,
+              take: q.limit,
+              orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+              select: {
+                id: true,
+                accion: true,
+                createdAt: true,
+                datosAnteriores: true,
+                datosNuevos: true,
+                usuario: { select: { nombre: true } },
+              },
+            })
+          ).map((r) => ({
+            ...r,
+            datosAnteriores: safeAuditData(r.datosAnteriores),
+            datosNuevos: safeAuditData(r.datosNuevos),
+          })),
           await tx.actividad.count({ where }),
           q.page,
           q.limit,

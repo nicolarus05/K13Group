@@ -685,3 +685,124 @@ prueba completada. TAR e inventario firmado guardados también en
 `/home/nicolas/.local/share/k13group/backups/cierre-integracion-20261023/`,
 con checksum verificado. La integración queda finalizada y validada; las
 deudas PE son saldos de negocio pendientes de cobro, no tareas de importación.
+
+## Sprint 13 implementado — 24 de octubre de 2026
+
+La rama `feat/sprint13-auditoria-seguridad` incorpora la pantalla **Auditoría**
+y las rutas autenticadas `GET /auditoria`, `/auditoria/filtros` y
+`/auditoria/:id`. Permiten filtrar módulo, acción, usuario/sistema, registro e
+intervalo; el cursor ordena por fecha e identificador, con corte temporal y
+límite de 100 registros. El listado no entrega instantáneas completas. El
+detalle oculta campos sensibles, muestra los valores registrados antes/después
+y permite consultar el historial de registros retirados. No existen rutas para
+modificar o eliminar actividad. La aplicación mantiene su modelo de usuario
+administrador autenticado; no se ha introducido un sistema nuevo de roles.
+
+El contrato de actividad conserva actor (nulo para sistema), fecha, módulo,
+registro y acción. Las instantáneas y motivos se muestran cuando existen;
+los eventos anteriores no se reconstruyen ni se reescriben. La comparación
+solo usa campos presentes en ambos estados y reconoce los sobres de cambios
+de configuración. Altas, ediciones y retiradas de clientes guardan ahora sus
+instantáneas en la misma transacción; el bloqueo de fila conserva el estado
+anterior real ante editores concurrentes. Las dos escrituras antiguas del
+importador (equivalencia y revisión de fila) también comparten transacción con
+su auditoría. Las correcciones de lectura añaden valores anteriores/cambios
+redactados, y las decisiones de equivalencias incluyen motivo y destino.
+Los módulos existentes conservan sus registros de suscripciones, operaciones,
+finanzas, recordatorios, catálogos, configuración, exportaciones y recuperación.
+
+Se registran inicio y cierre de sesión sin tokens. El guard global comprueba
+el origen de las escrituras de navegador, incluido el login, además de la
+autenticación, CORS, cookies, revocación y limitación de peticiones existentes.
+El filtro de errores conserva las validaciones de formularios y no publica
+excepciones internas: los errores de servidor tienen identificador correlacionado
+con un log de método, plantilla de ruta y estado, sin cuerpo, URL con parámetros
+ni consulta SQL. El historial global y los historiales de suscripciones,
+finanzas y configuración aplican ocultación a los datos sensibles históricos.
+
+**Configuración → Copias** incorpora programación con contraseña, motivo y
+control de versión. Parte desactivada, con valores iniciales de 24 horas y siete
+copias. El worker reutiliza el motor existente, espera operaciones/mantenimiento,
+recupera una ejecución pendiente al arrancar y evita duplicados con inventario
+persistente. Los fallos se muestran en la web y se reintentan tras 15 minutos.
+La conservación afecta solo a copias programadas y se ejecuta después de una
+nueva copia completada; conserva las manuales y previas a restauraciones.
+El listado distingue los tres tipos. La política sigue **desactivada en el
+entorno principal**, pendiente de fijar la frecuencia y conservación definitivas.
+
+La migración `20261024100000_auditoria_indices` está aplicada: hay 20 migraciones
+y tres índices de consulta de actividad. No modifica registros de negocio.
+Durante los ensayos se corrigieron el nombre accesible de los filtros, la
+comparación incorrecta de campos ausentes en instantáneas parciales y una alarma
+de programación cuando un worker nuevo arrancaba antes de crear las tablas.
+
+Validación de esta implementación: 233 pruebas de integración en 15 suites
+(la batería completa de 232 y la nueva regresión de auditoría, con su suite de
+nueve repetida), 76 unitarias, 104 de interfaz y 16 de recuperación/programación.
+Las suites de lectura y equivalencias se repitieron después de ampliar sus
+registros. Compilaciones de backend y frontend, tipos y lint sin errores.
+`./dev test-e2e-auditoria` usa el proyecto aislado `k13-sprint13-test`: Chromium
+crea una ficha, comprueba edición/retirada e historial, configura la programación,
+espera la copia real, valida su restauración temporal y comprueba que reiniciar
+API/worker conserva una sola copia. Los volúmenes de ensayo se eliminan al salir.
+
+En el navegador contra el entorno principal se comprobaron Auditoría y Copias,
+las cabeceras de seguridad y los 23 lotes aplicados, sin errores JS ni HTTP 5xx.
+Los hashes y recuentos de nueve tablas de clientes, importación, referencias,
+servicios, operaciones y movimientos coinciden antes/después. Se mantienen
+2.664 clientes visibles, 2.672 servicios y operaciones, 2.660 cobros por 212.620 EUR
+y cinco deudas PE por 370 EUR. No se crearon fichas de prueba en este entorno.
+
+Copia previa a los índices: `a3ee8765-f720-46a8-99c7-ba3d17d8b074`.
+Copia con el esquema actualizado: `06c63199-cec7-4166-8571-23365f5fb3b2`,
+restauración de prueba completada en el trabajo
+`18104f4c-c4ba-448e-afc5-9354ec59efc1`. TAR e inventario firmado guardados también
+con permisos privados y checksum verificado en
+`/home/nicolas/.local/share/k13group/backups/sprint13-20261024/`.
+Esta copia está fuera del volumen Docker pero permanece en el mismo equipo.
+
+## Revisión del Sprint 13 — 25 de octubre de 2026
+
+La revisión detectó y corrigió cinco fallos con pruebas de regresión:
+
+- Un `schedule.json` malformado podía detener el trabajador de recuperación.
+  Ahora se captura el error; un fallo al persistir el estado tampoco detiene
+  el proceso.
+- Un error de limpieza de copias esperaba el intervalo de copia siguiente en
+  lugar de reintentarse a los 15 minutos. La limpieza pendiente se conserva y
+  reintenta sin generar otra copia; antes de borrar se verifica la integridad
+  de la copia que permite aplicar la conservación.
+- Los cambios de conservación o la desactivación durante una copia larga
+  podían ignorarse al limpiar. El trabajador relee la política antes de borrar.
+- Actualizar Auditoría desde una página posterior podía recuperar la primera
+  página de caché sin consultar datos nuevos. Ahora invalida el listado y sus
+  filtros al volver al inicio.
+- Algunas fechas ISO no compatibles con JavaScript/PostgreSQL provocaban un
+  error 500. La API valida fechas de calendario y cursores y devuelve 400.
+
+La web muestra el momento del reintento de programación separado de la próxima
+copia. Se comprobó además que un fallo al escribir auditoría revierte tanto
+la creación de sesión como su revocación, sin dejar cambios parciales.
+
+Validación: 76 pruebas unitarias, 234 de integración en 15 suites (233 en la
+batería completa y la regresión adicional de sesión, con la suite de auditoría
+de diez repetida), 105 de interfaz y 23 de recuperación/programación aprobadas.
+Las compilaciones de backend y frontend y las comprobaciones de tipos y lint
+del proyecto finalizaron correctamente. El ensayo aislado de Chromium pasó
+alta/edición/retirada, historial, programación desde la web, restauración de
+prueba y reinicio sin duplicar copias. Los casos adicionales de cambio de
+política durante la copia pasaron en la batería de recuperación posterior.
+
+El navegador contra el entorno principal confirmó 2.664 clientes visibles,
+2.672 servicios y operaciones, 23 lotes auditados, 2.660 cobros por 212.620 EUR
+y deuda PE por 370 EUR, sin errores JavaScript ni HTTP 5xx. Las copias automáticas
+siguen desactivadas y los cuatro servicios Docker están saludables.
+
+Ocho de las nueve tablas de negocio comparadas conservan exactamente sus
+recuentos y hashes. La diferencia en suscripciones corresponde exclusivamente
+a tres transiciones `ACTIVA` → `PROXIMA_A_VENCER` registradas por el proceso
+automático al comenzar el 25 de octubre. Al deshacer esos tres cambios solo en
+memoria (estado, versión y fecha de actualización), el hash coincide con el
+inicial; esta comprobación no escribe en la base de datos. El XLSX conserva su
+SHA-256, siguen aplicadas las 20 migraciones y no quedan esquemas temporales
+de integración. No se detectaron incidencias pendientes en estas comprobaciones.

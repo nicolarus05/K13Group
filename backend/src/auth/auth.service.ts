@@ -10,6 +10,7 @@ import { PrismaService } from '../database/prisma.service';
 import { lockUser } from '../users/account';
 import { readSettings } from '../configuracion/settings';
 import { LoginDto } from './dto/login.dto';
+import { writeAudit } from '../auditoria/audit-data';
 
 const ACCESS_COOKIE = 'access_token';
 const REFRESH_COOKIE = 'refresh_token';
@@ -61,6 +62,7 @@ export class AuthService {
         where: { id: user.id },
         data: { ultimoLogin: new Date() },
       });
+      await writeAudit(tx, user.id, 'cuenta', user.id, 'INICIAR_SESION', null, null);
       return { sid, refresh, expiresAt, profile };
     });
     await this.setAccess(res, user.id, sid, expiresAt);
@@ -103,7 +105,13 @@ export class AuthService {
         continue;
       }
       if (isUUID(payload.sub) && isUUID(payload.sid)) {
-        await this.prisma.sesion.deleteMany({ where: { id: payload.sid, usuarioId: payload.sub } });
+        await this.prisma.$transaction(async (tx) => {
+          const removed = await tx.sesion.deleteMany({
+            where: { id: payload.sid, usuarioId: payload.sub },
+          });
+          if (removed.count)
+            await writeAudit(tx, payload.sub, 'cuenta', payload.sub, 'CERRAR_SESION', null, null);
+        });
       }
     }
     res.clearCookie(ACCESS_COOKIE, { path: '/' });

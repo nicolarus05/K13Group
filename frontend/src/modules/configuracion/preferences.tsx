@@ -24,6 +24,9 @@ export const defaults = {
   'interfaz.refresco_indicadores_segundos': 60,
   'seguridad.access_minutos': 15,
   'seguridad.sesion_dias': 7,
+  'copias.automaticas_activas': 0,
+  'copias.intervalo_horas': 24,
+  'copias.conservar': 7,
 };
 export type Settings = typeof defaults;
 export type SettingsResponse = {

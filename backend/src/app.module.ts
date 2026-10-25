@@ -2,7 +2,9 @@ import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { RecoveryModule } from './recovery/recovery.module';
 import { MaintenanceMiddleware, OperationCompletionInterceptor } from './recovery/maintenance';
-import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { BrowserOriginGuard } from './common/browser-origin.guard';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './auth/auth.module';
@@ -27,6 +29,8 @@ import { ExportacionesModule } from './exportaciones/exportaciones.module';
 
 @Module({
   providers: [
+    { provide: APP_FILTER, useClass: AllExceptionsFilter },
+    { provide: APP_GUARD, useClass: BrowserOriginGuard },
     { provide: APP_INTERCEPTOR, useClass: OperationCompletionInterceptor },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],

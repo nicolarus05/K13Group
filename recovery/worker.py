@@ -22,6 +22,7 @@ ASSETS = Path(os.environ.get('ASSET_DIR', '/assets'))
 DB = os.environ.get('PGDATABASE', 'k13group')
 SECRET = os.environ['RECOVERY_SECRET'].encode()
 MAX_BYTES = int(os.environ.get('BACKUP_MAX_BYTES', str(2 * 1024**3)))
+SCHEDULE_QUERY = "SELECT coalesce(json_object_agg(clave,valor),'{}') FROM public.configuracion WHERE clave IN ('copias.automaticas_activas','copias.intervalo_horas','copias.conservar')"
 UUID = re.compile(r'^[0-9a-f-]{36}$')
 
 
@@ -104,7 +105,7 @@ def space():
         raise RuntimeError('Espacio insuficiente para una recuperación segura.')
 
 
-def backup(automatic=False, actor=None):
+def backup(automatic=False, actor=None, scheduled=False):
     space()
     ident = str(uuid.uuid4())
     with tempfile.TemporaryDirectory(dir=ROOT / 'work') as folder:
@@ -136,6 +137,7 @@ def backup(automatic=False, actor=None):
         os.replace(partial, target)
         meta = {'id': ident, 'state': 'COMPLETADA', 'size': str(target.stat().st_size), 'createdAt': manifest['createdAt'], 'checksum': checksum(target), 'automatic': automatic, 'actor': actor, 'migrations': manifest['migrations']}
         meta['mac'] = sign(ident + ':' + meta['checksum'])
+        meta['scheduled'] = scheduled
         atomic(target.with_suffix('.json'), meta)
         return ident
 
@@ -233,7 +235,7 @@ def execute(job):
         action = job['action']
         if action == 'backup':
             phase(job, 'Creando y comprobando copia')
-            job['copyId'] = backup(actor=job.get('actor'))
+            job['copyId'] = backup(actor=job.get('actor'), automatic=bool(job.get('scheduled')), scheduled=bool(job.get('scheduled')))
         elif action == 'delete':
             ident = job['copyId']
             # Marcar primero: nunca permitir descargar un archivo eliminado.
@@ -360,6 +362,103 @@ def enqueue(action, ident=None):
         time.sleep(1)
 
 
+def schedule_tick(timestamp=None):
+    """Bajo el flock del worker: una copia pendiente y limpieza reintentable.
+
+    El inventario durable evita duplicar copias al reiniciar. La limpieza tiene
+    su propio estado: un fallo no obliga a crear otra copia ni a esperar un día.
+    """
+    timestamp = time.time() if timestamp is None else timestamp
+    started = time.monotonic()
+    path = ROOT / 'schedule.json'
+    state = {}
+    try:
+        saved = read(path) if path.exists() else {}
+        if not isinstance(saved, dict):
+            raise RuntimeError('Estado de programación inválido.')
+        state = saved
+        # En una instalación nueva el worker puede arrancar antes de migrar la API.
+        if not query("SELECT coalesce(to_regclass('public.configuracion')::text, '')"):
+            return
+        values = json.loads(query(SCHEDULE_QUERY))
+        enabled = values.get('copias.automaticas_activas', '0') == '1'
+        hours, keep = int(values.get('copias.intervalo_horas', '24')), int(values.get('copias.conservar', '7'))
+        if not 1 <= hours <= 168 or not 1 <= keep <= 90:
+            raise RuntimeError('Configuración de copias inválida.')
+        if not enabled or timestamp < state.get('retryAt', 0):
+            return
+        copies = [read(p) for p in (ROOT / 'copies').glob('*.json')]
+        scheduled = sorted([c for c in copies if c.get('scheduled') and c['state'] == 'COMPLETADA'], key=lambda c: c['createdAt'], reverse=True)
+        anchor = next((c for c in scheduled if c['id'] == state.get('retentionPending')), None)
+        if state.get('retentionPending') and not anchor:
+            # La copia que autorizaba limpiar pudo eliminarse manualmente.
+            state.pop('retentionPending', None)
+            atomic(path, state)
+        last = datetime.datetime.fromisoformat(scheduled[0]['createdAt']).timestamp() if scheduled else 0
+        if not anchor and timestamp < last + hours * 3600:
+            return
+        if (ROOT / 'maintenance').exists():
+            return
+        lock = ROOT / 'dispatch.lock'
+        try:
+            lock.mkdir()
+        except FileExistsError:
+            return
+        try:
+            if any(read(p)['state'] in ('PENDIENTE', 'EJECUTANDO') for p in (ROOT / 'jobs').glob('*.json')):
+                return
+            if not anchor:
+                job = {'id': str(uuid.uuid4()), 'action': 'backup', 'actor': None,
+                       'scheduled': True, 'state': 'PENDIENTE', 'phase': 'Programada', 'createdAt': now()}
+                atomic(ROOT / 'jobs' / (job['id'] + '.json'), job)
+                execute(job)
+                state = {'lastJob': job['id'], 'state': job['state'], 'finishedAt': now(),
+                         'error': job.get('error'), 'retryAt': timestamp + time.monotonic() - started + 900 if job['state'] != 'COMPLETADA' else 0}
+                if job['state'] == 'COMPLETADA':
+                    state['retentionPending'] = job['copyId']
+                atomic(path, state)
+                if job['state'] != 'COMPLETADA':
+                    return
+                anchor = read(ROOT / 'copies' / (job['copyId'] + '.json'))
+                scheduled = [anchor, *scheduled]
+            # Crear/validar una copia puede tardar: releer la política justo antes
+            # de limpiar, por si se amplió la conservación o se desactivó mientras.
+            current = json.loads(query(SCHEDULE_QUERY))
+            keep = int(current.get('copias.conservar', '7'))
+            if not 1 <= keep <= 90:
+                raise RuntimeError('Conservación inválida.')
+            if current.get('copias.automaticas_activas', '0') != '1':
+                state.pop('retentionPending', None)
+                state.update(state='COMPLETADA', error=None, retryAt=0, finishedAt=now())
+                atomic(path, state)
+                return
+            # No eliminar ninguna copia si la que habilitó esta limpieza se dañó.
+            ident = anchor['id']
+            if not UUID.fullmatch(ident) or not hmac.compare_digest(anchor.get('mac', ''), sign(ident + ':' + anchor['checksum'])) or checksum(ROOT / 'copies' / (ident + '.tar')) != anchor['checksum']:
+                raise RuntimeError('La copia nueva no está disponible para conservar el respaldo.')
+            # Se usa la política vigente también al reintentar una limpieza.
+            for old in scheduled[keep:]:
+                if not UUID.fullmatch(old['id']) or not hmac.compare_digest(old.get('mac', ''), sign(old['id'] + ':' + old['checksum'])):
+                    raise RuntimeError('No se puede aplicar la conservación a metadatos inválidos.')
+                cleanup = {'id': str(uuid.uuid4()), 'action': 'delete', 'copyId': old['id'],
+                           'actor': None, 'state': 'PENDIENTE', 'phase': 'Conservación programada', 'createdAt': now()}
+                execute(cleanup)
+                if cleanup['state'] != 'COMPLETADA':
+                    raise RuntimeError('La copia se creó, pero falló la limpieza de copias antiguas.')
+            state.pop('retentionPending', None)
+            state.update(state='COMPLETADA', error=None, retryAt=0, finishedAt=now())
+            atomic(path, state)
+        finally:
+            lock.rmdir()
+    except Exception:
+        try:
+            atomic(path, {**state, 'state': 'FALLIDA', 'error': 'No se pudo completar la programación de copias. Revisa el servicio de recuperación.',
+                          'finishedAt': now(), 'retryAt': timestamp + time.monotonic() - started + 900})
+        except Exception:
+            # Un disco lleno tampoco debe matar el proceso que permite recuperar.
+            print('No se pudo guardar el estado de programación; revisa el almacenamiento.', file=sys.stderr, flush=True)
+
+
 def main():
     os.umask(0o077)
     for path in (ROOT, ROOT / 'jobs', ROOT / 'copies', ROOT / 'leases', ROOT / 'work', ASSETS):
@@ -374,6 +473,7 @@ def main():
                 (ROOT / 'heartbeat').touch()
                 time.sleep(2)
         threading.Thread(target=heartbeat, daemon=True).start()
+        last_schedule_check = 0
         while True:
             for request in sorted((ROOT / 'jobs').glob('*.request')):
                 job = None
@@ -411,6 +511,9 @@ def main():
                     job=read(path)
                     if job['state']=='PENDIENTE':
                         phase(job, 'Solicitud interrumpida', state='FALLIDA', finishedAt=now())
+            if time.monotonic() - last_schedule_check >= 30:
+                schedule_tick()
+                last_schedule_check = time.monotonic()
             time.sleep(1)
 
 

@@ -14,6 +14,7 @@ type Copy = {
   createdAt: string;
   validatedAt?: string;
   automatic?: boolean;
+  scheduled?: boolean;
   checksum: string;
 };
 type Ticket = { id: string; token: string };
@@ -144,7 +145,7 @@ export function Backups() {
   return (
     <section className="space-y-5">
       <div>
-        <h2 className="font-semibold">Copias manuales</h2>
+        <h2 className="font-semibold">Copias disponibles</h2>
         <p className="text-text-secondary text-sm">
           Incluyen la base de datos y el logo. Las claves de infraestructura se custodian por
           separado. Descarga una copia y guárdala fuera del equipo para protegerte ante su pérdida.
@@ -225,7 +226,11 @@ export function Backups() {
                       <p>{copy.id}</p>
                       <p>
                         {(Number(copy.size) / 1024 ** 2).toFixed(2)} MB
-                        {copy.automatic ? ' · Copia previa de seguridad' : ''}
+                        {copy.scheduled
+                          ? ' · Copia programada'
+                          : copy.automatic
+                            ? ' · Copia previa de seguridad'
+                            : ' · Copia manual'}
                       </p>
                       <p>
                         {copy.validatedAt

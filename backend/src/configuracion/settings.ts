@@ -11,6 +11,9 @@ export const defaults = {
   'interfaz.refresco_indicadores_segundos': 60,
   'seguridad.access_minutos': 15,
   'seguridad.sesion_dias': 7,
+  'copias.automaticas_activas': 0,
+  'copias.intervalo_horas': 24,
+  'copias.conservar': 7,
 };
 export type Settings = typeof defaults;
 export type SettingKey = keyof Settings;
@@ -20,6 +23,9 @@ export const ranges: Partial<Record<SettingKey, [number, number]>> = {
   'interfaz.refresco_indicadores_segundos': [15, 300],
   'seguridad.access_minutos': [5, 60],
   'seguridad.sesion_dias': [1, 30],
+  'copias.automaticas_activas': [0, 1],
+  'copias.intervalo_horas': [1, 168],
+  'copias.conservar': [1, 90],
 };
 export function validSetting(key: string, value: unknown, internal = false) {
   if (

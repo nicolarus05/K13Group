@@ -168,4 +168,167 @@ class RecoveryTests(unittest.TestCase):
         self.assertEqual(w.query(f"SELECT count(*) FROM copias_seguridad WHERE id='{ident}'"),'0')
         self.assertTrue((w.ROOT/'copies'/(self.copy+'.tar')).exists())
 
+class ScheduleTests(unittest.TestCase):
+    def setUp(self):
+        self.folder=tempfile.TemporaryDirectory(prefix='k13-schedule-test-')
+        self.addCleanup(self.folder.cleanup)
+        self.root=Path(self.folder.name)
+        for name in ['copies','jobs','work','leases']:(self.root/name).mkdir()
+        self.root_patch=patch.object(w,'ROOT',self.root);self.root_patch.start();self.addCleanup(self.root_patch.stop)
+        self.config={'copias.automaticas_activas':'1','copias.intervalo_horas':'24','copias.conservar':'2'}
+        self.query=patch.object(w,'query',side_effect=lambda sql:'configuracion' if 'to_regclass' in sql else w.json.dumps(self.config));self.query.start();self.addCleanup(self.query.stop)
+        self.executed=[]
+        self.executor=patch.object(w,'execute',side_effect=self.execute);self.executor.start();self.addCleanup(self.executor.stop)
+        self.clock=1000000000.0
+
+    def copy(self, timestamp, scheduled=True, automatic=True):
+        ident=str(uuid.uuid4());stamp=w.datetime.datetime.fromtimestamp(timestamp,w.datetime.timezone.utc).isoformat()
+        meta={'id':ident,'createdAt':stamp,'state':'COMPLETADA','checksum':'hash','scheduled':scheduled,'automatic':automatic}
+        (self.root/'copies'/(ident+'.tar')).write_bytes(b'fixture')
+        meta['checksum']=w.checksum(self.root/'copies'/(ident+'.tar'))
+        meta['mac']=w.sign(ident+':'+meta['checksum']);w.atomic(self.root/'copies'/(ident+'.json'),meta)
+        return ident
+
+    def execute(self,job):
+        self.executed.append(job['action'])
+        job['state']='COMPLETADA'
+        if job['action']=='backup':job['copyId']=self.copy(self.clock)
+        else:
+            path=self.root/'copies'/(job['copyId']+'.json');meta=w.read(path)
+            meta['state']='ELIMINADA';w.atomic(path,meta)
+            path.with_suffix('.tar').unlink()
+        w.atomic(self.root/'jobs'/(job['id']+'.json'),job)
+
+    def test_startup_before_migrations_does_not_create_a_false_failure(self):
+        with patch.object(w,'query',return_value=''):
+            w.schedule_tick(self.clock)
+        self.assertFalse((self.root/'schedule.json').exists())
+        self.assertEqual(self.executed,[])
+
+    def test_disabled_never_creates_or_deletes(self):
+        self.config['copias.automaticas_activas']='0';w.schedule_tick(self.clock)
+        self.assertEqual(self.executed,[])
+
+    def test_restart_and_long_downtime_create_only_one_copy(self):
+        self.copy(self.clock-86400*20)
+        w.schedule_tick(self.clock);w.schedule_tick(self.clock+30)
+        (self.root/'schedule.json').unlink()
+        w.schedule_tick(self.clock+60)
+        self.assertEqual(self.executed,['backup'])
+
+    def test_retention_keeps_manual_and_safety_copies(self):
+        manual=self.copy(self.clock-1000000,False,False)
+        safety=self.copy(self.clock-1000000,False,True)
+        old=self.copy(self.clock-86400*3);recent=self.copy(self.clock-86400*2)
+        w.schedule_tick(self.clock)
+        self.assertEqual(self.executed,['backup','delete'])
+        for ident in [manual,safety,recent]:self.assertTrue((self.root/'copies'/(ident+'.tar')).exists())
+        self.assertFalse((self.root/'copies'/(old+'.tar')).exists())
+
+    def test_failure_retries_after_delay_without_pruning(self):
+        old=self.copy(self.clock-86400*3)
+        def fail(job):
+            self.executed.append('failed');job['state']='FALLIDA';job['error']='Ensayo'
+            w.atomic(self.root/'jobs'/(job['id']+'.json'),job)
+        with patch.object(w,'execute',side_effect=fail):
+            w.schedule_tick(self.clock);w.schedule_tick(self.clock+30)
+        self.assertEqual(self.executed,['failed'])
+        self.assertTrue((self.root/'copies'/(old+'.tar')).exists())
+        self.clock+=901;w.schedule_tick(self.clock)
+        self.assertEqual(self.executed,['failed','backup'])
+
+    def test_busy_dispatch_pending_job_and_maintenance_defer(self):
+        lock=self.root/'dispatch.lock';lock.mkdir();w.schedule_tick(self.clock);lock.rmdir()
+        maintenance=self.root/'maintenance';maintenance.touch();w.schedule_tick(self.clock);maintenance.unlink()
+        pending=self.root/'jobs'/(str(uuid.uuid4())+'.json');w.atomic(pending,{'state':'PENDIENTE'})
+        w.schedule_tick(self.clock);pending.unlink()
+        self.assertEqual(self.executed,[])
+        w.schedule_tick(self.clock);self.assertEqual(self.executed,['backup'])
+
+    def test_database_error_is_generic_and_invalid_ranges_do_not_run(self):
+        with patch.object(w,'query',side_effect=RuntimeError('password=must-not-appear')):
+            w.schedule_tick(self.clock)
+        state=(self.root/'schedule.json').read_text()
+        self.assertNotIn('must-not-appear',state)
+        self.config['copias.conservar']='0';w.schedule_tick(self.clock+1000)
+        self.assertEqual(self.executed,[])
+
+    def test_corrupt_schedule_does_not_crash_or_delete_copies(self):
+        old=self.copy(self.clock-86400*3)
+        (self.root/'schedule.json').write_text('{truncated')
+        w.schedule_tick(self.clock)
+        state=w.read(self.root/'schedule.json')
+        self.assertEqual(state['state'],'FALLIDA')
+        self.assertEqual(self.executed,[])
+        self.assertTrue((self.root/'copies'/(old+'.tar')).exists())
+        self.clock+=901;w.schedule_tick(self.clock)
+        self.assertEqual(self.executed,['backup'])
+
+    def test_retention_failure_retries_cleanup_without_another_backup(self):
+        old=self.copy(self.clock-86400*3);self.copy(self.clock-86400*2)
+        execute=self.execute
+        def fail_delete(job):
+            if job['action']!='delete':return execute(job)
+            self.executed.append('failed-delete');job['state']='FALLIDA'
+            w.atomic(self.root/'jobs'/(job['id']+'.json'),job)
+        with patch.object(w,'execute',side_effect=fail_delete):
+            w.schedule_tick(self.clock)
+        self.assertEqual(self.executed,['backup','failed-delete'])
+        w.schedule_tick(self.clock+30)
+        self.assertEqual(self.executed,['backup','failed-delete'])
+        self.clock+=901;w.schedule_tick(self.clock)
+        self.assertEqual(self.executed,['backup','failed-delete','delete'])
+        self.assertFalse((self.root/'copies'/(old+'.tar')).exists())
+        self.assertEqual(w.read(self.root/'schedule.json')['state'],'COMPLETADA')
+
+    def test_retention_retry_respects_updated_policy(self):
+        self.copy(self.clock-86400*3);self.copy(self.clock-86400*2)
+        execute=self.execute
+        def fail_delete(job):
+            if job['action']!='delete':return execute(job)
+            job['state']='FALLIDA'
+            w.atomic(self.root/'jobs'/(job['id']+'.json'),job)
+        with patch.object(w,'execute',side_effect=fail_delete):w.schedule_tick(self.clock)
+        self.config['copias.conservar']='7'
+        self.clock+=901;w.schedule_tick(self.clock)
+        self.assertEqual(self.executed,['backup'])
+        self.assertEqual(len(list((self.root/'copies').glob('*.tar'))),3)
+        self.assertEqual(w.read(self.root/'schedule.json')['state'],'COMPLETADA')
+
+    def test_retention_uses_policy_changed_while_backup_was_running(self):
+        self.copy(self.clock-86400*3);self.copy(self.clock-86400*2)
+        execute=self.execute
+        def change_policy(job):
+            execute(job)
+            if job['action']=='backup':self.config['copias.conservar']='7'
+        with patch.object(w,'execute',side_effect=change_policy):w.schedule_tick(self.clock)
+        self.assertEqual(self.executed,['backup'])
+        self.assertEqual(len(list((self.root/'copies').glob('*.tar'))),3)
+
+    def test_disabling_during_backup_prevents_cleanup(self):
+        self.copy(self.clock-86400*3);self.copy(self.clock-86400*2)
+        execute=self.execute
+        def disable(job):
+            execute(job)
+            if job['action']=='backup':self.config['copias.automaticas_activas']='0'
+        with patch.object(w,'execute',side_effect=disable):w.schedule_tick(self.clock)
+        self.assertEqual(self.executed,['backup'])
+        self.assertNotIn('retentionPending',w.read(self.root/'schedule.json'))
+
+    def test_unwritable_schedule_state_does_not_crash_worker(self):
+        with patch.object(w,'query',side_effect=RuntimeError('offline')), patch.object(w,'atomic',side_effect=OSError('full')), patch('sys.stderr'):
+            w.schedule_tick(self.clock)
+        self.assertEqual(self.executed,[])
+
+    def test_new_copy_corruption_stops_retention(self):
+        old=self.copy(self.clock-86400*3);self.copy(self.clock-86400*2)
+        execute=self.execute
+        def corrupt(job):
+            execute(job)
+            if job['action']=='backup':(self.root/'copies'/(job['copyId']+'.tar')).write_bytes(b'corrupt')
+        with patch.object(w,'execute',side_effect=corrupt):w.schedule_tick(self.clock)
+        self.assertEqual(self.executed,['backup'])
+        self.assertTrue((self.root/'copies'/(old+'.tar')).exists())
+        self.assertEqual(w.read(self.root/'schedule.json')['state'],'FALLIDA')
+
 if __name__=='__main__':unittest.main(verbosity=2)

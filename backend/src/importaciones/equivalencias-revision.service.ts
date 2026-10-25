@@ -625,6 +625,10 @@ export class EquivalenciasRevisionService {
               accion: 'REVISAR_EQUIVALENCIA',
               datosNuevos: {
                 decisionId: saved.id,
+                motivo: dto.motivo,
+                accion: dto.accion,
+                entidadId: dto.entidadId ?? null,
+                destino: target?.nombre ?? null,
                 version,
                 tipo: dto.tipo,
                 alcance: dto.alcance,

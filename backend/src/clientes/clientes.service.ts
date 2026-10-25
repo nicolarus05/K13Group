@@ -1,3 +1,4 @@
+import { writeAudit } from '../auditoria/audit-data';
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
@@ -93,9 +94,7 @@ export class ClientesService {
           include: INCLUDE_ESTADO,
         });
         await this.ensureReferencia(tx, cliente.nombre, usuarioId);
-        await tx.actividad.create({
-          data: { usuarioId, tabla: 'clientes', registroId: cliente.id, accion: 'CREAR' },
-        });
+        await writeAudit(tx, usuarioId, 'clientes', cliente.id, 'CREAR', null, cliente);
         return cliente;
       })
       .catch((error: unknown) => this.writeError(error));
@@ -113,15 +112,16 @@ export class ClientesService {
         // Mismo orden que suscripciones/renovaciones: catálogo antes de fila de cliente.
         // ensureReferencia no debe esperar al catálogo mientras retiene esa fila.
         if (dto.nombre) await lockCatalog(tx, 'referencias');
+        await tx.$queryRaw`SELECT id FROM clientes WHERE id = ${id}::uuid FOR UPDATE`;
+        const before = await tx.cliente.findFirst({ where: { id, deletedAt: null } });
+        if (!before) throw new NotFoundException('Cliente no encontrado');
         const cliente = await tx.cliente.update({
           where: { id, deletedAt: null },
           data: { ...dto, ...(hasTelefono ? { telefono, telefonoNormalizado } : {}) },
           include: INCLUDE_ESTADO,
         });
         if (dto.nombre) await this.ensureReferencia(tx, cliente.nombre, usuarioId);
-        await tx.actividad.create({
-          data: { usuarioId, tabla: 'clientes', registroId: id, accion: 'EDITAR' },
-        });
+        await writeAudit(tx, usuarioId, 'clientes', id, 'EDITAR', before, cliente);
         return cliente;
       })
       .catch((error: unknown) => this.writeError(error));
@@ -130,14 +130,22 @@ export class ClientesService {
   // RN-001.004: borrado lógico
   async remove(id: string, usuarioId: string) {
     return this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM clientes WHERE id = ${id}::uuid FOR UPDATE`;
+      const before = await tx.cliente.findFirst({ where: { id, deletedAt: null } });
       const result = await tx.cliente.updateMany({
         where: { id, deletedAt: null },
         data: { deletedAt: new Date() },
       });
       if (!result.count) throw new NotFoundException(`Cliente ${id} no encontrado`);
-      await tx.actividad.create({
-        data: { usuarioId, tabla: 'clientes', registroId: id, accion: 'ELIMINAR' },
-      });
+      await writeAudit(
+        tx,
+        usuarioId,
+        'clientes',
+        id,
+        'ELIMINAR',
+        before,
+        await tx.cliente.findUniqueOrThrow({ where: { id } }),
+      );
     });
   }
 
