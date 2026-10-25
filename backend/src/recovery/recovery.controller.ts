@@ -25,6 +25,9 @@ import { RecoveryService } from './recovery.service';
 @UseGuards(JwtAuthGuard)
 export class RecoveryController {
   constructor(private readonly service: RecoveryService) {}
+  @Get('programacion') async schedule() {
+    return { success: true, data: await this.service.schedule() };
+  }
   @Get() async list(@Query() q: SettingsQueryDto) {
     const rows = await this.service.list();
     const page = q.page ?? 1,

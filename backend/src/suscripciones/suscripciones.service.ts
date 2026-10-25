@@ -1,3 +1,4 @@
+import { safeAuditData } from '../auditoria/audit-data';
 import { acquireOperation } from '../recovery/maintenance';
 import { readSettings, warningDays as configuredWarningDays } from '../configuracion/settings';
 import {
@@ -288,7 +289,11 @@ export class SuscripcionesService implements OnApplicationBootstrap, OnModuleDes
     ]);
     return {
       success: true,
-      data,
+      data: data.map((r) => ({
+        ...r,
+        datosAnteriores: safeAuditData(r.datosAnteriores),
+        datosNuevos: safeAuditData(r.datosNuevos),
+      })),
       pagination: {
         page: query.page,
         limit: query.limit,

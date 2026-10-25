@@ -338,6 +338,9 @@ model Actividad {
 
   usuario Usuario? @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
 
+  @@index([createdAt, id])
+  @@index([tabla, registroId, createdAt, id])
+  @@index([usuarioId, createdAt, id])
   @@map("actividad")
 }
 

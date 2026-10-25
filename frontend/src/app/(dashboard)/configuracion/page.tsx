@@ -15,6 +15,7 @@ import {
   type Settings,
   type SettingsResponse,
 } from '@/modules/configuracion/preferences';
+import { BackupSchedule } from '@/modules/configuracion/backup-schedule';
 import { Backups } from '@/modules/configuracion/backups';
 
 const selectClass = 'w-full rounded-input border border-hover bg-background p-2';
@@ -54,7 +55,10 @@ function SettingsPage() {
       ) : tab === 'seguridad' ? (
         <Account />
       ) : tab === 'copias' ? (
-        <Backups />
+        <>
+          <BackupSchedule />
+          <Backups />
+        </>
       ) : tab === 'sistema' ? (
         <>
           <SettingsEditor technical />

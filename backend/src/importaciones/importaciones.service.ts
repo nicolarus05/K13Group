@@ -1,3 +1,4 @@
+import { safeAuditData, writeAudit } from '../auditoria/audit-data';
 import {
   BadRequestException,
   ConflictException,
@@ -467,7 +468,9 @@ export class ImportacionesService {
             tabla: 'importacion_filas',
             registroId: rowId,
             accion: 'CORREGIR_LECTURA',
+            datosAnteriores: safeAuditData(previousValues) as Prisma.InputJsonObject,
             datosNuevos: {
+              cambios: safeAuditData(dto.cambios),
               importacionId: id,
               campos: entries.map(([key]) => key),
               motivo: dto.motivo,
@@ -704,32 +707,38 @@ export class ImportacionesService {
       dto.tipo === 'TARIFA'
         ? dto.valorClave.trim().toUpperCase()
         : normalizeComparable(dto.valorClave);
-    const result = await this.prisma.importacionEquivalencia.upsert({
-      where: { tipo_valorClave: { tipo: dto.tipo, valorClave } },
-      update: {
-        valorOrigen: dto.valorOrigen.trim(),
-        valorCanonico: dto.valorCanonico.trim(),
-        entidadId: dto.entidadId,
-        activo: true,
-      },
-      create: {
-        tipo: dto.tipo,
-        valorOrigen: dto.valorOrigen.trim(),
-        valorClave,
-        valorCanonico: dto.valorCanonico.trim(),
-        entidadId: dto.entidadId,
-      },
-    });
-    await this.prisma.actividad.create({
-      data: {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(hashtext(${'equivalencia:' + dto.tipo + ':' + valorClave}))`;
+      const before = await tx.importacionEquivalencia.findUnique({
+        where: { tipo_valorClave: { tipo: dto.tipo, valorClave } },
+      });
+      const result = await tx.importacionEquivalencia.upsert({
+        where: { tipo_valorClave: { tipo: dto.tipo, valorClave } },
+        update: {
+          valorOrigen: dto.valorOrigen.trim(),
+          valorCanonico: dto.valorCanonico.trim(),
+          entidadId: dto.entidadId,
+          activo: true,
+        },
+        create: {
+          tipo: dto.tipo,
+          valorOrigen: dto.valorOrigen.trim(),
+          valorClave,
+          valorCanonico: dto.valorCanonico.trim(),
+          entidadId: dto.entidadId,
+        },
+      });
+      await writeAudit(
+        tx,
         usuarioId,
-        tabla: 'importacion_equivalencias',
-        registroId: result.id,
-        accion: 'UPSERT',
-        datosNuevos: result as unknown as Prisma.InputJsonValue,
-      },
+        'importacion_equivalencias',
+        result.id,
+        'UPSERT',
+        before,
+        result,
+      );
+      return result;
     });
-    return result;
   }
 
   async reviewRow(
@@ -741,57 +750,65 @@ export class ImportacionesService {
     const analysis = await this.prisma.importacion.findUnique({ where: { id: importacionId } });
     if (analysis?.versionMapeo === PARSER_VERSION)
       throw new ConflictException('Completa primero la lectura y la revisión de identidades.');
-    const row = await this.prisma.importacionFila.findFirst({
-      where: { id: filaId, importacionId },
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM importacion_filas WHERE id = ${filaId}::uuid FOR UPDATE`;
+      const row = await tx.importacionFila.findFirst({
+        where: { id: filaId, importacionId },
+      });
+      if (!row) throw new NotFoundException(`Fila ${filaId} no encontrada en la importación.`);
+      if (![...ROW_DECISIONS].includes(dto.decision))
+        throw new BadRequestException('Decisión no válida.');
+      if (row.estado === ROW_STATUS.IMPORTED)
+        throw new ConflictException('La fila ya fue reconciliada y es inmutable.');
+      const mapping: RowMapping = {
+        ...this.readMapping(row.mapeo),
+        ...(dto.clienteId ? { clienteId: dto.clienteId } : {}),
+        ...(dto.productoId ? { productoId: dto.productoId } : {}),
+        ...(dto.tarifaId ? { tarifaId: dto.tarifaId } : {}),
+        ...(dto.servidorId ? { servidorId: dto.servidorId } : {}),
+        ...(dto.referenciaId ? { referenciaId: dto.referenciaId } : {}),
+        ...(dto.metodoPagoId ? { metodoPagoId: dto.metodoPagoId } : {}),
+      };
+      if (dto.decision === 'ACEPTAR') {
+        if (!mapping.clienteId)
+          throw new BadRequestException('Debes seleccionar un cliente para aceptar la fila.');
+        await this.validateMapping(mapping);
+        await this.validateTariffProduct(mapping);
+      }
+      const estado =
+        dto.decision === 'RECHAZAR'
+          ? ROW_STATUS.REJECTED
+          : dto.decision === 'ACEPTAR'
+            ? ROW_STATUS.READY
+            : ROW_STATUS.PENDING;
+      const updated = await tx.importacionFila.update({
+        where: { id: filaId },
+        data: {
+          decision: dto.decision,
+          estado,
+          clienteId: mapping.clienteId ?? null,
+          mapeo: mapping as unknown as Prisma.InputJsonValue,
+          revisadaPorId: usuarioId,
+          revisadaAt: new Date(),
+          observacionRevision: dto.observacion?.trim() || null,
+        },
+      });
+      await tx.actividad.create({
+        data: {
+          usuarioId,
+          tabla: 'importacion_filas',
+          registroId: filaId,
+          accion: 'REVISAR',
+          datosAnteriores: {
+            decision: row.decision,
+            mapping: row.mapeo,
+            observacion: row.observacionRevision,
+          },
+          datosNuevos: { decision: dto.decision, mapping, observacion: dto.observacion ?? null },
+        },
+      });
+      return this.publicRow(updated);
     });
-    if (!row) throw new NotFoundException(`Fila ${filaId} no encontrada en la importación.`);
-    if (![...ROW_DECISIONS].includes(dto.decision))
-      throw new BadRequestException('Decisión no válida.');
-    if (row.estado === ROW_STATUS.IMPORTED)
-      throw new ConflictException('La fila ya fue reconciliada y es inmutable.');
-    const mapping: RowMapping = {
-      ...this.readMapping(row.mapeo),
-      ...(dto.clienteId ? { clienteId: dto.clienteId } : {}),
-      ...(dto.productoId ? { productoId: dto.productoId } : {}),
-      ...(dto.tarifaId ? { tarifaId: dto.tarifaId } : {}),
-      ...(dto.servidorId ? { servidorId: dto.servidorId } : {}),
-      ...(dto.referenciaId ? { referenciaId: dto.referenciaId } : {}),
-      ...(dto.metodoPagoId ? { metodoPagoId: dto.metodoPagoId } : {}),
-    };
-    if (dto.decision === 'ACEPTAR') {
-      if (!mapping.clienteId)
-        throw new BadRequestException('Debes seleccionar un cliente para aceptar la fila.');
-      await this.validateMapping(mapping);
-      await this.validateTariffProduct(mapping);
-    }
-    const estado =
-      dto.decision === 'RECHAZAR'
-        ? ROW_STATUS.REJECTED
-        : dto.decision === 'ACEPTAR'
-          ? ROW_STATUS.READY
-          : ROW_STATUS.PENDING;
-    const updated = await this.prisma.importacionFila.update({
-      where: { id: filaId },
-      data: {
-        decision: dto.decision,
-        estado,
-        clienteId: mapping.clienteId ?? null,
-        mapeo: mapping as unknown as Prisma.InputJsonValue,
-        revisadaPorId: usuarioId,
-        revisadaAt: new Date(),
-        observacionRevision: dto.observacion?.trim() || null,
-      },
-    });
-    await this.prisma.actividad.create({
-      data: {
-        usuarioId,
-        tabla: 'importacion_filas',
-        registroId: filaId,
-        accion: 'REVISAR',
-        datosNuevos: { decision: dto.decision, mapping, observacion: dto.observacion ?? null },
-      },
-    });
-    return this.publicRow(updated);
   }
 
   async reconcile(importacionId: string, usuarioId: string, options: ReconcileOptions) {

@@ -18,9 +18,11 @@ import {
   Settings,
   Bell,
   CalendarDays,
+  ShieldCheck,
 } from 'lucide-react';
 const logo = '/LogoK13GROUP.jpg';
 const items = [
+  { label: 'Auditoría', href: '/auditoria', icon: ShieldCheck },
   { label: 'Configuración', href: '/configuracion', icon: Settings },
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Clientes', href: '/clientes', icon: Users },

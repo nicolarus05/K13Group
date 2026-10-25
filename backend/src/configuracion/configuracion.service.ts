@@ -1,3 +1,4 @@
+import { safeAuditData } from '../auditoria/audit-data';
 import { RecoveryService } from '../recovery/recovery.service';
 import {
   BadRequestException,
@@ -64,6 +65,7 @@ export class ConfiguracionService {
         Object.keys(changes).some(
           (k) =>
             k.startsWith('seguridad.') ||
+            k.startsWith('copias.') ||
             k.startsWith('sistema.') ||
             k === 'interfaz.refresco_indicadores_segundos',
         )
@@ -152,7 +154,14 @@ export class ConfiguracionService {
       }),
       this.prisma.actividad.count({ where }),
     ]);
-    return { data, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+    return {
+      data: data.map((r) => ({
+        ...r,
+        datosAnteriores: safeAuditData(r.datosAnteriores),
+        datosNuevos: safeAuditData(r.datosNuevos),
+      })),
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
   }
   async system() {
     await this.prisma.$queryRaw`SELECT 1`;
