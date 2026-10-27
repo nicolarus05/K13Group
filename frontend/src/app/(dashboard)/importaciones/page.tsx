@@ -1,5 +1,6 @@
 'use client';
 import { useConfiguredPage } from '@/modules/configuracion/preferences';
+import dynamic from 'next/dynamic';
 
 import { useEffect, useMemo, useState, type ChangeEvent, type ReactNode } from 'react';
 import { AlertTriangle, CheckCircle2, FileSpreadsheet, RefreshCw, Upload } from 'lucide-react';
@@ -21,11 +22,24 @@ import {
 } from '@/modules/importaciones/hooks/use-importaciones';
 import type { ImportacionSummary } from '@/modules/importaciones/types/importaciones.types';
 import { ReadingPreview, ReadingHistory } from '@/modules/importaciones/reading-preview';
-import { IdentityReview } from '@/modules/importaciones/identity-review';
-import { ApplicationReview } from '@/modules/importaciones/application-review';
-import { EquivalenceReview } from '@/modules/importaciones/equivalence-review';
 import { catalogError } from '@/modules/catalogos/services/catalogos.service';
 import { useQueryClient } from '@tanstack/react-query';
+
+const loadingReview = () => <p role="status">Cargando revisión de la importación…</p>;
+const IdentityReview = dynamic(
+  () => import('@/modules/importaciones/identity-review').then((module) => module.IdentityReview),
+  { loading: loadingReview },
+);
+const ApplicationReview = dynamic(
+  () =>
+    import('@/modules/importaciones/application-review').then((module) => module.ApplicationReview),
+  { loading: loadingReview },
+);
+const EquivalenceReview = dynamic(
+  () =>
+    import('@/modules/importaciones/equivalence-review').then((module) => module.EquivalenceReview),
+  { loading: loadingReview },
+);
 
 type ReviewForm = {
   clienteId: string;
@@ -64,7 +78,7 @@ export default function ImportacionesPage() {
   const catalogsQuery = useImportacionCatalogs(importId);
   const pendingQuery = usePendingImportacionValues(importId);
   const reviewMutation = useReviewImportacionRow(importId ?? '');
-  const clientsQuery = useClientes({ limit: 100, sort: 'nombre:asc' });
+  const clientsQuery = useClientes({ limit: 100, sort: 'nombre' });
   const rows = useMemo(() => rowsQuery.data?.data ?? [], [rowsQuery.data]);
   const selectedRow = rows.find((row) => row.id === selectedId) ?? null;
   const catalogs = catalogsQuery.data;

@@ -25,6 +25,8 @@ export function useLogin() {
     mutationFn: (credentials: LoginFormData) =>
       authService.login(credentials).then((r) => r.data.data),
     onSuccess: (user) => {
+      // El login también es accesible con otra sesión todavía en caché.
+      queryClient.clear();
       queryClient.setQueryData(AUTH_QUERY_KEY, user);
       router.push('/dashboard');
       router.refresh();

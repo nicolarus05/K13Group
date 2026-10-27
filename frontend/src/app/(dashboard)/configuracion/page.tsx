@@ -1,6 +1,7 @@
 'use client';
 import { Suspense, useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
@@ -15,8 +16,14 @@ import {
   type Settings,
   type SettingsResponse,
 } from '@/modules/configuracion/preferences';
-import { BackupSchedule } from '@/modules/configuracion/backup-schedule';
-import { Backups } from '@/modules/configuracion/backups';
+const BackupSchedule = dynamic(
+  () => import('@/modules/configuracion/backup-schedule').then((module) => module.BackupSchedule),
+  { loading: () => <p role="status">Cargando programación de copias…</p> },
+);
+const Backups = dynamic(
+  () => import('@/modules/configuracion/backups').then((module) => module.Backups),
+  { loading: () => <p role="status">Cargando copias…</p> },
+);
 
 const selectClass = 'w-full rounded-input border border-hover bg-background p-2';
 const panels = {

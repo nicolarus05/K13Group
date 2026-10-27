@@ -2,6 +2,7 @@
 set -euo pipefail
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
 case "${1:-help}" in
+  quality) shift; exec bash ./quality/run.sh "$@" ;;
   start) docker compose up -d --wait ;;
   stop) docker compose stop ;;
   status) docker compose ps ;;
@@ -37,5 +38,5 @@ case "${1:-help}" in
     ;;
   recovery-resume) docker compose restart recovery ;;
   seed) docker compose exec backend npm run db:seed ;;
-  *) echo 'Uso: ./dev {start|stop|status|logs|backend comando...|frontend comando...|build-backend|build-frontend|test-ui|test-backend|test-integration|test-recovery|test-e2e-configuracion|test-e2e-lectura|test-e2e-exportaciones|test-e2e-auditoria|migrate|seed|backup|restore-check ID|restore ID|recovery-resume|recovery-clear-leases}' ;;
+  *) echo 'Uso: ./dev {quality [check|benchmark|browser|soak]|start|stop|status|logs|backend comando...|frontend comando...|build-backend|build-frontend|test-ui|test-backend|test-integration|test-recovery|test-e2e-configuracion|test-e2e-lectura|test-e2e-exportaciones|test-e2e-auditoria|migrate|seed|backup|restore-check ID|restore ID|recovery-resume|recovery-clear-leases}' ;;
 esac

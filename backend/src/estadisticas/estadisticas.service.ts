@@ -172,11 +172,21 @@ export class EstadisticasService {
     const [now] = await tx.$queryRaw<
       { total: number; vigentes: number; perdidos: number; noRenovar: number }[]
     >(Prisma.sql`
+      WITH services AS (
+        SELECT s.cliente_id,
+          BOOL_OR(se.valor IN ('ACTIVA','PROXIMA_A_VENCER','VENCIDA') AND s.fecha_fin>${parseDay(hoy)}) vigente,
+          MAX(s.fecha_fin) FILTER(WHERE se.valor<>'BORRADOR') ultimo_fin,
+          BOOL_OR(s.no_renovar) no_renovar
+        FROM suscripciones s JOIN estados se ON se.id=s.estado_id
+        WHERE s.deleted_at IS NULL GROUP BY s.cliente_id
+      )
       SELECT COUNT(*)::int total,
-      COUNT(*) FILTER(WHERE ce.valor='ACTIVO' AND EXISTS(SELECT 1 FROM suscripciones s JOIN estados se ON se.id=s.estado_id WHERE s.cliente_id=c.id AND s.deleted_at IS NULL AND se.valor IN ('ACTIVA','PROXIMA_A_VENCER','VENCIDA') AND s.fecha_fin>${parseDay(hoy)}))::int vigentes,
-      COUNT(*) FILTER(WHERE (SELECT MAX(s.fecha_fin) FROM suscripciones s JOIN estados se ON se.id=s.estado_id WHERE s.cliente_id=c.id AND s.deleted_at IS NULL AND se.valor<>'BORRADOR') <= ${parseDay(shift(hoy, -30))})::int perdidos,
-      COUNT(*) FILTER(WHERE EXISTS(SELECT 1 FROM suscripciones s WHERE s.cliente_id=c.id AND s.deleted_at IS NULL AND s.no_renovar))::int "noRenovar"
-      FROM clientes c JOIN estados ce ON ce.id=c.estado_id WHERE c.deleted_at IS NULL ${currentFilter}`);
+      COUNT(*) FILTER(WHERE ce.valor='ACTIVO' AND s.vigente)::int vigentes,
+      COUNT(*) FILTER(WHERE s.ultimo_fin <= ${parseDay(shift(hoy, -30))})::int perdidos,
+      COUNT(*) FILTER(WHERE s.no_renovar)::int "noRenovar"
+      FROM clientes c JOIN estados ce ON ce.id=c.estado_id
+      LEFT JOIN services s ON s.cliente_id=c.id
+      WHERE c.deleted_at IS NULL ${currentFilter}`);
     const rows = await tx.$queryRaw<{ dia: string; total: number }[]>(Prisma.sql`
       SELECT date_trunc(${grain(q)},((c.created_at AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Madrid'))::date::text dia,COUNT(*)::int total
       FROM clientes c WHERE c.deleted_at IS NULL AND ${range(Prisma.sql`((c.created_at AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Madrid')`, p.desde, p.hasta)} GROUP BY dia`);
