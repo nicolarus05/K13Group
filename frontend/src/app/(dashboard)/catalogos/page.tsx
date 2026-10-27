@@ -95,10 +95,21 @@ function CatalogPanel({ kind }: { kind: CatalogKind }) {
     enabled: kind === 'tarifas',
   });
   const refresh = async () => {
-    await Promise.all([
-      client.invalidateQueries({ queryKey: ['catalogos'] }),
-      client.invalidateQueries({ queryKey: ['importacion'] }),
-    ]);
+    // Los listados y resúmenes incorporan nombres y disponibilidad del catálogo.
+    await Promise.all(
+      [
+        'catalogos',
+        'importacion',
+        'clientes',
+        'suscripciones',
+        'renovaciones',
+        'finanzas',
+        'dashboard',
+        'estadisticas',
+        'recordatorios',
+        'auditoria',
+      ].map((key) => client.invalidateQueries({ queryKey: [key] })),
+    );
   };
   const activeMutation = useMutation({
     mutationFn: (row: CatalogRecord) => catalogosService.setActive(kind, row.id, !isActive(row)),

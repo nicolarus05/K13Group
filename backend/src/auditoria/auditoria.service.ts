@@ -108,14 +108,12 @@ export class AuditoriaService {
   }
   async filters() {
     const [tables, actions, usuarios] = await Promise.all([
-      this.prisma.actividad.findMany({
-        distinct: ['tabla'],
-        select: { tabla: true },
+      this.prisma.actividad.groupBy({
+        by: ['tabla'],
         orderBy: { tabla: 'asc' },
       }),
-      this.prisma.actividad.findMany({
-        distinct: ['accion'],
-        select: { accion: true },
+      this.prisma.actividad.groupBy({
+        by: ['accion'],
         orderBy: { accion: 'asc' },
       }),
       this.prisma.usuario.findMany({

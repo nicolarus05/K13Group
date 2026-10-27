@@ -31,5 +31,5 @@ export interface ClienteQuery {
   limit?: number;
   search?: string;
   estadoId?: string;
-  sort?: string;
+  sort?: 'nombre' | 'createdAt' | 'updatedAt';
 }

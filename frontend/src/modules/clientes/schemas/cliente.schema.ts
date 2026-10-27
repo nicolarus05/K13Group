@@ -21,3 +21,4 @@ export const clienteSchema = z.object({
 });
 
 export type ClienteFormData = z.infer<typeof clienteSchema>;
+export type ClienteFormInput = z.input<typeof clienteSchema>;

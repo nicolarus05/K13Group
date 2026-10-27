@@ -86,7 +86,21 @@ const isolated = process.env.TEST_DATABASE_URL;
     const user = await db.usuario.findUniqueOrThrow({ where: { username: 'admin' } });
     cookie =
       'access_token=' +
-      new JwtService().sign({ sub: user.id, sid: (await db.sesion.create({ data: { usuarioId: user.id, token: 'fixture-access-only', expiresAt: new Date(Date.now() + 3600000) } })).id }, { secret: process.env.JWT_SECRET, expiresIn: '30m' });
+      new JwtService().sign(
+        {
+          sub: user.id,
+          sid: (
+            await db.sesion.create({
+              data: {
+                usuarioId: user.id,
+                token: 'fixture-access-only',
+                expiresAt: new Date(Date.now() + 3600000),
+              },
+            })
+          ).id,
+        },
+        { secret: process.env.JWT_SECRET, expiresIn: '30m' },
+      );
     states = Object.fromEntries(
       (await db.estado.findMany()).map((s) => [s.tipo + '.' + s.valor, s.id]),
     );
@@ -229,6 +243,41 @@ const isolated = process.env.TEST_DATABASE_URL;
       total: 4,
       perdidos: 1,
       vigentes: 1,
+    });
+  });
+  it('resume una vez cada cliente y conserva borradores, bajas y filtros de estado', async () => {
+    const active = await client();
+    const draft = await client();
+    const inactive = await client({ estadoId: states['cliente.INACTIVO'] });
+    await client();
+    await sub(active.id);
+    await sub(active.id);
+    await sub(active.id, { noRenovar: true, deletedAt: new Date() });
+    await sub(draft.id, {
+      estadoId: states['suscripcion.BORRADOR'],
+      noRenovar: true,
+      fechaFin: new Date('2026-01-01'),
+    });
+    await sub(inactive.id);
+    expect((await get('/estadisticas/clientes')).data.clientes.actual).toEqual({
+      total: 4,
+      vigentes: 1,
+      perdidos: 0,
+      noRenovar: 1,
+    });
+    expect(
+      (
+        await get('/estadisticas/clientes', {
+          desde: '2026-09-01',
+          hasta: '2026-09-25',
+          estadoCliente: 'INACTIVO',
+        })
+      ).data.clientes.actual,
+    ).toEqual({
+      total: 1,
+      vigentes: 0,
+      perdidos: 0,
+      noRenovar: 0,
     });
   });
   it('altas por día de Madrid y filtro de estado solo para situación actual', async () => {

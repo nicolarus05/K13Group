@@ -1,0 +1,92 @@
+# Instalación desechable: no publica puertos ni monta datos del proyecto principal.
+services:
+  permissions:
+    image: postgres:16-alpine
+    user: '0:0'
+    entrypoint: [sh, -c, 'chown 1000:1000 /recovery /assets']
+    volumes:
+      - recovery_data:/recovery
+      - assets_data:/assets
+  quality-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: k13_quality
+      POSTGRES_USER: fixture
+      POSTGRES_PASSWORD: quality-test-only
+    tmpfs: /var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U fixture -d k13_quality']
+      interval: 2s
+      retries: 30
+  web:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile.quality
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://localhost:3000/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      retries: 40
+  api:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile.quality
+    network_mode: service:web
+    depends_on:
+      permissions: {condition: service_completed_successfully}
+      quality-db: {condition: service_healthy}
+      web: {condition: service_healthy}
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://fixture:quality-test-only@quality-db:5432/k13_quality
+      JWT_SECRET: quality-access-test-only
+      JWT_REFRESH_SECRET: quality-refresh-test-only
+      FRONTEND_URL: http://localhost:3000
+      RECOVERY_DIR: /recovery
+      ASSET_DIR: /assets
+      RECOVERY_SECRET: quality-recovery-test-only
+      QUALITY_ISOLATED: '1'
+      QUALITY_SCALE: ${QUALITY_SCALE:-1}
+    volumes:
+      - recovery_data:/recovery
+      - assets_data:/assets
+    command: [sh, -c, 'npx prisma migrate deploy && node scripts/quality-fixture.cjs && node dist/src/main']
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://localhost:3001/api/v1/auth/me').then(r=>process.exit(r.status===401?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      retries: 40
+  worker:
+    build: ../recovery
+    depends_on:
+      permissions: {condition: service_completed_successfully}
+      quality-db: {condition: service_healthy}
+    environment:
+      PGHOST: quality-db
+      PGUSER: fixture
+      PGPASSWORD: quality-test-only
+      PGDATABASE: k13_quality
+      RECOVERY_SECRET: quality-recovery-test-only
+    volumes:
+      - recovery_data:/recovery
+      - assets_data:/assets
+    healthcheck:
+      test: [CMD, python3, -c, "import os,time; assert time.time()-os.stat('/recovery/heartbeat').st_mtime<15"]
+      interval: 5s
+      retries: 20
+  recovery-tests:
+    profiles: [tools]
+    build: ../recovery
+    depends_on:
+      quality-db: {condition: service_healthy}
+    environment:
+      PGHOST: quality-db
+      PGUSER: fixture
+      PGPASSWORD: quality-test-only
+      PGDATABASE: k13_quality
+      RECOVERY_SECRET: quality-recovery-test-only
+    volumes:
+      - ../recovery:/tests:ro
+      - ../backend/prisma/migrations:/migrations:ro
+    entrypoint: [python3, /tests/test_worker.py]
+volumes:
+  recovery_data:
+  assets_data:

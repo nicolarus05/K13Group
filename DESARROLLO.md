@@ -806,3 +806,160 @@ memoria (estado, versión y fecha de actualización), el hash coincide con el
 inicial; esta comprobación no escribe en la base de datos. El XLSX conserva su
 SHA-256, siguen aplicadas las 20 migraciones y no quedan esquemas temporales
 de integración. No se detectaron incidencias pendientes en estas comprobaciones.
+
+
+## Sprint 14 implementado — 27 de octubre de 2026
+
+Se incorpora un entorno de calidad desechable para WSL/Docker, independiente de
+los puertos, volúmenes, credenciales y datos del entorno principal. `./dev quality
+check` compila versiones de producción y ejecuta auditoría de dependencias, tipos,
+lint, pruebas unitarias, integración, interfaz, recuperación y navegador. Los
+comandos `benchmark`, `browser` y `soak` y sus evidencias se describen en
+[quality/README.md](quality/README.md). La configuración de GitHub Actions ejecuta
+las comprobaciones en PR y cambios de main; las mediciones son opcionales. El
+workflow tiene sintaxis comprobada y sus comandos se probaron localmente;
+todavía no se ha ejecutado en GitHub.
+
+Las consultas de filtros de auditoría agrupan ahora en PostgreSQL, evitando cargar
+todos los eventos para deduplicarlos en Node. El resumen de clientes de Estadísticas
+agrega los servicios una vez y conserva los filtros, bajas, borradores y clientes
+sin servicios. La migración 21 añade el índice de movimientos por operación y
+estado. En la comparación SQL con datos sintéticos x10, el informe anterior y el
+nuevo coinciden exactamente; desaparecen los 6.680 barridos completos repetidos
+de movimientos que explicaban la principal demora.
+
+Se corrigen tres casos de datos obsoletos en caché, reproducidos antes de aplicar
+la corrección: un nuevo login dentro de la misma aplicación, la edición del nombre
+de un cliente y la edición de un producto del catálogo. Las vistas relacionadas
+se invalidan tras guardar, manteniendo la navegación sin recarga. La revisión
+de identidades/equivalencias/aplicación y las pantallas de copias se cargan bajo
+demanda. Los formularios distinguen los tipos de entrada y salida de Zod 4.
+
+Las imágenes locales y de calidad usan Node 22. Se actualizan las dependencias y
+se acotan las sustituciones de paquetes transitivos vulnerables; las dos auditorías
+instaladas devuelven cero vulnerabilidades conocidas. La distribución oficial de
+SheetJS 0.20.3 interpreta exactamente las mismas 12 hojas y 3.135 filas del XLSX
+real que la versión anterior: coincide el hash del resultado completo del parser,
+sin reimportar ni modificar datos. Los detalles y fuentes de las actualizaciones
+están en la documentación del entorno de calidad.
+
+Validación: 84 pruebas unitarias, 236 de integración en 16 suites, 108 de interfaz
+y 23 de recuperación/programación aprobadas. Se incluyen cambios de horario de
+Madrid, equivalencia del resumen SQL, tres regresiones de caché y la prueba de
+10.000 suscripciones con lectura concurrente y auditoría sin duplicados. Tipos,
+lint y compilaciones de ambas aplicaciones correctos. Chromium comprobó doce
+pantallas de producción, cookies, renovación/cierre de sesión, protección de
+origen y Swagger desactivado; también pasó alta/edición/retirada, programación
+de copias, restauración temporal y persistencia tras reiniciar API y worker.
+La batería completa aislada está en `quality/results/20261026T231808Z-277098/`;
+las últimas correcciones de catálogo se verificaron después con las 108 pruebas
+de interfaz y los dos casos de navegación sin recarga.
+
+El entorno principal ya ejecuta Node 22.23.4 y las 21 migraciones. El navegador
+confirmó 2.664 clientes visibles, 2.672 servicios y operaciones, 23 lotes aplicados,
+2.660 cobros por 212.620 EUR y deuda PE por 370 EUR, sin errores JavaScript ni 5xx.
+Las copias automáticas continúan desactivadas y los cuatro servicios están
+saludables. No quedan esquemas temporales de pruebas en la base principal.
+
+Las nueve tablas de negocio comparadas conservan sus hashes antes/después de la
+actualización; las seis nuevas entradas de auditoría corresponden al acceso y
+cierre de sesión y a crear/validar las dos copias. Frente al inicio del sprint,
+las ocho transiciones automáticas de suscripciones y sus ocho recordatorios al
+comenzar el 27 de octubre explican los otros cambios: al reconstruir el estado
+anterior solo en memoria, vuelve a coincidir el hash de suscripciones. El XLSX
+conserva su SHA-256 `47e158a3289fededa153b4c6eef30d04e6e7ba4816ed975d85e05a6c98191046`.
+
+Copia previa a la actualización: `c6f65038-3072-42e4-88e0-dc7e551d0c4e`.
+Copia con el esquema 21: `3f5df854-858e-4b0a-ba3a-5e71f6242456`. Ambas se validaron
+mediante restauración temporal. Sus TAR e inventarios firmados están también en
+`/home/nicolas/.local/share/k13group/backups/sprint14-20261027/`, con permisos
+privados y checksums verificados; permanecen en este mismo equipo.
+
+Las mediciones HTTP finales completaron 637 solicitudes por escala (1.274 en
+total), con sesiones válidas y sin errores. Estos son los p95 en milisegundos
+para diez sesiones concurrentes; cada escenario contiene 30 muestras:
+
+| Ruta | Base x1 | Final x1 | Base x10 | Final x10 |
+| --- | ---: | ---: | ---: | ---: |
+| Clientes | 13 | 22 | 25 | 36 |
+| Suscripciones | 26 | 32 | 27 | 34 |
+| Finanzas | 27 | 27 | 27 | 39 |
+| Dashboard | 103 | 114 | 555 | 762 |
+| Estadísticas | 163 | 50 | 6.224 | 473 |
+| Auditoría: listado | 10 | 10 | 10 | 18 |
+| Auditoría: filtros | 111 | 57 | 1.088 | 61 |
+
+La mejora se concentra en Estadísticas y los filtros de Auditoría; las otras
+rutas no mejoraron de forma uniforme y Dashboard aumentó de 555 a 762 ms a
+escala x10. Son muestras locales en WSL con Node/dependencias actualizados, no
+una garantía de rendimiento en producción. Dashboard además usa el día de
+negocio actual, que cambió entre las ejecuciones. Evidencias finales:
+`quality/results/20261026T232815Z-281573/` y
+`quality/results/20261026T232916Z-282254/`. Ambos ensayos compilaron también
+la última corrección de caché del catálogo en modo de producción.
+
+El ensayo de cinco minutos mantuvo diez sesiones y completó 1.450 consultas
+sin errores, con p95 por ruta entre 16 y 96 ms. Durante la carga se completaron
+una copia real, una exportación de clientes a XLSX y otra de finanzas a CSV;
+los archivos se comprobaron y las exportaciones tardaron menos de un segundo.
+Las muestras de RSS de la API oscilaron entre 180 y 245 MiB y las conexiones
+a PostgreSQL entre 13 y 17. Esta duración no demuestra ausencia de fugas a
+largo plazo. Evidencias: `quality/results/20261026T231152Z-274416/`.
+
+
+## Revisión del Sprint 14 — 27 de octubre de 2026
+
+Se corrigieron tres fallos reproducidos durante esta revisión:
+
+- Una renovación de sesión anterior que devolvía 401 podía cerrar una sesión
+  recién iniciada. El login espera las respuestas de renovación/cierre automático
+  pendientes, las peticiones se identifican por sesión y las respuestas antiguas
+  no se reintentan con la sesión nueva. Esas esperas de red tienen un límite de
+  15 segundos por petición. Dos regresiones de navegador cubren la renovación
+  anterior aceptada y rechazada, el orden de las respuestas y la ausencia de
+  reintentos de peticiones anteriores.
+- Importaciones solicitaba clientes con `sort=nombre:asc`, que la API rechaza.
+  Usa ahora `sort=nombre`; el tipo de consulta admite únicamente los tres valores
+  que acepta el backend. El recorrido real detectó el 400 antes de corregirlo y
+  volvió a pasar después.
+- El registro de huellas de calidad fallaba si había archivos eliminados en Git.
+  Ahora conserva las eliminaciones en el estado del árbol y calcula huellas de
+  los archivos presentes. Se comprobó con archivos eliminados, nuevos, con
+  espacios y con guion inicial; también registra los cambios preparados en Git.
+
+El recorrido de producción falla ahora ante respuestas API 4xx inesperadas
+durante la navegación, además de los errores de servidor y JavaScript. El ensayo
+de carga exige que se hayan completado sus dos exportaciones para terminar con
+éxito; no basta con que las lecturas funcionen.
+
+Verificación: 84 pruebas unitarias, 236 de integración en 16 suites, 110 de
+interfaz y 23 de recuperación/programación aprobadas (453 en la batería). Tipos,
+lint y compilaciones correctos. Las suites de backend y recuperación están en
+`quality/results/20261027T095336Z-300092/`; esa ejecución terminó detectando el
+400 de Importaciones. Tras corregirlo, se repitieron tipos, lint, compilación,
+las 110 pruebas de interfaz y los recorridos afectados, sin repetir las suites
+de backend que no cambiaron. Evidencias finales:
+`quality/results/20261027T100221Z-review14-303142/`.
+
+El recorrido aislado pasó doce pantallas y los controles de sesión/origen,
+alta/edición/retirada, programación, restauración temporal y reinicio de API y
+worker sin duplicar la copia. Una revalidación de carga de 60 segundos completó
+ambas exportaciones y una copia concurrente. Las dos auditorías de dependencias
+instaladas continúan con cero vulnerabilidades conocidas. La CI remota sigue
+pendiente de ejecutarse en GitHub.
+
+Se compararon 14 informes completos del código anterior y el optimizado con
+los datos reales, en una transacción `READ ONLY` y un snapshot consistente:
+resumen, clientes, finanzas y renovaciones, agrupaciones por día/mes/año y filtros
+de clientes activos/inactivos. Coinciden exactamente al excluir únicamente la
+marca de generación del informe.
+
+El navegador principal comprobó doce pantallas sin errores JavaScript ni HTTP
+4xx inesperados/5xx. Permanecen 2.664 clientes visibles, 2.672 servicios y
+operaciones, 23 lotes, 212.620 EUR cobrados y 370 EUR pendientes. Las nueve
+tablas de negocio comparadas conservan sus recuentos y hashes antes/después;
+las cuatro entradas nuevas de auditoría son los dos inicios y dos cierres de
+sesión de esta revisión. El XLSX mantiene su SHA-256, siguen aplicadas las 21
+migraciones y no hay esquemas temporales en la base principal. Las copias
+automáticas siguen desactivadas. No se detectaron fallos pendientes en estas
+comprobaciones; las pruebas finitas no garantizan ausencia absoluta de errores.

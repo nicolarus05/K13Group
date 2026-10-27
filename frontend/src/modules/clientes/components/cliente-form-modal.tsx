@@ -6,7 +6,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Modal } from '@/components/ui/modal';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { clienteSchema, type ClienteFormData } from '../schemas/cliente.schema';
+import {
+  clienteSchema,
+  type ClienteFormData,
+  type ClienteFormInput,
+} from '../schemas/cliente.schema';
 import type { Cliente } from '../types/clientes.types';
 
 interface ClienteFormModalProps {
@@ -32,7 +36,7 @@ export function ClienteFormModal({
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<ClienteFormData>({ resolver: zodResolver(clienteSchema) });
+  } = useForm<ClienteFormInput, unknown, ClienteFormData>({ resolver: zodResolver(clienteSchema) });
 
   // Precarga en modo edición
   useEffect(() => {

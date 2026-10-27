@@ -260,6 +260,7 @@ model MovimientoFinanciero {
   @@index([tipoId, estadoId, fecha])
   @@index([categoriaGastoId, fecha])
   @@index([metodoPagoId, fecha])
+  @@index([renovacionId, estadoId])
   @@map("movimientos_financieros")
 }
 
