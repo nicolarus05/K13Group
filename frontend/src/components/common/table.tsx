@@ -37,14 +37,14 @@ export function Table<T extends { id: string }>({
 
   return (
     <div className={cn('w-full overflow-x-auto', className)}>
-      <table className="w-full text-sm">
+      <table className="w-full text-xs">
         <thead>
           <tr className="border-b border-hover">
             {columns.map((col, i) => (
               <th
                 key={i}
                 className={cn(
-                  'px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-text-secondary',
+                  'px-4 py-3 text-left text-xs font-medium text-text-secondary',
                   col.headerClassName,
                 )}
               >
@@ -64,7 +64,7 @@ export function Table<T extends { id: string }>({
               )}
             >
               {columns.map((col, i) => (
-                <td key={i} className={cn('px-4 py-3 text-text-main', col.className)}>
+                <td key={i} className={cn('px-4 py-3 text-text-main whitespace-nowrap', col.className)}>
                   {typeof col.accessor === 'function'
                     ? col.accessor(row)
                     : (row[col.accessor] as ReactNode)}
@@ -92,7 +92,7 @@ export function Pagination({ page, totalPages, total, limit, onPageChange }: Pag
   const to = Math.min(page * limit, total);
 
   return (
-    <div className="flex items-center justify-between px-1 pt-4 text-sm text-text-secondary">
+    <div className="flex flex-wrap items-center justify-between gap-3 px-1 py-4 text-sm text-text-secondary">
       <span>
         {from}–{to} de {total}
       </span>

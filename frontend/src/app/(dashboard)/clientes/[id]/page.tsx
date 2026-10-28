@@ -40,14 +40,17 @@ export default function ClienteDetallePage() {
   return (
     <div className="space-y-5">
       {/* Cabecera */}
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-3">
         <button
+          aria-label="Volver"
           onClick={() => router.back()}
-          className="rounded p-1.5 text-text-secondary hover:bg-hover"
+          className="text-text-secondary hover:bg-hover rounded p-1.5"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <h1 className="text-xl font-semibold text-text-main">{cliente.nombre}</h1>
+        <h1 className="text-text-main min-w-0 flex-1 text-xl font-semibold break-words">
+          {cliente.nombre}
+        </h1>
         <EstadoBadge estado={cliente.estado.valor} />
         <Button size="sm" variant="secondary" className="ml-auto" onClick={() => setEditOpen(true)}>
           <Pencil className="h-3.5 w-3.5" />
@@ -101,17 +104,17 @@ export default function ClienteDetallePage() {
             {cliente.suscripciones?.map((s) => (
               <div
                 key={s.id}
-                className="flex items-center justify-between rounded border border-hover p-3 text-sm"
+                className="rounded-input border-hover flex flex-wrap items-center justify-between gap-3 border p-3 text-sm"
               >
                 <Link
                   href={'/suscripciones/' + s.id}
-                  className="font-medium text-primary underline"
+                  className="text-primary min-w-0 font-medium break-words underline"
                 >
                   {s.producto.nombre}
                 </Link>
-                <div className="flex items-center gap-4 text-text-secondary">
-                  <span>{s.tarifa?.nombre}</span>
-                  <span>{s.servidor?.nombre}</span>
+                <div className="text-text-secondary flex min-w-0 flex-wrap items-center gap-3 break-words">
+                  <span className="max-w-full min-w-0 break-words">{s.tarifa?.nombre}</span>
+                  <span className="max-w-full min-w-0 break-words">{s.servidor?.nombre}</span>
                   <EstadoBadge estado={s.estado.valor} />
                 </div>
               </div>
@@ -141,9 +144,9 @@ function Dato({
   className?: string;
 }) {
   return (
-    <div className={className}>
-      <dt className="text-xs text-text-secondary">{label}</dt>
-      <dd className="mt-0.5 text-text-main">{value ?? '—'}</dd>
+    <div className={['min-w-0 break-words', className].filter(Boolean).join(' ')}>
+      <dt className="text-text-secondary text-xs">{label}</dt>
+      <dd className="text-text-main mt-0.5">{value ?? '—'}</dd>
     </div>
   );
 }

@@ -30,7 +30,6 @@ import { ExpenseDialog } from '@/modules/finanzas/expense-dialog';
 import { ClienteFormModal } from '@/modules/clientes/components/cliente-form-modal';
 import { useCreateCliente } from '@/modules/clientes/hooks/use-clientes';
 import type { ClienteFormData } from '@/modules/clientes/schemas/cliente.schema';
-import './dashboard.css';
 
 function relativePeriod(preset: string, today: string) {
   const date = new Date(today + 'T00:00:00Z');

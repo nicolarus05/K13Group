@@ -1,0 +1,253 @@
+/* Shared visual language for every route, including overlays outside the shell. */
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--k13-line);
+  }
+  body {
+    margin: 0;
+  }
+  :where(button, input, select, textarea) {
+    font: inherit;
+  }
+  :where(button, a, input, select, textarea, summary):focus-visible {
+    outline: 2px solid var(--k13-cyan);
+    outline-offset: 3px;
+  }
+  :where(input, select, textarea) {
+    accent-color: var(--k13-cyan);
+  }
+  ::selection {
+    background: #165a80;
+    color: white;
+  }
+}
+
+@layer components {
+  .k13-page {
+    width: 100%;
+    max-width: 1600px;
+    margin-inline: auto;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .k13-page > :where(div, section) {
+    min-width: 0;
+  }
+
+  .k13-page
+    :where(
+      input:not([type='checkbox'], [type='radio'], [type='file'], [type='hidden']),
+      select,
+      textarea
+    ),
+  .k13-login :where(input, select) {
+    min-height: 40px;
+    max-width: 100%;
+    background: #040c1a;
+    color: var(--text-main);
+    border: 1px solid var(--k13-line);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+  .k13-page textarea {
+    min-height: 100px;
+  }
+  .k13-page :where(input, textarea)::placeholder {
+    color: #8294ad;
+  }
+  .k13-page :where(table) {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 12px;
+  }
+  .k13-page :where(th) {
+    padding: 13px 16px;
+    background: #020916;
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .k13-page :where(td) {
+    padding: 14px 16px;
+    border-top: 1px solid #ffffff0d;
+    color: #d8e1f0;
+  }
+  .k13-page :where(tbody tr):hover {
+    background: #ffffff04;
+  }
+  .k13-page :where(button) {
+    cursor: pointer;
+  }
+  .k13-page :where(button):disabled {
+    cursor: not-allowed;
+  }
+}
+
+.k13-surface,
+.k13-page .rounded-card.bg-panel {
+  border: 1px solid var(--k13-line);
+  background: var(--k13-surface);
+  box-shadow:
+    inset 0 1px #ffffff05,
+    0 8px 24px #0002;
+  min-width: 0;
+}
+.k13-action {
+  background: var(--k13-action);
+  border: 1px solid #ffffff3a;
+  box-shadow: 0 0 16px #d9097515;
+  color: white;
+}
+.k13-action-danger {
+  background: #a32246;
+  border: 1px solid #ff9aae50;
+  color: white;
+}
+.k13-page > .mx-auto {
+  max-width: 1600px;
+}
+.k13-page > :where(div, section) > :where(header, .flex.items-center.justify-between) {
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.k13-page .overflow-x-auto {
+  border: 1px solid var(--k13-line);
+  border-radius: 9px;
+  background: var(--k13-surface);
+}
+.k13-metrics > div {
+  border: 1px solid #2aaaff70;
+  border-radius: 10px;
+  background:
+    radial-gradient(ellipse at 90% -20%, #2aaaff60, transparent 65%),
+    linear-gradient(165deg, #0057a8, #021129);
+  padding: 18px;
+}
+.k13-metrics > div:nth-child(4n + 2) {
+  background:
+    radial-gradient(ellipse at 90% -20%, #ff308a60, transparent 65%),
+    linear-gradient(165deg, #a50042, #26051b);
+  border-color: #ff308a70;
+}
+.k13-metrics > div:nth-child(4n + 3) {
+  background:
+    radial-gradient(ellipse at 90% -20%, #34e99760, transparent 65%),
+    linear-gradient(165deg, #007d38, #022d1d);
+  border-color: #34e99770;
+}
+.k13-metrics > div:nth-child(4n + 4) {
+  background:
+    radial-gradient(ellipse at 90% -20%, #bc94ff60, transparent 65%),
+    linear-gradient(165deg, #472099, #100c33);
+  border-color: #bc94ff70;
+}
+.k13-metrics h2 {
+  font-size: 12px;
+  color: #f3f6ff;
+}
+.k13-metrics p {
+  font-size: 26px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.k13-login {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: 24px;
+  background:
+    radial-gradient(ellipse at 20% 15%, #0079b425, transparent 50%),
+    radial-gradient(ellipse at 85% 80%, #d9097517, transparent 50%), var(--background);
+}
+.k13-login-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 32px;
+  border-radius: 12px;
+  border-top-color: #16cfff80;
+  box-shadow: 0 20px 80px #0006;
+}
+.k13-login-brand {
+  margin-bottom: 28px;
+}
+.k13-login-brand img {
+  display: block;
+  margin: 0 auto 24px;
+  width: 140px;
+  height: 140px;
+  object-fit: contain;
+  border-radius: 12px;
+}
+.k13-login-brand h1 {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.6px;
+}
+.k13-login-brand p {
+  margin-top: 6px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+@media (max-width: 540px) {
+  .k13-login {
+    padding: 16px;
+  }
+  .k13-login-card {
+    padding: 24px;
+  }
+  :is(.k13-page, .k13-login)
+    :is(
+      input:not([type='checkbox'], [type='radio'], [type='file'], [type='hidden']),
+      select,
+      textarea
+    ) {
+    font-size: 16px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0s !important;
+  }
+}
+
+/* Route titles and filters share the dashboard hierarchy. */
+.k13-page h1 {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.6px;
+  line-height: 1.25;
+}
+.k13-page :where(label) {
+  color: var(--text-secondary);
+}
+.k13-page .k13-surface :where(input, select, textarea) {
+  min-width: 0;
+}
+.k13-page .k13-surface > :where(div, label) {
+  min-width: 0;
+}
+.k13-page .rounded-card.bg-panel > .overflow-x-auto {
+  border: 0;
+}
+@media (max-width: 540px) {
+  .k13-page h1 {
+    font-size: 23px;
+  }
+}
+
+.k13-login :where(button, input):focus-visible {
+  outline: 2px solid var(--k13-cyan);
+  outline-offset: 3px;
+}
+
+.k13-modal::backdrop {
+  background: #000b;
+  backdrop-filter: blur(4px);
+}

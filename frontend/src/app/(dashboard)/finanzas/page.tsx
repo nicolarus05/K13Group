@@ -64,7 +64,7 @@ export default function Page() {
       <Link href="/catalogos" className="text-primary underline">
         Gestionar categorías y métodos de pago
       </Link>
-      <section aria-label="Filtros financieros" className="grid gap-3 md:grid-cols-3">
+      <section aria-label="Filtros financieros" className="k13-surface grid gap-4 rounded-card p-5 md:grid-cols-3">
         <label>
           Periodo
           <select
@@ -221,7 +221,7 @@ export default function Page() {
       )}
       {summary.isPending && <p role="status">Calculando balance…</p>}
       {summary.data && !summary.isError && (
-        <section aria-label="Balance" className="grid gap-3 md:grid-cols-4">
+        <section aria-label="Balance" className="k13-metrics grid gap-3 md:grid-cols-4">
           {[
             ['Ingresos', money(summary.data.ingresos)],
             ['Gastos', money(summary.data.gastos)],

@@ -1,12 +1,14 @@
+import Image from 'next/image';
 import { LoginFormClient } from '@/modules/auth/components/login-form-client';
 
 export default function LoginPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background">
-      <div className="w-full max-w-sm space-y-6 rounded-card bg-panel p-8 shadow-lg">
-        <div>
-          <h1 className="text-2xl font-semibold text-text-main">K13Group</h1>
-          <p className="mt-1 text-sm text-text-secondary">Accede a tu cuenta</p>
+    <main className="k13-login">
+      <div className="k13-login-card k13-surface">
+        <div className="k13-login-brand">
+          <Image src="/LogoK13GROUP.jpg" alt="K13Group" width={140} height={140} priority />
+          <h1>Accede a tu cuenta</h1>
+          <p>Tu centro de gestión K13Group</p>
         </div>
         <LoginFormClient />
       </div>

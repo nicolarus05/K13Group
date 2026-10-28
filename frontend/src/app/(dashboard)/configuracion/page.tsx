@@ -51,7 +51,7 @@ function SettingsPage() {
             key={key}
             href={`/configuracion?tab=${key}`}
             aria-current={tab === key ? 'page' : undefined}
-            className={`rounded-button border px-4 py-2 ${tab === key ? 'bg-primary text-white' : 'border-hover'}`}
+            className={`rounded-button border px-4 py-2 ${tab === key ? 'k13-action text-white' : 'border-hover'}`}
           >
             {label}
           </Link>

@@ -963,3 +963,21 @@ sesión de esta revisión. El XLSX mantiene su SHA-256, siguen aplicadas las 21
 migraciones y no hay esquemas temporales en la base principal. Las copias
 automáticas siguen desactivadas. No se detectaron fallos pendientes en estas
 comprobaciones; las pruebas finitas no garantizan ausencia absoluta de errores.
+
+### Unificación visual con el dashboard — 27/10/2026
+
+- Paleta compartida en `globals.css`, registrada mediante `@theme inline` de Tailwind 4. Se retira la configuración antigua de Tailwind y la carga duplicada de Inter; la aplicación hereda la fuente de `next/font`.
+- Estilos del dashboard disponibles globalmente desde `src/styles/dashboard.css`, junto con `design-system.css`: fondo, paneles, acentos cian/magenta, tipografía, tablas, formularios, estados y foco de teclado comunes a todas las rutas.
+- Adaptación de acceso, filtros, tarjetas financieras, auditoría, exportaciones, configuración y fichas. Botones primarios con el degradado del dashboard; acciones destructivas conservan su señal visual roja. Las ventanas tienen altura limitada y desplazamiento interno; los desplegables quedan anclados a su campo.
+- Verificación: TypeScript y lint correctos; compilación de producción correcta en un directorio temporal, sin reemplazar `.next` del entorno de desarrollo; 110 pruebas funcionales de UI y dos nuevas pruebas de diseño aprobadas. Estas últimas cubren anchos de 320, 390, 768 y 1440 px, tabla, ventana de cliente, acceso y teclado con datos simulados.
+- Navegación real por 14 pantallas principales en escritorio, tableta y móvil, y fichas de clientes, suscripciones, renovaciones y finanzas. Sin desbordamiento horizontal de página ni errores JavaScript/HTTP inesperados en los recorridos. Se mantienen los recuentos de 2664 clientes, 2672 suscripciones y operaciones, 212620 € de ingresos históricos y 370 € pendientes. No se realizan escrituras de negocio durante estos recorridos; los accesos generan su auditoría habitual.
+- Incidencia previa observada: `schedule.json` del servicio de recuperación conserva un estado `FALLIDA` registrado el 27/10/2026 a las 13:58 (Madrid), anterior a este cambio visual. La programación permanece desactivada. Este cambio no modifica el servicio, su configuración ni borra el aviso.
+
+#### Revisión adicional del diseño unificado
+
+- Corregida la gestión del foco en las ventanas: diálogo modal nativo, fondo inerte, recorrido de teclado contenido, Escape controlado por el formulario y devolución del foco al botón que abrió la ventana. Se conserva el desplazamiento del contenido y se comprueba que el formulario cabe en pantallas de poca altura.
+- Corregidos dos desbordamientos reproducidos: paginación de Auditoría a 320 px y textos largos sin espacios en la ficha de cliente (incluidos tarifa y servidor). Campos móviles de acceso y módulos con tamaño de texto de 16 px.
+- La validación de producción detectó una discrepancia de hidratación del calendario al cambiar de día respecto al HTML generado durante la compilación. Ahora la fecha inicial de Madrid se resuelve después de hidratar. Una regresión fija el reloj del navegador al 01/01/2030 en Madrid y verifica fecha, agenda y ausencia de errores React.
+- Resultado final: **113 pruebas de interfaz aprobadas sobre la compilación de producción**, TypeScript, lint y build correctos. Se mantienen pruebas explícitas de foco, cierre, fondo inerte, pantallas bajas, textos largos y paginación móvil. Las dos pruebas de calendario que detectaron la discrepancia en producción pasan tras la corrección.
+- Recorrido real: 14 pantallas a 320, 390, 768 y 1440 px, cuatro tipos de ficha y apertura/cierre de la ventana de cliente; sin desbordamientos ni errores JavaScript/HTTP inesperados. Recuentos y totales de negocio conservados. La consulta de la política de copias desde el worker funciona; continúa desactivada por defecto y se conserva el aviso histórico documentado anteriormente.
+- Evidencia local: `/tmp/k13-review-design-all-ui-final.log`, `/tmp/k13-review-design-build-final.log`, `/tmp/k13-review-design-calendar-check.log` y `/tmp/k13-review-design-browser-final.log`. La producción se compiló y probó en un directorio temporal y puerto interno 3100, sin sustituir el servidor principal.

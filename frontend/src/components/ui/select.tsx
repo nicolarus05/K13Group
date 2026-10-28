@@ -48,9 +48,9 @@ export function Select({
   const selectId = label?.toLowerCase().replace(/\s+/g, '-');
 
   return (
-    <div className={cn('space-y-1', className)} ref={ref}>
+    <div className={cn('relative space-y-1', className)} ref={ref}>
       {label && (
-        <label htmlFor={selectId} className="block text-sm font-medium text-text-secondary">
+        <label htmlFor={selectId} className="text-text-secondary block text-sm font-medium">
           {label}
         </label>
       )}
@@ -61,38 +61,48 @@ export function Select({
         disabled={disabled}
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          'flex w-full items-center justify-between rounded-input border bg-background px-3 py-2 text-sm transition-colors',
+          'rounded-input bg-background flex w-full items-center justify-between border px-3 py-2 text-sm transition-colors',
           error ? 'border-danger' : open ? 'border-primary' : 'border-hover',
           disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
-          selected ? 'text-text-main' : 'text-hover',
+          selected ? 'text-text-main' : 'text-text-secondary',
         )}
       >
         <span>{selected?.label ?? placeholder}</span>
-        <ChevronDown className={cn('h-4 w-4 text-text-secondary transition-transform', open && 'rotate-180')} />
+        <ChevronDown
+          className={cn('text-text-secondary h-4 w-4 transition-transform', open && 'rotate-180')}
+        />
       </button>
 
       {open && (
-        <div className="absolute z-20 mt-1 w-full min-w-[180px] rounded-input border border-hover bg-panel shadow-lg">
+        <div className="rounded-input border-hover bg-panel absolute z-20 mt-1 max-h-64 w-full overflow-y-auto border shadow-lg">
           {options.map((opt) => (
             <button
               key={opt.value}
               type="button"
               disabled={opt.disabled}
-              onClick={() => { onChange(opt.value); setOpen(false); }}
+              onClick={() => {
+                onChange(opt.value);
+                setOpen(false);
+              }}
               className={cn(
                 'flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors',
                 opt.disabled ? 'cursor-not-allowed opacity-40' : 'hover:bg-hover',
                 opt.value === value ? 'text-primary' : 'text-text-main',
               )}
             >
-              <Check className={cn('h-3.5 w-3.5 shrink-0', opt.value === value ? 'opacity-100' : 'opacity-0')} />
+              <Check
+                className={cn(
+                  'h-3.5 w-3.5 shrink-0',
+                  opt.value === value ? 'opacity-100' : 'opacity-0',
+                )}
+              />
               {opt.label}
             </button>
           ))}
         </div>
       )}
 
-      {error && <p className="text-xs text-danger">{error}</p>}
+      {error && <p className="text-danger text-xs">{error}</p>}
     </div>
   );
 }

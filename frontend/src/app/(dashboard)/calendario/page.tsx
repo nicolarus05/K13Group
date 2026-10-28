@@ -1,7 +1,7 @@
 'use client';
 import { useConfiguredPage } from '@/modules/configuracion/preferences';
 import { useDateLabel, useRefreshInterval } from '@/modules/configuracion/preferences';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { reminders, madridToday, kindLabel } from '@/modules/recordatorios/recordatorios.service';
@@ -10,11 +10,26 @@ import { usePageBounds } from '@/modules/recordatorios/use-page-bounds';
 
 const iso = (date: Date) => date.toISOString().slice(0, 10);
 export default function CalendarPage() {
+  // Production prerenders this route. Resolve today's date after hydration so
+  // yesterday's build and today's browser never render different initial HTML.
+  const [today, setToday] = useState<string | null>(null);
+  useEffect(() => setToday(madridToday()), []);
+  if (!today)
+    return (
+      <div className="reminders">
+        <h1>Calendario</h1>
+        <p role="status">Cargando calendario…</p>
+      </div>
+    );
+  return <CalendarContent today={today} />;
+}
+
+function CalendarContent({ today }: { today: string }) {
   const dateLabel = useDateLabel();
   const refreshInterval = useRefreshInterval();
 
-  const [month, setMonth] = useState(() => madridToday().slice(0, 7)),
-    [day, setDay] = useState(madridToday),
+  const [month, setMonth] = useState(() => today.slice(0, 7)),
+    [day, setDay] = useState(today),
     [page, setPage, pageLimit] = useConfiguredPage(),
     [tipo, setTipo] = useState('');
   const first = new Date(month + '-01T00:00:00Z');

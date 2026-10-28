@@ -6,16 +6,16 @@ type Variant = 'primary' | 'secondary' | 'danger' | 'ghost';
 type Size = 'sm' | 'md' | 'lg';
 
 const variants: Record<Variant, string> = {
-  primary: 'bg-primary text-white hover:opacity-90',
+  primary: 'k13-action text-white hover:brightness-110',
   secondary: 'border border-hover bg-panel text-text-main hover:bg-hover',
-  danger: 'bg-danger text-white hover:opacity-90',
+  danger: 'k13-action-danger text-white hover:brightness-110',
   ghost: 'text-text-secondary hover:bg-hover hover:text-text-main',
 };
 
 const sizes: Record<Size, string> = {
-  sm: 'h-8 px-3 text-xs',
-  md: 'h-9 px-4 text-sm',
-  lg: 'h-10 px-5 text-sm',
+  sm: 'min-h-9 px-3 text-xs',
+  md: 'min-h-10 px-4 text-sm',
+  lg: 'min-h-11 px-5 text-sm',
 };
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -30,7 +30,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       ref={ref}
       disabled={disabled || loading}
       className={cn(
-        'inline-flex items-center justify-center gap-2 rounded-button font-medium transition-all',
+        'rounded-button inline-flex items-center justify-center gap-2 font-medium transition-all',
         'disabled:cursor-not-allowed disabled:opacity-50',
         variants[variant],
         sizes[size],

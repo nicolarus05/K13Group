@@ -11,7 +11,7 @@ export default function Page() {
     <div className="space-y-5">
       <h1 className="text-xl font-semibold">Nueva suscripción</h1>
       <Suspense fallback={<p>Cargando…</p>}>
-        <NewSubscription />
+        <div className="k13-surface rounded-card p-5"><NewSubscription /></div>
       </Suspense>
     </div>
   );

@@ -24,7 +24,7 @@ export function BackupSchedule() {
       api.get<{ data: Status }>('/configuracion/copias/programacion').then((r) => r.data.data),
   });
   return (
-    <section className="space-y-3 rounded border p-4">
+    <section className="k13-surface space-y-3 rounded-card p-5">
       <h2 className="font-semibold">Copias automáticas</h2>
       <p>
         Se guardan en este equipo. Con Windows, WSL o Docker apagados no se pueden ejecutar; al
