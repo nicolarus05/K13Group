@@ -215,7 +215,7 @@
 .k13-panel {
   border: 1px solid var(--k13-line);
   border-radius: 9px;
-  background: linear-gradient(130deg, #071322, #040c19);
+  background: var(--k13-surface);
   overflow: hidden;
   margin-bottom: 18px;
 }
@@ -287,7 +287,7 @@
   cursor: not-allowed;
 }
 .k13-button.primary {
-  background: linear-gradient(110deg, #0079b4, #7645aa 55%, #d90975);
+  background: var(--k13-action);
   border-color: #ffffff3a;
   box-shadow: 0 0 16px #d9097515;
 }

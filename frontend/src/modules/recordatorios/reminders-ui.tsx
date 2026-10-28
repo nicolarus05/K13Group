@@ -8,7 +8,6 @@ import { isAxiosError } from 'axios';
 import { clientesService } from '@/modules/clientes/services/clientes.service';
 import { reminders, madridToday, kindLabel, type Reminder } from './recordatorios.service';
 import { usePageBounds } from './use-page-bounds';
-import '@/app/(dashboard)/dashboard/dashboard.css';
 import './recordatorios.css';
 
 export function Failure({ error }: { error: unknown }) {

@@ -1,16 +1,42 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-@import "tailwindcss";
+@import 'tailwindcss';
 
+/* Shared dashboard palette, also available to dialogs and the login screen. */
 :root {
-  --background: #0F172A;
-  --panel: #1E293B;
-  --hover: #334155;
-  --primary: #3B82F6;
-  --success: #22C55E;
-  --warning: #F59E0B;
-  --danger: #EF4444;
-  --text-main: #F8FAFC;
-  --text-secondary: #CBD5E1;
+  color-scheme: dark;
+  --background: #020711;
+  --panel: #061121;
+  --hover: #182a40;
+  --primary: #65d5ff;
+  --success: #7af0b2;
+  --warning: #ffcf78;
+  --danger: #ff9aae;
+  --text-main: #f5f7ff;
+  --text-secondary: #b2bfd1;
+  --k13-bg: var(--background);
+  --k13-panel: var(--panel);
+  --k13-line: #ffffff26;
+  --k13-muted: var(--text-secondary);
+  --k13-cyan: #16cfff;
+  --k13-pink: #ef1685;
+  --k13-surface: linear-gradient(130deg, #071322, #040c19);
+  --k13-action: linear-gradient(110deg, #0079b4, #7645aa 55%, #d90975);
+}
+
+/* Tailwind 4 reads these tokens directly; no legacy JS config is needed. */
+@theme inline {
+  --color-background: var(--background);
+  --color-panel: var(--panel);
+  --color-hover: var(--hover);
+  --color-primary: var(--primary);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-text-main: var(--text-main);
+  --color-text-secondary: var(--text-secondary);
+  --radius-card: 9px;
+  --radius-button: 6px;
+  --radius-input: 6px;
+  --radius-modal: 12px;
 }
 
 * {

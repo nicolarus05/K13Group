@@ -22,7 +22,6 @@ import { CatalogFilter } from '@/modules/estadisticas/catalog-filter';
 import { todayMadrid } from '@/modules/suscripciones/suscripciones.service';
 import { money } from '@/modules/renovaciones/renovaciones.service';
 import { catalogError } from '@/modules/catalogos/services/catalogos.service';
-import '../dashboard/dashboard.css';
 import './estadisticas.css';
 type Range = { desde: string; hasta: string };
 const relative = (preset: string, today: string): Range => {

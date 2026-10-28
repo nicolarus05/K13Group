@@ -19,9 +19,9 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div className={cn('flex flex-col items-center justify-center py-16 text-center', className)}>
-      <Icon className="mb-4 h-10 w-10 text-hover" />
-      <p className="text-sm font-medium text-text-main">{title}</p>
-      {description && <p className="mt-1 text-xs text-text-secondary">{description}</p>}
+      <Icon className="text-text-secondary/60 mb-4 h-10 w-10" />
+      <p className="text-text-main text-sm font-medium">{title}</p>
+      {description && <p className="text-text-secondary mt-1 text-xs">{description}</p>}
       {action && <div className="mt-4">{action}</div>}
     </div>
   );

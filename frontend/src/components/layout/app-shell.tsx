@@ -69,16 +69,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         <main
           id="main-content"
           tabIndex={-1}
-          className={
-            'k13-main' +
-            (['/dashboard', '/estadisticas', '/recordatorios', '/calendario'].some(
-              (p) => path === p || path.startsWith(p + '/'),
-            )
-              ? ' k13-main-dashboard'
-              : '')
-          }
+          className="k13-main"
         >
-          {children}
+          <div className="k13-page">{children}</div>
         </main>
         <Footer />
       </div>

@@ -26,6 +26,7 @@ async function fixture(t, opts = {}) {
     assert.deepEqual(errors, []);
   });
   await context.addCookies([{ name: 'access_token', value: 'reminder-ui-only', url: origin }]);
+  if (opts.now) await page.clock.setFixedTime(new Date(opts.now));
   let fail = opts.fail;
   let total = opts.total ?? (opts.empty ? 0 : 1);
   let agendaTotal = opts.agendaTotal ?? 0;
@@ -337,3 +338,12 @@ test(
     assert.ok(requests.every((r) => r.method === 'GET'));
   },
 );
+
+test('calendario usa el día de Madrid al abrir una compilación de otra fecha', async (t) => {
+  const { page, requests } = await fixture(t, { calendar: true, now: '2029-12-31T23:30:00Z' });
+  await page.getByRole('heading', { name: 'Agenda · 01/01/2030', exact: true }).waitFor();
+  assert.equal(await page.getByLabel('Ir al día', { exact: true }).inputValue(), '2030-01-01');
+  assert.ok(
+    requests.some((r) => r.path === '/recordatorios/agenda' && r.query.desde === '2030-01-01'),
+  );
+});

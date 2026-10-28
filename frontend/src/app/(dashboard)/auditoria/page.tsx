@@ -73,7 +73,7 @@ export default function Page() {
     setCursors([undefined]);
     setSelected(null);
   }
-  const input = 'rounded border bg-white p-2 text-black';
+  const input = 'w-full rounded-input border border-hover bg-background p-2 text-text-main';
   return (
     <div className="space-y-5">
       <h1 className="text-2xl font-semibold">Auditoría</h1>
@@ -82,7 +82,7 @@ export default function Page() {
         Fechas mostradas en Europe/Madrid.
       </p>
       <form
-        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+        className="k13-surface rounded-card grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-4"
         onSubmit={(e) => {
           e.preventDefault();
           apply();
@@ -200,7 +200,7 @@ export default function Page() {
       )}
       {result.data?.data.length === 0 && <p>No hay actividad con estos filtros.</p>}
       {result.data?.data.map((row) => (
-        <article key={row.id} className="space-y-2 rounded border p-3">
+        <article key={row.id} className="k13-surface rounded-card space-y-3 p-5 break-words">
           <p>
             <strong>
               {row.tabla} · {row.accion}
@@ -210,7 +210,9 @@ export default function Page() {
           <p>{date(row.createdAt)}</p>
           {row.registroId && <p className="break-all">Registro: {row.registroId}</p>}
           <div className="flex flex-wrap gap-2">
-            <Button onClick={() => setSelected(row.id)}>Ver detalle</Button>
+            <Button variant="secondary" onClick={() => setSelected(row.id)}>
+              Ver detalle
+            </Button>
             {row.registroId && (
               <Button
                 onClick={() => {
@@ -284,12 +286,14 @@ export default function Page() {
                   </details>
                 </>
               )}
-              <Button onClick={() => setSelected(null)}>Cerrar detalle</Button>
+              <Button variant="secondary" onClick={() => setSelected(null)}>
+                Cerrar detalle
+              </Button>
             </section>
           )}
         </article>
       ))}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <Button
           disabled={cursors.length === 1 || result.isFetching}
           onClick={() => {

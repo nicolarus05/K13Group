@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { reminders } from '@/modules/recordatorios/recordatorios.service';
 const labels: Record<string, string> = {
   configuracion: 'Configuración',
+  auditoria: 'Auditoría',
   dashboard: 'Dashboard',
   clientes: 'Clientes',
   suscripciones: 'Suscripciones',

@@ -1,6 +1,13 @@
 'use client';
 
-import { createContext, useCallback, useContext, useReducer, type ElementType, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useReducer,
+  type ElementType,
+  type ReactNode,
+} from 'react';
 import { cn } from '@/lib/utils';
 import { CheckCircle2, XCircle, AlertTriangle, Info, X } from 'lucide-react';
 
@@ -69,25 +76,28 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={ctx}>
       {children}
       {/* Contenedor de toasts */}
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
+      <div className="fixed right-4 bottom-4 z-50 flex flex-col gap-2">
         {toasts.map((t) => {
           const Icon = icons[t.type];
           return (
             <div
               key={t.id}
               className={cn(
-                'flex w-80 items-start gap-3 rounded-card border bg-panel px-4 py-3 shadow-lg',
+                'rounded-card bg-panel flex w-80 max-w-[calc(100vw-2rem)] items-start gap-3 border px-4 py-3 shadow-lg',
                 styles[t.type],
               )}
             >
               <Icon className="mt-0.5 h-4 w-4 shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-text-main">{t.title}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-text-main text-sm font-medium">{t.title}</p>
                 {t.description && (
-                  <p className="mt-0.5 text-xs text-text-secondary">{t.description}</p>
+                  <p className="text-text-secondary mt-0.5 text-xs">{t.description}</p>
                 )}
               </div>
-              <button onClick={() => remove(t.id)} className="shrink-0 text-text-secondary hover:text-text-main">
+              <button
+                onClick={() => remove(t.id)}
+                className="text-text-secondary hover:text-text-main shrink-0"
+              >
                 <X className="h-3.5 w-3.5" />
               </button>
             </div>

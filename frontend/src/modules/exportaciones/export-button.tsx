@@ -65,7 +65,7 @@ export function ExportButton({
     }
   }
   return (
-    <section aria-label="Exportación de datos" className="space-y-2 rounded border p-3">
+    <section aria-label="Exportación de datos" className="k13-surface space-y-2 rounded-card p-4">
       <div className="flex flex-wrap items-center gap-3">
         <label>
           Formato de exportación{' '}
@@ -88,7 +88,7 @@ export function ExportButton({
           Historial de exportaciones
         </Link>
       </div>
-      <p className="text-sm">
+      <p className="text-xs text-text-secondary">
         Todos los resultados con los filtros actuales. Máximo{' '}
         {format === 'pdf' ? '1.000' : '10.000'} registros.
       </p>

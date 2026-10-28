@@ -62,12 +62,12 @@ function SubscriptionsPage() {
     <div className="space-y-5">
       <header className="flex flex-wrap justify-between gap-3">
         <h1 className="text-xl font-semibold">Suscripciones</h1>
-        <Link className="text-primary underline" href="/suscripciones/nueva">
+        <Link className="k13-button primary" href="/suscripciones/nueva">
           Nueva suscripción
         </Link>
       </header>
       <ExportButton module="suscripciones" filters={query} />
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="k13-surface grid gap-4 rounded-card p-5 md:grid-cols-3">
         <Input
           label="Buscar cliente, teléfono o producto"
           maxLength={150}
@@ -180,7 +180,7 @@ function SubscriptionsPage() {
           {result.data.data.map((row) => (
             <article
               key={row.id}
-              className="border-hover flex flex-wrap items-center justify-between gap-3 rounded border p-4"
+              className="k13-surface flex flex-wrap items-center justify-between gap-3 rounded-card p-4"
             >
               <div>
                 <Link

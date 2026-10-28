@@ -4,11 +4,14 @@
   margin: auto;
 }
 .reminders h1 {
-  font-size: 1.8rem;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.6px;
   margin: 12px 0;
 }
 .reminders h2 {
-  font-size: 1.2rem;
+  font-size: 14px;
+  font-weight: 500;
   margin-bottom: 12px;
 }
 .reminders p {
@@ -48,9 +51,9 @@
 .reminders select,
 .reminders textarea,
 .reminders button {
-  background: #071529;
+  background: #040c1a;
   color: #e6edf7;
-  border: 1px solid #38506d;
+  border: 1px solid var(--k13-line);
   border-radius: 7px;
   padding: 9px 12px;
   max-width: 100%;
@@ -64,7 +67,7 @@
 }
 .reminders button[aria-pressed='true'] {
   border-color: #00c9f0;
-  background: #073756;
+  background: var(--k13-action);
 }
 .reminders :focus-visible {
   outline: 2px solid #25c8e9;
@@ -89,7 +92,7 @@
 .reminders td,
 .reminders th {
   padding: 14px 10px;
-  border-bottom: 1px solid #22334c;
+  border-bottom: 1px solid var(--k13-line);
 }
 .reminders small {
   display: block;
@@ -121,7 +124,7 @@
 }
 .rem-agenda {
   padding: 14px 0;
-  border-bottom: 1px solid #22334c;
+  border-bottom: 1px solid var(--k13-line);
 }
 @media (max-width: 640px) {
   .rem-section {
