@@ -110,7 +110,7 @@ async function main() {
       .locator('tr')
       .filter({ has: page.getByRole('button', { name: 'Revisar OCT 4', exact: true }) });
     assert.match(await operation.innerText(), /Suscripción: HISTORICA/);
-    assert.match(await operation.innerText(), /Finanzas: PENDIENTE_PAGO/);
+    assert.match(await operation.innerText(), /Contabilidad: PENDIENTE_PAGO/);
     await page.reload();
     await page.getByText('Retomar un análisis guardado', { exact: true }).click();
     await page.getByRole('button', { name: 'Abrir análisis', exact: true }).click();
@@ -131,7 +131,7 @@ async function main() {
     await page.getByText('12.4 · Confirmar e importar datos revisados', { exact: true }).click();
     await page.getByLabel('Seleccionar OCT 4', { exact: true }).check();
     await page.getByLabel('Servicio OCT 4', { exact: true }).selectOption('NUEVO');
-    await page.getByLabel('Finanzas OCT 4', { exact: true }).selectOption('DEUDA');
+    await page.getByLabel('Contabilidad OCT 4', { exact: true }).selectOption('DEUDA');
     await page.getByLabel('Operación OCT 4', { exact: true }).selectOption('ALTA');
     await page
       .getByLabel('Motivo del lote', { exact: true })

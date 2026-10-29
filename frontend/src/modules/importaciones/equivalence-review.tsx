@@ -395,7 +395,7 @@ export function EquivalenceReview({ importId }: { importId: string }) {
                             <br />
                             Suscripción: {row.suscripcion}
                             <br />
-                            Finanzas: {row.finanzas}
+                            Contabilidad: {row.finanzas}
                           </td>
                           <td className="p-2">
                             <Button

@@ -18,7 +18,7 @@ const names = [
   'Resumen',
   'Clientes',
   'Renovaciones',
-  'Finanzas',
+  'Contabilidad',
   'Productos',
   'Servidores',
   'Referencias',
@@ -31,13 +31,13 @@ const catalogScenarios = [
   {
     kind: 'metodos-pago',
     tab: 'Métodos de pago',
-    report: 'Finanzas',
+    report: 'Contabilidad',
     label: 'Método de pago (ingresos)',
   },
   {
     kind: 'categorias-gasto',
     tab: 'Categorías de gasto',
-    report: 'Finanzas',
+    report: 'Contabilidad',
     label: 'Categoría de gasto',
   },
 ];
@@ -387,7 +387,7 @@ test(
   { timeout: 30000 },
   async (t) => {
     const { page, tab, metric, queries } = await fixture(t);
-    await tab('Finanzas').click();
+    await tab('Contabilidad').click();
     const method = page.getByRole('combobox', { name: 'Método de pago (ingresos)', exact: true });
     await method.selectOption('option-1');
     await metric('Resultado operativo').getByText('No aplicable', { exact: true }).waitFor();

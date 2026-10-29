@@ -30,7 +30,7 @@ export default function Page() {
   return (
     <div className="space-y-4">
       <Link className="text-primary underline" href="/finanzas">
-        Volver a Finanzas
+        Volver a Contabilidad
       </Link>
       <h1 className="text-2xl font-semibold">Detalle del movimiento</h1>
       {query.isPending && <p role="status">Cargando movimiento…</p>}
@@ -95,7 +95,7 @@ export default function Page() {
           {row.tipo.valor === 'INGRESO' && (
             <p>
               Ingreso bruto de solo lectura. Su cobro y anulación se gestionan mediante la operación
-              de servicio; no se duplica ni se modifica desde Finanzas.
+              de servicio; no se duplica ni se modifica desde Contabilidad.
             </p>
           )}
           {row.tipo.valor === 'GASTO' &&

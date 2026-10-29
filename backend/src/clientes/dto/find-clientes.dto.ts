@@ -1,4 +1,4 @@
-import { IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -25,7 +25,7 @@ export class FindClientesDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
-  @IsString()
+  @IsUUID()
   estadoId?: string;
 
   @ApiProperty({ required: false, default: 'nombre' })

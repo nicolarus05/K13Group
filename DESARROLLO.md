@@ -981,3 +981,92 @@ comprobaciones; las pruebas finitas no garantizan ausencia absoluta de errores.
 - Resultado final: **113 pruebas de interfaz aprobadas sobre la compilación de producción**, TypeScript, lint y build correctos. Se mantienen pruebas explícitas de foco, cierre, fondo inerte, pantallas bajas, textos largos y paginación móvil. Las dos pruebas de calendario que detectaron la discrepancia en producción pasan tras la corrección.
 - Recorrido real: 14 pantallas a 320, 390, 768 y 1440 px, cuatro tipos de ficha y apertura/cierre de la ventana de cliente; sin desbordamientos ni errores JavaScript/HTTP inesperados. Recuentos y totales de negocio conservados. La consulta de la política de copias desde el worker funciona; continúa desactivada por defecto y se conserva el aviso histórico documentado anteriormente.
 - Evidencia local: `/tmp/k13-review-design-all-ui-final.log`, `/tmp/k13-review-design-build-final.log`, `/tmp/k13-review-design-calendar-check.log` y `/tmp/k13-review-design-browser-final.log`. La producción se compiló y probó en un directorio temporal y puerto interno 3100, sin sustituir el servidor principal.
+
+### Revisión integral — 28–29/10/2026
+
+Correcciones verificadas en `fix/revision-integral-proyecto`, partiendo de `main`
+`06581ba`:
+
+- Clientes rechaza con HTTP 400 los identificadores de ruta y `estadoId`
+  mal formados, y la edición de `nombre` con `null`, antes de llegar a Prisma.
+  Se conserva el vaciado de campos opcionales y la edición parcial.
+- Las rutas antiguas de Importaciones validan también los identificadores de
+  importación y fila. Diez regresiones detectaron la falta de validación; las
+  consultas y revisiones con UUID válidos conservan su contrato.
+- El listado y la ficha de Clientes muestran errores recuperables con reintento.
+  Al eliminar el último cliente de una página, se vuelve a una página válida.
+- El formulario de cliente y la confirmación de borrado bloquean el cierre y
+  los envíos repetidos desde el inicio de la acción hasta terminar su promesa.
+  La prueba con respuesta retenida detectó que esperar al render de
+  `mutation.isPending` dejaba un intervalo en el que Escape cerraba la ventana.
+  Las guardias síncronas corrigen ese intervalo; se mantiene Escape inmediatamente
+  después de iniciar la petición en las regresiones, sin esperas artificiales.
+
+Resultado: **479 pruebas aprobadas**, desglosadas en 102 unitarias y de validación
+HTTP, 236 de integración, 118 de interfaz sobre compilación de producción y
+23 de recuperación/programación. Tipos, lint y compilaciones correctos. Las
+auditorías de dependencias instaladas de backend y frontend registran cero
+vulnerabilidades conocidas.
+
+Las 236 pruebas de integración están en
+`quality/results/20261029T010717Z-449952/`. Esa ejecución detectó la carrera del
+formulario durante la interfaz; el fallo se corrigió y se revalidó. La evidencia
+final de unidades/HTTP, interfaz, recuperación y navegador está en
+`quality/results/20261029T011754Z-ui-soak-453520/`, que incluye el ejecutor utilizado,
+estado de Git y huellas de las fuentes. Los últimos cambios de backend afectan
+solo a la validación de parámetros del controlador y están cubiertos por las
+pruebas HTTP nuevas; los servicios de las suites de integración no cambiaron.
+
+El recorrido real aislado completó doce pantallas, controles de sesión y origen,
+alta/edición/retirada, programación de una copia, restauración temporal y reinicio
+de API/worker sin duplicar la copia. No registró errores JavaScript ni respuestas
+HTTP inesperadas. Todas las escrituras de estas pruebas usan datos sintéticos.
+
+Rendimiento comprobado en WSL:
+
+- Escala 10: siete rutas, 637 solicitudes, concurrencias 1/5/10 y respuestas
+  correctas. Mayor p95 observado: 696 ms en dashboard. Evidencia:
+  `quality/results/20261028T200440Z-429080/benchmark.json`.
+- Ensayo final de 300 segundos con diez sesiones: 1460 consultas correctas,
+  mayor p95 de 67 ms y máximo de 91 ms. Exportaciones de clientes a XLSX y finanzas
+  a CSV legibles, y copia concurrente completada. RSS de API observado entre
+  aproximadamente 187 y 240 MiB; conexiones entre 12 y 16. Estas muestras finitas
+  no descartan fugas ni sustituyen la observación prolongada en producción.
+
+Integridad del entorno principal: las 21 migraciones coinciden con sus SQL y
+checksums; no hay índices inválidos ni restricciones sin validar. Se conservan
+los recuentos, importación y finanzas. Ocho de las diez tablas comparadas mantienen
+su huella original; las otras dos son suscripciones y actividad. Su diferencia
+corresponde exactamente al cambio de día: 14 estados automáticos y 14 recordatorios.
+Al reconstruir **solo en memoria** el estado previo de las suscripciones usando
+la auditoría, su huella vuelve a coincidir con la original. La comprobación tras
+el ensayo final no muestra cambios adicionales en ninguna de las diez tablas.
+El XLSX conserva SHA-256
+`47e158a3289fededa153b4c6eef30d04e6e7ba4816ed975d85e05a6c98191046`.
+Los cuatro servicios principales siguen saludables; se retiraron los recursos
+temporales de las pruebas.
+
+La revisión de recuperación comprobó las 19 copias existentes y sus firmas, sin
+trabajos pendientes ni mantenimiento activo. La programación principal sigue
+desactivada y conserva el aviso histórico `FALLIDA` del 27/10/2026 a las 13:58
+(Madrid). La lectura actual de la política funciona; el aviso por sí solo no
+prueba una copia fallida y no permite determinar la causa original. Se conserva
+para su seguimiento operativo.
+
+La [CI de main](https://github.com/nicolarus05/K13Group/actions/runs/40709081366)
+pasó para `06581ba`; las correcciones de esta revisión se validaron localmente
+antes de su commit. Se actualizaron los estados documentales de los
+sprints 11–14 conforme a las integraciones realizadas. El sprint 15 continúa
+pendiente: el entorno Windows/WSL actual es de desarrollo y aún falta el despliegue
+definitivo, HTTPS/dominio, monitorización y operación de copias. No se detectaron
+más fallos en las comprobaciones descritas; no constituyen una garantía de
+ausencia absoluta de errores.
+
+### Navegación y nombre de Contabilidad — 29/10/2026
+
+- Dashboard aparece como primera opción del menú lateral, tanto en escritorio
+  como en el menú móvil.
+- El nombre visible Finanzas se sustituye por Contabilidad en navegación,
+  cabeceras, estadísticas, importaciones e informes e historial de exportación.
+- Verificación: 40 pruebas de interfaz aprobadas, comprobación del menú en
+  escritorio y móvil, TypeScript de frontend/backend y lint correctos.

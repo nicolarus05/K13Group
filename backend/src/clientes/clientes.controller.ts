@@ -10,6 +10,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { ClientesService } from './clientes.service';
@@ -35,7 +36,7 @@ export class ClientesController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Obtener ficha de cliente' })
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id', ParseUUIDPipe) id: string) {
     const data = await this.clientesService.findOne(id);
     return { success: true, data };
   }
@@ -50,7 +51,7 @@ export class ClientesController {
   @Put(':id')
   @ApiOperation({ summary: 'Editar cliente' })
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateClienteDto,
     @CurrentUser() user: Usuario,
   ) {
@@ -61,7 +62,7 @@ export class ClientesController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Eliminar cliente (borrado lógico)' })
-  async remove(@Param('id') id: string, @CurrentUser() user: Usuario) {
+  async remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: Usuario) {
     await this.clientesService.remove(id, user.id);
   }
 }

@@ -595,7 +595,7 @@ export default function ImportacionesPage() {
                       onClick={() => handleReconcile(false)}
                       loading={reconcileMutation.isPending}
                     >
-                      Crear suscripciones, dejar finanzas pendientes
+                      Crear suscripciones, dejar contabilidad pendiente
                     </Button>
                     <Button
                       onClick={() => handleReconcile(true)}

@@ -232,7 +232,7 @@ export function ApplicationReview({
         <div className="mt-4 space-y-4">
           <p>
             Selecciona hasta 500 filas por lote. Puedes importar clientes y servicios dejando las
-            finanzas pendientes. Los datos ausentes del cliente se guardan vacíos; los clientes
+            contabilidad pendiente. Los datos ausentes del cliente se guardan vacíos; los clientes
             nuevos se crean activos.
           </p>
           <p>
@@ -308,7 +308,7 @@ export function ApplicationReview({
                         {row.hoja} · {row.fila} · {row.nombre || 'Identidad pendiente'}
                       </label>
                       <p className="text-sm">
-                        Identidad: {row.identidad} · Servicio: {row.suscripcion} · Finanzas:{' '}
+                        Identidad: {row.identidad} · Servicio: {row.suscripcion} · Contabilidad:{' '}
                         {row.finanzas}. Periodo: {row.fechaInicioPropuesta ?? 'Pendiente'} →{' '}
                         {row.fechaFin ?? 'Pendiente'} · P.AÑO:{' '}
                         {row.importeAnual === null ? 'Pendiente' : money(row.importeAnual)}.
@@ -430,9 +430,9 @@ export function ApplicationReview({
                           {c.servicio !== 'NINGUNO' && (
                             <>
                               <label>
-                                Finanzas{' '}
+                                Contabilidad{' '}
                                 <select
-                                  aria-label={`Finanzas ${row.hoja} ${row.fila}`}
+                                  aria-label={`Contabilidad ${row.hoja} ${row.fila}`}
                                   className={selectClass}
                                   value={c.finanzas}
                                   onChange={(e) =>

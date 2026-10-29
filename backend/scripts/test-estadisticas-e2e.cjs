@@ -161,7 +161,7 @@ async function main() {
       'Métodos de pago',
       'Clientes',
       'Renovaciones',
-      'Finanzas',
+      'Contabilidad',
     ]) {
       await tabs.getByRole('button', { name, exact: true }).click();
       await page.getByText('Solo datos registrados:', { exact: false }).waitFor();

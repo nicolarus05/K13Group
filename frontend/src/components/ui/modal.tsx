@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { X } from 'lucide-react';
 
@@ -140,7 +140,7 @@ export function Modal({
 interface ConfirmModalProps {
   open: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   title: string;
   description?: string;
   confirmLabel?: string;
@@ -156,21 +156,40 @@ export function ConfirmModal({
   confirmLabel = 'Confirmar',
   loading,
 }: ConfirmModalProps) {
+  const confirming = useRef(false);
+  const [pending, setPending] = useState(false);
+  const busy = loading || pending;
+  const handleClose = () => {
+    if (!confirming.current && !loading) onClose();
+  };
+  const handleConfirm = async () => {
+    if (confirming.current || loading) return;
+    confirming.current = true;
+    setPending(true);
+    try {
+      await onConfirm();
+    } finally {
+      confirming.current = false;
+      setPending(false);
+    }
+  };
+
   return (
-    <Modal open={open} onClose={onClose} title={title} description={description} size="sm">
+    <Modal open={open} onClose={handleClose} title={title} description={description} size="sm">
       <div className="flex justify-end gap-2">
         <button
-          onClick={onClose}
-          className="rounded-button border-hover text-text-secondary hover:bg-hover border px-4 py-2 text-sm"
+          onClick={handleClose}
+          disabled={busy}
+          className="rounded-button border-hover text-text-secondary hover:bg-hover border px-4 py-2 text-sm disabled:opacity-50"
         >
           Cancelar
         </button>
         <button
-          onClick={onConfirm}
-          disabled={loading}
+          onClick={handleConfirm}
+          disabled={busy}
           className="k13-action-danger rounded-button px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
         >
-          {loading ? 'Procesando…' : confirmLabel}
+          {busy ? 'Procesando…' : confirmLabel}
         </button>
       </div>
     </Modal>

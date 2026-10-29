@@ -46,8 +46,8 @@ export default function Page() {
       {result.data?.data.map((row) => (
         <article key={row.id} className="space-y-1 rounded border p-3">
           <strong>
-            {row.modulo ?? 'Exportación anterior'}
-            {row.seccion ? ` · ${row.seccion}` : ''} · {row.tipo.toUpperCase()}
+            {row.modulo === 'finanzas' ? 'Contabilidad' : (row.modulo ?? 'Exportación anterior')}
+            {row.seccion ? ` · ${row.seccion === 'finanzas' ? 'Contabilidad' : row.seccion}` : ''} · {row.tipo.toUpperCase()}
           </strong>
           <p>
             {new Date(row.createdAt).toLocaleString('es-ES', { timeZone: 'Europe/Madrid' })} ·{' '}

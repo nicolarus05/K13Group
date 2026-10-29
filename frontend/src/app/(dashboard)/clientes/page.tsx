@@ -1,6 +1,8 @@
 'use client';
 import { ExportButton } from '@/modules/exportaciones/export-button';
 import { useConfiguredPage } from '@/modules/configuracion/preferences';
+import { usePageBounds } from '@/modules/recordatorios/use-page-bounds';
+import { catalogError } from '@/modules/catalogos/services/catalogos.service';
 
 import { useState } from 'react';
 import { isAxiosError } from 'axios';
@@ -33,7 +35,19 @@ export default function ClientesPage() {
   const [editCliente, setEditCliente] = useState<Cliente | undefined>();
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const { data, isLoading } = useClientes({ page, limit: pageLimit, search: search || undefined });
+  const {
+    data,
+    isLoading,
+    isFetching,
+    isError,
+    error: loadError,
+    refetch,
+  } = useClientes({
+    page,
+    limit: pageLimit,
+    search: search || undefined,
+  });
+  const adjusting = usePageBounds(page, setPage, data?.pagination, !isFetching && !isError);
   const createMutation = useCreateCliente();
   const updateMutation = useUpdateCliente(editCliente?.id ?? '');
   const deleteMutation = useDeleteCliente();
@@ -137,15 +151,24 @@ export default function ClientesPage() {
 
       {/* Tabla */}
       <div className="rounded-card bg-panel">
-        <Table
-          columns={columns}
-          data={data?.data ?? []}
-          isLoading={isLoading}
-          onRowClick={(r) => router.push(`/clientes/${r.id}`)}
-          emptyTitle="No hay clientes"
-          emptyDescription="Crea el primer cliente pulsando el botón superior."
-        />
-        {data && data.pagination.totalPages > 1 && (
+        {isError ? (
+          <div role="alert" className="k13-error">
+            No se pudieron cargar los clientes. {catalogError(loadError)}{' '}
+            <Button variant="secondary" onClick={() => void refetch()}>
+              Reintentar clientes
+            </Button>
+          </div>
+        ) : (
+          <Table
+            columns={columns}
+            data={data?.data ?? []}
+            isLoading={isLoading || adjusting}
+            onRowClick={(r) => router.push(`/clientes/${r.id}`)}
+            emptyTitle="No hay clientes"
+            emptyDescription="Crea el primer cliente pulsando el botón superior."
+          />
+        )}
+        {!isError && !adjusting && data && data.pagination.totalPages > 1 && (
           <div className="border-hover border-t px-4">
             <Pagination
               page={data.pagination.page}

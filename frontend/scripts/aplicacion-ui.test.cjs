@@ -214,7 +214,7 @@ async function fixture(
     await page.getByLabel('Seleccionar OCT 4', { exact: true }).check();
     if (finance) {
       await page.getByLabel('Servicio OCT 4', { exact: true }).selectOption('NUEVO');
-      await page.getByLabel('Finanzas OCT 4', { exact: true }).selectOption('DEUDA');
+      await page.getByLabel('Contabilidad OCT 4', { exact: true }).selectOption('DEUDA');
       await page.getByLabel('Operación OCT 4', { exact: true }).selectOption('ALTA');
     }
     await page.getByLabel('Motivo del lote', { exact: true }).fill('Ensayo revisado');
@@ -243,7 +243,7 @@ test('exige previsualización, tipo de operación y doble confirmación financie
   await choose();
   assert.equal(
     await page
-      .getByLabel('Finanzas OCT 4', { exact: true })
+      .getByLabel('Contabilidad OCT 4', { exact: true })
       .locator('option[value="COBRADO"]')
       .count(),
     0,
