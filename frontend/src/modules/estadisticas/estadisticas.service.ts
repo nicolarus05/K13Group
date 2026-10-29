@@ -3,7 +3,7 @@ export const sections = {
   resumen: 'Resumen',
   clientes: 'Clientes',
   renovaciones: 'Renovaciones',
-  finanzas: 'Finanzas',
+  finanzas: 'Contabilidad',
   productos: 'Productos',
   servidores: 'Servidores',
   referencias: 'Referencias',

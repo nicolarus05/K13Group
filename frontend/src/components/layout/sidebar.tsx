@@ -22,14 +22,14 @@ import {
 } from 'lucide-react';
 const logo = '/LogoK13GROUP.jpg';
 const items = [
+  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Auditoría', href: '/auditoria', icon: ShieldCheck },
   { label: 'Configuración', href: '/configuracion', icon: Settings },
-  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Clientes', href: '/clientes', icon: Users },
   { label: 'Suscripciones', href: '/suscripciones', icon: CreditCard },
   { label: 'Renovaciones', href: '/renovaciones', icon: RefreshCw },
   { label: 'Catálogos', href: '/catalogos', icon: BookOpen },
-  { label: 'Finanzas', href: '/finanzas', icon: DollarSign },
+  { label: 'Contabilidad', href: '/finanzas', icon: DollarSign },
   { label: 'Estadísticas', href: '/estadisticas', icon: BarChart2 },
   { label: 'Recordatorios', href: '/recordatorios', icon: Bell },
   { label: 'Calendario', href: '/calendario', icon: CalendarDays },

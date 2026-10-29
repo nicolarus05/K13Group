@@ -149,7 +149,7 @@ export class ImportacionesController {
   @Post(':id/confirmar')
   @ApiOperation({ summary: 'Confirmar una importación revisada' })
   confirm(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Headers('idempotency-key') idempotencyKey: string | undefined,
     @Body() dto: ConfirmarImportacionDto,
     @CurrentUser() user: Usuario,
@@ -162,7 +162,7 @@ export class ImportacionesController {
   @Post(':id/reconciliar')
   @ApiOperation({ summary: 'Reconciliar filas aceptadas y crear operaciones revisadas' })
   reconcile(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: ReconciliarImportacionDto,
     @CurrentUser() user: Usuario,
   ) {
@@ -173,38 +173,38 @@ export class ImportacionesController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Consultar estado de una importación' })
-  getOne(@Param('id') id: string) {
+  getOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.importacionesService.getImportacion(id).then((data) => ({ success: true, data }));
   }
 
   @Get(':id/filas')
   @ApiOperation({ summary: 'Consultar filas de una importación' })
-  getRows(@Param('id') id: string, @Query() query: ImportacionFilasDto) {
+  getRows(@Param('id', ParseUUIDPipe) id: string, @Query() query: ImportacionFilasDto) {
     return this.importacionesService.getFilas(id, query);
   }
 
   @Get(':id/errores')
   @ApiOperation({ summary: 'Consultar errores y conflictos de una importación' })
-  getErrors(@Param('id') id: string, @Query() query: ImportacionFilasDto) {
+  getErrors(@Param('id', ParseUUIDPipe) id: string, @Query() query: ImportacionFilasDto) {
     return this.importacionesService.getFilas(id, query, true);
   }
 
   @Get(':id/catalogos')
   @ApiOperation({ summary: 'Consultar catálogos y equivalencias para revisar una importación' })
-  getCatalogos(@Param('id') id: string) {
+  getCatalogos(@Param('id', ParseUUIDPipe) id: string) {
     return this.importacionesService.getCatalogos(id).then((data) => ({ success: true, data }));
   }
 
   @Get(':id/valores-pendientes')
   @ApiOperation({ summary: 'Consultar valores históricos sin equivalencia' })
-  getPendingValues(@Param('id') id: string) {
+  getPendingValues(@Param('id', ParseUUIDPipe) id: string) {
     return this.importacionesService.getPendingValues(id).then((data) => ({ success: true, data }));
   }
 
   @Post(':id/equivalencias')
   @ApiOperation({ summary: 'Crear o actualizar una equivalencia revisada' })
   saveEquivalence(
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: EquivalenciaImportacionDto,
     @CurrentUser() user: Usuario,
   ) {
@@ -216,8 +216,8 @@ export class ImportacionesController {
   @Patch(':id/filas/:filaId/revisar')
   @ApiOperation({ summary: 'Registrar la decisión de revisión de una fila' })
   reviewRow(
-    @Param('id') id: string,
-    @Param('filaId') filaId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('filaId', ParseUUIDPipe) filaId: string,
     @Body() dto: RevisarImportacionFilaDto,
     @CurrentUser() user: Usuario,
   ) {

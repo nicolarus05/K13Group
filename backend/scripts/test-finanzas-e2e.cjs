@@ -125,7 +125,7 @@ async function main() {
     assert.equal((await balance()).ingresos, '75.00');
     assert.equal((await balance()).pendienteCobro, '0.00');
     assert.equal(await db.movimientoFinanciero.count(), 1);
-    await page.getByRole('link', { name: 'Finanzas', exact: true }).click();
+    await page.getByRole('link', { name: 'Contabilidad', exact: true }).click();
     const resultCard = page
       .getByRole('region', { name: 'Balance', exact: true })
       .locator('div')
@@ -172,7 +172,7 @@ async function main() {
       (await db.renovacion.findUniqueOrThrow({ where: { id: renewal.id } })).fechaFin.getTime(),
       sub.fechaFin.getTime(),
     );
-    await page.getByRole('link', { name: 'Volver a Finanzas' }).click();
+    await page.getByRole('link', { name: 'Volver a Contabilidad' }).click();
     await page.getByLabel('Estado', { exact: true }).selectOption('ANULADO');
     await page.getByRole('row').filter({ hasText: 'Hosting real E2E' }).waitFor();
     await resultCard.getByText(/0,00/).waitFor();

@@ -10,6 +10,7 @@ import { EstadoBadge } from '@/components/ui/badge';
 import { PageLoader } from '@/components/ui/loader';
 import { ClienteFormModal } from '@/modules/clientes/components/cliente-form-modal';
 import { useCliente, useUpdateCliente } from '@/modules/clientes/hooks/use-clientes';
+import { catalogError } from '@/modules/catalogos/services/catalogos.service';
 import { useToast } from '@/components/ui/toast';
 import type { ClienteFormData } from '@/modules/clientes/schemas/cliente.schema';
 import { format } from 'date-fns';
@@ -21,11 +22,23 @@ export default function ClienteDetallePage() {
   const { success, error } = useToast();
   const [editOpen, setEditOpen] = useState(false);
 
-  const { data: cliente, isLoading } = useCliente(id);
+  const { data: cliente, isLoading, isError, error: loadError, refetch } = useCliente(id);
   const updateMutation = useUpdateCliente(id);
 
   if (isLoading) return <PageLoader />;
-  if (!cliente) return null;
+  if (isError || !cliente)
+    return (
+      <div className="space-y-4">
+        <h1>Ficha de cliente</h1>
+        <p role="alert">No se pudo cargar el cliente. {isError && catalogError(loadError)}</p>
+        <Button variant="secondary" onClick={() => void refetch()}>
+          Reintentar cliente
+        </Button>
+        <Link className="text-primary block underline" href="/clientes">
+          Volver a clientes
+        </Link>
+      </div>
+    );
 
   async function handleUpdate(data: ClienteFormData) {
     try {

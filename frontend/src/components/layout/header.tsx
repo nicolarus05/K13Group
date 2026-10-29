@@ -13,7 +13,7 @@ const labels: Record<string, string> = {
   clientes: 'Clientes',
   suscripciones: 'Suscripciones',
   renovaciones: 'Renovaciones',
-  finanzas: 'Finanzas',
+  finanzas: 'Contabilidad',
   estadisticas: 'Estadísticas',
   catalogos: 'Catálogos',
   importaciones: 'Importaciones',

@@ -487,9 +487,11 @@ renovación se realizan desde sus flujos existentes. Sin importar el XLSX.
 Contrato detallado: módulo Recordatorios y Calendario y backend/SPRINT10.md.
 SPRINT 11 – Configuración
 
-Estado: PLANIFICADO COMPLETO (08/10/2026). Pendiente de implementación.
-Plan detallado y criterios de aceptación: backend/SPRINT11.md.
-Base integrada en main: 8f631ec. Histórico XLSX del sprint 3.5 aplazado.
+Estado: IMPLEMENTADO e integrado en main mediante fd2ff0d.
+Configuración, cuenta, seguridad y recuperación manual operativas.
+El documento backend/SPRINT11.md conserva el alcance original; los resultados
+de implementación y revisión están en DESARROLLO.md. El histórico XLSX ya fue
+importado y conciliado durante el cierre del sprint 12.
 
 11.1 — Contratos, datos y proveedor central de ajustes tipados y versionados.
 11.2 — General y Sistema: nombre/logo, preferencias, umbral, temporizadores y
@@ -527,14 +529,17 @@ La importación definida en este sprint reutilizará el staging y el mapeo cread
 en el Sprint 3.5. No se permitirá una carga directa que omita la revisión de
 duplicados o la reconciliación financiera.
 
-Estado verificado el 21 de octubre de 2026: pasos 12.1–12.5 implementados y
-revisados en feat/sprint12-lectura-excel. Cierre técnico comprobado; integración
-en main e importación definitiva pendientes. Evidencia y límites del ensayo en
-DESARROLLO.md, apartado «Verificación de cierre técnico del sprint 12».
-El ensayo leyó el XLSX completo y materializó una fila en un esquema temporal;
-no se ha importado el histórico en el entorno principal.
+Estado: IMPLEMENTADO, revisado e integrado en main mediante fd2ff0d.
+La integración definitiva del XLSX quedó registrada en a15ae82: 2672 filas
+completas y 463 excluidas, sin filas pendientes; los importes y excepciones
+siguen las decisiones confirmadas por el usuario. Evidencias y límites en
+DESARROLLO.md. La validación aislada utiliza datos sintéticos.
 
 SPRINT 13 – Auditoría y Seguridad
+
+Estado: IMPLEMENTADO e integrado en main mediante 1669431. Auditoría, sesión,
+protección de escrituras y programación de copias verificadas en entorno aislado.
+La programación del entorno principal permanece desactivada.
 
 Implementación de:
 
@@ -546,6 +551,10 @@ Limitación de peticiones.
 Cabeceras de seguridad.
 Copias de seguridad automáticas.
 SPRINT 14 – Optimización y Testing
+
+Estado: IMPLEMENTADO e integrado en main mediante 4d606c7. Consultas, índices,
+carga diferida, validación aislada y CI implementados. El rediseño posterior y
+sus correcciones están integrados mediante 06581ba. Resultados en DESARROLLO.md.
 
 Pruebas:
 
@@ -562,6 +571,10 @@ Caché.
 Carga diferida.
 Índices de base de datos.
 SPRINT 15 – Producción
+
+Estado: PENDIENTE. La instalación Windows/WSL actual es de desarrollo; los
+servidores de producción usados por las pruebas aisladas no constituyen un
+despliegue público con dominio, HTTPS, monitorización y operación de copias.
 
 Preparación final:
 

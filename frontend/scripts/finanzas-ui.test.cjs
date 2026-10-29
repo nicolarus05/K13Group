@@ -109,7 +109,7 @@ async function fixture(t, config = {}) {
   await page.goto(origin + (config.detail ? '/finanzas/' + row.id : '/finanzas'));
   await page
     .getByRole('heading', {
-      name: config.detail ? 'Detalle del movimiento' : 'Finanzas',
+      name: config.detail ? 'Detalle del movimiento' : 'Contabilidad',
       exact: true,
     })
     .waitFor();

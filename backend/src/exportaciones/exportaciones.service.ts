@@ -163,7 +163,7 @@ function reportTables(report: Row): Table[] {
   const names: Record<string, string> = {
     periodo: 'Periodo',
     calidad: 'Calidad',
-    finanzas: 'Finanzas',
+    finanzas: 'Contabilidad',
     anterior: 'Anterior',
     variacion: 'Variación',
     clientes: 'Clientes',
@@ -465,7 +465,7 @@ export class ExportacionesService {
         { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead, timeout: 30000 },
       );
       const data: ExportDocument = {
-        title: `K13Group · ${module}${section ? ' · ' + section : ''}`,
+        title: `K13Group · ${module === 'finanzas' ? 'Contabilidad' : module}${section ? ' · ' + (section === 'finanzas' ? 'Contabilidad' : section) : ''}`,
         generated: generated.toISOString(),
         filters:
           Object.entries(filters)
