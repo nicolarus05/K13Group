@@ -26,7 +26,13 @@ import {
   warningDays,
 } from '../recordatorios/recordatorios.service';
 import { renewalSelect } from './renovaciones.select';
-import { CollectDto, RenewalDto, RenewalPreferenceDto, RenewalQueryDto } from './renovaciones.dto';
+import {
+  AdditionalCollectionDto,
+  CollectDto,
+  RenewalDto,
+  RenewalPreferenceDto,
+  RenewalQueryDto,
+} from './renovaciones.dto';
 import { buildPaginatedResponse } from '../common/helpers/response.helper';
 
 @Injectable()
@@ -379,6 +385,115 @@ export class RenovacionesService {
       { timeout: 30_000 },
     );
   }
+  async addCollection(id: string, dto: AdditionalCollectionDto, actor: string) {
+    const amount = new Prisma.Decimal(dto.importe);
+    if (
+      !amount.isFinite() ||
+      amount.lte(0) ||
+      amount.gt('99999999.99') ||
+      amount.decimalPlaces() > 2
+    )
+      throw new BadRequestException(
+        'El cobro adicional debe ser positivo y tener como máximo dos decimales.',
+      );
+    const motivo = dto.motivo.trim();
+    if (motivo.length < 3 || motivo.length > 1000)
+      throw new BadRequestException('Indica el motivo del cobro adicional.');
+    const paid = parseDay(dto.fechaCobro);
+    const hash = createHash('sha256')
+      .update(
+        JSON.stringify({
+          id,
+          importe: amount.toFixed(2),
+          metodoPagoId: dto.metodoPagoId,
+          fechaCobro: dto.fechaCobro,
+          motivo,
+        }),
+      )
+      .digest('hex');
+    return this.prisma.$transaction(
+      async (tx) => {
+        await subscriptionLock(tx);
+        const previous = await tx.movimientoFinanciero.findUnique({
+          where: { operacionClave: dto.solicitudId },
+        });
+        if (previous) {
+          if (
+            previous.solicitudHash !== hash ||
+            previous.renovacionId !== id ||
+            previous.origen !== 'COBRO_ADICIONAL'
+          )
+            throw new ConflictException('La solicitud ya se utilizó con otros datos.');
+          return this.findOne(id, tx);
+        }
+        const before = await this.findOne(id, tx);
+        this.version(before.version, dto.version);
+        await this.subscription(tx, before.suscripcionId);
+        if (
+          before.estado?.valor !== 'COMPLETADA' ||
+          before.metodoPago.esGratuito ||
+          !before.movimientos.length ||
+          before.movimientos.some((m) => m.estado.valor !== 'CONFIRMADO')
+        )
+          throw new ConflictException(
+            'El cobro adicional requiere una operación monetaria completada y cobrada.',
+          );
+        if (
+          !before.fechaOperacion ||
+          paid < before.fechaOperacion ||
+          dto.fechaCobro > businessDay()
+        )
+          throw new BadRequestException('La fecha de cobro debe estar entre la operación y hoy.');
+        const total = before.movimientos.reduce(
+          (sum, m) => sum.plus(m.importe),
+          new Prisma.Decimal(0),
+        );
+        if (!total.equals(before.importe))
+          throw new ConflictException('Los cobros de la operación requieren conciliación previa.');
+        if (total.plus(amount).gt('99999999.99'))
+          throw new BadRequestException('El importe total supera el máximo permitido.');
+        const method = await this.method(tx, dto.metodoPagoId);
+        if (method.esGratuito)
+          throw new BadRequestException('Un cobro adicional no puede usar un método gratuito.');
+        const source = await tx.renovacion.findUniqueOrThrow({ where: { id } });
+        const movement = await tx.movimientoFinanciero.create({
+          data: {
+            operacionClave: dto.solicitudId,
+            solicitudHash: hash,
+            renovacionId: id,
+            suscripcionId: before.suscripcionId,
+            tipoId: await stateId(tx, 'movimiento_tipo', 'INGRESO'),
+            estadoId: await stateId(tx, 'movimiento_estado', 'CONFIRMADO'),
+            metodoPagoId: method.id,
+            metodoPagoNombreSnapshot: method.nombre,
+            importe: amount,
+            fecha: paid,
+            fechaCobro: paid,
+            origen: 'COBRO_ADICIONAL',
+            concepto: 'Cobro adicional del periodo',
+            observaciones: motivo,
+            atribucionVerificada: source.atribucionVerificada,
+            productoIdSnapshot: source.productoIdSnapshot,
+            servidorIdSnapshot: source.servidorIdSnapshot,
+            referenciaIdSnapshot: source.referenciaIdSnapshot,
+            productoNombreSnapshot: source.productoNombreSnapshot,
+            tarifaNombreSnapshot: source.tarifaNombreSnapshot,
+            servidorNombreSnapshot: source.servidorNombreSnapshot,
+            referenciaNombreSnapshot: source.referenciaNombreSnapshot,
+          },
+        });
+        await tx.renovacion.update({
+          where: { id },
+          data: { importe: total.plus(amount), version: { increment: 1 } },
+        });
+        await audit(tx, actor, 'movimientos_financieros', movement.id, 'CREAR', null, movement);
+        const after = await this.findOne(id, tx);
+        await audit(tx, actor, 'renovaciones', id, 'COBRO_ADICIONAL', before, { ...after, motivo });
+        return after;
+      },
+      { timeout: 30000 },
+    );
+  }
   async collect(id: string, dto: CollectDto, actor: string) {
     return this.prisma.$transaction(
       async (tx) => {
@@ -483,10 +598,10 @@ export class RenovacionesService {
           },
           select: subscriptionSelect,
         });
-        const movement = await tx.movimientoFinanciero.findUnique({
-          where: { operacionClave: id },
+        const movements = await tx.movimientoFinanciero.findMany({
+          where: { renovacionId: id, estado: { valor: { not: 'ANULADO' } } },
         });
-        if (movement) {
+        for (const movement of movements) {
           const after = await tx.movimientoFinanciero.update({
             where: { id: movement.id },
             data: { estadoId: await stateId(tx, 'movimiento_estado', 'ANULADO') },

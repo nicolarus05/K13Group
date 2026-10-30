@@ -26,8 +26,13 @@ const Backups = dynamic(
 );
 
 const selectClass = 'w-full rounded-input border border-hover bg-background p-2';
+const TemplateEditor = dynamic(
+  () => import('@/modules/mensajes/template-editor').then((module) => module.TemplateEditor),
+  { loading: () => <p role="status">Cargando plantillas…</p> },
+);
 const panels = {
   general: 'General',
+  plantillas: 'Plantillas de mensajes',
   catalogos: 'Catálogos',
   seguridad: 'Seguridad',
   copias: 'Copias',
@@ -57,7 +62,9 @@ function SettingsPage() {
           </Link>
         ))}
       </nav>
-      {tab === 'catalogos' ? (
+      {tab === 'plantillas' ? (
+        <TemplateEditor />
+      ) : tab === 'catalogos' ? (
         <CatalogLinks />
       ) : tab === 'seguridad' ? (
         <Account />

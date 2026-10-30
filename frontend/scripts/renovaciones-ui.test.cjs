@@ -79,6 +79,14 @@ async function fixture(t, options = {}) {
     ],
   };
   if (options.pending) history = [renewal];
+  if (options.additional) {
+    renewal.importe = '140';
+    renewal.movimientos[0].estado.valor = 'CONFIRMADO';
+    renewal.movimientos[0].fechaCobro = '2026-09-25';
+    renewal.movimientos[0].fechaPrevistaCobro = null;
+    renewal.movimientos.push({ ...renewal.movimientos[0], id: randomUUID(), importe: '65' });
+    history = [renewal];
+  }
   const writes = [];
   let late;
   t.after(async () => {
@@ -175,6 +183,17 @@ async function fixture(t, options = {}) {
     },
   };
 }
+test('el historial muestra los dos cobros y el total sin ocultar el suplemento', async (t) => {
+  const { page, writes } = await fixture(t, { additional: true });
+  const payments = page.getByRole('region', { name: 'Cobros del periodo' });
+  await payments.waitFor();
+  assert.equal(await payments.getByRole('link').count(), 2);
+  const labels = await payments.getByRole('link').allTextContents();
+  assert.ok(labels.some(v => /75,00/.test(v)));
+  assert.ok(labels.some(v => /65,00/.test(v)));
+  assert.match(await payments.locator('..').innerText(), /140,00/);
+  assert.equal(writes.length, 0);
+});
 test(
   'renovación pendiente muestra el año desde la activación y envía la fecha prevista',
   { timeout: 30000 },

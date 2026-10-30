@@ -1070,3 +1070,98 @@ ausencia absoluta de errores.
   cabeceras, estadísticas, importaciones e informes e historial de exportación.
 - Verificación: 40 pruebas de interfaz aprobadas, comprobación del menú en
   escritorio y móvil, TypeScript de frontend/backend y lint correctos.
+
+## Actualización del XLSX de octubre — 30 de octubre de 2026
+
+- Aplicado `Modelos Funcionales/CLIENTES 2026(Octubre).xlsx`, con 3.208 filas y
+  SHA-256 `7fcdfd878b2f8fdb0c53821ab5d5cf229f634dd750b6193691e777f97dfaee26`.
+- Importación diferencial `a0b0d592-2bf4-465a-a9c9-69bc8cee14c5` y lote
+  `3c081476-1506-4433-8a38-17c4b536547c`: 77 clientes nuevos, 106 fichas
+  recuperadas y 183 servicios/operaciones nuevos, incluidos dos gratuitos y
+  nueve pendientes de pago. Se conservan los nombres originales y las fichas
+  anteriores cuando corresponde; compartir teléfono no fusiona clientes distintos.
+- Las 3.010 filas sin cambios conservan su resultado anterior. Diez filas
+  actualizan operaciones existentes, sin duplicarlas. Otras cinco no crean
+  operaciones: cuatro sin renovación y OCT 260, duplicado confirmado de OCT 107.
+  La ausencia de una fila en el nuevo archivo no elimina su histórico.
+- Cuatro cobros adicionales de 65 € mantienen intactos los movimientos originales
+  de 75 €. El historial muestra ambos cobros y el total de 140 €; las solicitudes
+  repetidas no duplican movimientos. La anulación de una operación web comprende
+  todos sus movimientos asociados.
+- Corregidos los vencimientos, nombres, gratuidades y estados de pago confirmados
+  por el usuario. Las fechas históricas siguen la convención de vencimiento menos
+  un año. Las correcciones y la correspondencia entre archivos quedan auditadas;
+  las 3.135 filas de origen de la importación anterior permanecen intactas.
+- Resultado principal verificado: 2.847 clientes visibles, 2.855 servicios,
+  2.855 operaciones y 2.850 movimientos; 226.870 € cobrados y 965 € pendientes.
+  No quedan filas pendientes de reconciliación en esta actualización; la deuda
+  pendiente se conserva expresamente como deuda.
+- Copia previa `b26cc518-b75c-41aa-ba3c-1b1a34a592a6`, creada y validada mediante
+  restauración temporal antes de aplicar los cambios. Ensayo completo en una base
+  aislada, comprobación de reintentos y posterior verificación del entorno principal.
+- Validación: 238 pruebas de integración del backend y 119 pruebas de interfaz
+  aprobadas. La batería de interfaz se ejecutó secuencialmente para evitar tiempos
+  de espera por concurrencia en WSL. Navegador real comprobado en ensayo y en el
+  entorno principal: Dashboard, Clientes, Suscripciones, Contabilidad, historial
+  de cobros, deuda corregida e importación aplicada, sin errores JavaScript/HTTP 5xx
+  ni escrituras de negocio desde las verificaciones web.
+
+## Plantillas de mensajes implementadas — 30 de octubre de 2026
+
+- Botón `Mensajes ▾` en el listado y ficha de clientes y en el detalle de cada
+  suscripción. Incluye Cliente Creado, Suscripción Renovada, Demo Creada,
+  Suscripción por vencer y Suscripción Vencida.
+- `Configuración → Plantillas de mensajes` permite personalizar los cinco textos,
+  insertar variables, previsualizar con datos ficticios y recuperar el texto
+  inicial. Las ediciones usan versiones y conservan el borrador ante conflictos.
+  Los textos personalizados se guardan en claves propias de `configuracion`;
+  no se requiere una migración ni se añaden credenciales a las suscripciones.
+- Usuario, contraseña y conexiones se introducen únicamente en el preparador del
+  mensaje. Se mantienen en el estado local del componente, se descartan al cerrar
+  o cambiar de servicio y no se envían a la API ni al almacenamiento del navegador.
+  El texto copiado permanece en el portapapeles del dispositivo.
+- El cliente, la aplicación y el vencimiento proceden de la ficha y del servicio
+  seleccionado. Los importes corresponden a la operación elegida: suma de ingresos
+  confirmados y deuda pendiente por separado, excluyendo gastos y anulaciones.
+  Un periodo con cobros de 75 € y 65 € muestra 140 €; una deuda PE no figura cobrada.
+- Las demos permiten introducir aplicación y vencimiento con fecha y hora de
+  Madrid, incluso para clientes sin suscripciones. Preparar mensajes no crea demos,
+  servicios, renovaciones ni movimientos financieros.
+- Se puede adaptar el texto para un único mensaje, revisar el resultado y copiarlo.
+  Las variables pendientes se señalan y bloquean la copia hasta completarlas o
+  retirarlas. Si el portapapeles falla, el texto queda seleccionado para copia manual.
+- API autenticada; auditoría de cambios de plantilla sin guardar su contenido ni
+  mensajes generados. Las consultas de contexto seleccionan expresamente los datos
+  permitidos y no exponen identificadores operativos privados.
+- Validación: 39 pruebas de backend (mensajes, configuración y seguridad) y 35 de
+  interfaz (mensajes, clientes, configuración, renovaciones y suscripciones), todas
+  aprobadas. Ensayo adicional con Chromium, API y PostgreSQL aislados: persistencia
+  de plantilla, copia real al portapapeles, acceso desde las tres pantallas y demo
+  en móvil. Sin errores JavaScript/HTTP 5xx ni cambios en los datos de negocio.
+- Comprobación posterior en la aplicación principal: cinco plantillas disponibles,
+  desplegable operativo y previsualización de 140 € a partir de dos cobros, sin
+  escrituras. Se reinició el backend para retirar un proceso anterior que impedía
+  la recarga de las rutas nuevas; todos los servicios quedaron saludables.
+- El esquema y la sesión de ensayo se eliminaron al finalizar. El entorno principal
+  conserva 2.847 clientes, 2.855 servicios, 2.855 operaciones y 2.850 movimientos,
+  con 226.870 € cobrados y 965 € pendientes.
+
+### Revisión de plantillas de mensajes — 30 de octubre de 2026
+
+- Corregida la salida del desplegable con Tab: continúa por las acciones del mismo
+  cliente. Al desplazar la lista se cierra el menú y se conserva el foco, sin
+  reaccionar a eventos atrasados de desplazamiento o tamaño anteriores a su apertura.
+- El menú cabe en pantallas de poca altura y permite recorrer sus opciones por
+  teclado sin desplazar la página. Cambiar de servicio vuelve a ocultar la contraseña.
+- Los valores compuestos únicamente por espacios se marcan como pendientes. Los
+  espacios de credenciales válidas se conservan literalmente; las variables no
+  admitidas muestran errores de validación sin bloquear la previsualización del editor.
+- Validación posterior: 9 pruebas de integración de mensajes sobre un esquema
+  temporal y 40 pruebas de navegador de mensajes, clientes, configuración,
+  renovaciones y suscripciones, todas aprobadas. Incluyen cinco casos nuevos de
+  regresión y comprueban que un cobro histórico no rellena un periodo actual sin
+  operación. TypeScript y ESLint de backend y frontend también aprobados.
+- Compilación de producción del frontend aprobada en un directorio temporal con
+  `NODE_ENV=production`, eliminado al terminar; no sustituye el servidor de trabajo.
+- Comprobación de solo lectura en el entorno principal: permanecen los recuentos
+  e importes indicados arriba. Las pruebas no escriben datos de negocio reales.

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowLeft, Pencil } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { MessageMenu } from '@/modules/mensajes/message-menu';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EstadoBadge } from '@/components/ui/badge';
 import { PageLoader } from '@/components/ui/loader';
@@ -65,6 +66,7 @@ export default function ClienteDetallePage() {
           {cliente.nombre}
         </h1>
         <EstadoBadge estado={cliente.estado.valor} />
+        <MessageMenu clienteId={cliente.id} nombre={cliente.nombre} />
         <Button size="sm" variant="secondary" className="ml-auto" onClick={() => setEditOpen(true)}>
           <Pencil className="h-3.5 w-3.5" />
           Editar

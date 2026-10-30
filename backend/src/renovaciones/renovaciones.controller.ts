@@ -14,7 +14,13 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { SubscriptionActionDto } from '../suscripciones/suscripciones.dto';
 import { RenovacionesService } from './renovaciones.service';
-import { CollectDto, RenewalDto, RenewalPreferenceDto, RenewalQueryDto } from './renovaciones.dto';
+import {
+  AdditionalCollectionDto,
+  CollectDto,
+  RenewalDto,
+  RenewalPreferenceDto,
+  RenewalQueryDto,
+} from './renovaciones.dto';
 import { buildResponse } from '../common/helpers/response.helper';
 
 @ApiTags('renovaciones')
@@ -37,6 +43,13 @@ export class RenovacionesController {
     @CurrentUser() user: Usuario,
   ) {
     return buildResponse(await this.service.collect(id, dto, user.id));
+  }
+  @Post(':id/cobro-adicional') async additionalCollection(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AdditionalCollectionDto,
+    @CurrentUser() user: Usuario,
+  ) {
+    return buildResponse(await this.service.addCollection(id, dto, user.id));
   }
   @Post(':id/anular') async annul(
     @Param('id', ParseUUIDPipe) id: string,
