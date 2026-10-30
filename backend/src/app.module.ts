@@ -26,6 +26,7 @@ import { ImportacionesModule } from './importaciones/importaciones.module';
 import { MetodosPagoModule } from './metodos-pago/metodos-pago.module';
 import { CategoriasGastoModule } from './categorias-gasto/categorias-gasto.module';
 import { ExportacionesModule } from './exportaciones/exportaciones.module';
+import { MensajesModule } from './mensajes/mensajes.module';
 
 @Module({
   providers: [
@@ -58,6 +59,7 @@ import { ExportacionesModule } from './exportaciones/exportaciones.module';
     MetodosPagoModule,
     CategoriasGastoModule,
     ExportacionesModule,
+    MensajesModule,
   ],
 })
 export class AppModule implements NestModule {

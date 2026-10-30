@@ -6,6 +6,7 @@ import { useRef, useState, type FormEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { MessageMenu } from '@/modules/mensajes/message-menu';
 import { EstadoBadge } from '@/components/ui/badge';
 import { catalogError } from '@/modules/catalogos/services/catalogos.service';
 import { subscriptions, type Subscription } from '@/modules/suscripciones/suscripciones.service';
@@ -89,6 +90,13 @@ export default function Page() {
           {row.cliente.nombre} · {row.producto.nombre}
         </h1>
         <EstadoBadge estado={row.estado.valor} />
+        {!row.cliente.deletedAt && (
+          <MessageMenu
+            clienteId={row.clienteId}
+            nombre={row.cliente.nombre}
+            suscripcionId={row.id}
+          />
+        )}
       </header>
       {!edit && !action && <SubscriptionRenewals subscription={row} />}
       {edit ? (

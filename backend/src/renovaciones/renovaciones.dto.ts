@@ -40,6 +40,15 @@ export class CollectDto extends VersionDto {
   @IsUUID() metodoPagoId!: string;
   @IsString() @Matches(/^\d{4}-\d{2}-\d{2}$/) fechaCobro!: string;
 }
+export class AdditionalCollectionDto extends CollectDto {
+  @IsUUID() solicitudId!: string;
+  @IsString() @Matches(/^(0|[1-9]\d{0,7})(\.\d{1,2})?$/) importe!: string;
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsString()
+  @MinLength(3)
+  @MaxLength(1000)
+  motivo!: string;
+}
 export class RenewalQueryDto {
   @Type(() => Number) @IsInt() @Min(1) page = 1;
   @Type(() => Number) @IsInt() @Min(1) @Max(100) limit = 25;

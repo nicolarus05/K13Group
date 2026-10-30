@@ -20,7 +20,8 @@ export function RenewalRecord({
 }) {
   const dateLabel = useDateLabel();
 
-  const movement = row.movimientos[0];
+  const movement =
+    row.movimientos.find((m) => m.estado.valor === 'PENDIENTE') ?? row.movimientos[0];
   const done = row.estado?.valor === 'COMPLETADA';
   return (
     <article className="border-hover space-y-2 rounded border p-4">
@@ -42,12 +43,30 @@ export function RenewalRecord({
       <p>
         {dateLabel(row.fechaInicio)} — {dateLabel(row.fechaFin)} · {money(row.importe)}
       </p>
-      <p>
-        Método:{' '}
-        {movement?.metodoPagoNombreSnapshot ??
-          row.metodoPagoNombreSnapshot ??
-          row.metodoPago.nombre}
-      </p>
+      {row.movimientos.length > 1 ? (
+        <section aria-label="Cobros del periodo" className="space-y-1">
+          <h3 className="font-medium">Cobros del periodo</h3>
+          <ul className="space-y-1">
+            {row.movimientos.map((payment) => (
+              <li key={payment.id} className="flex flex-wrap items-center gap-2">
+                <Link className="text-primary underline" href={'/finanzas/' + payment.id}>
+                  {money(payment.importe)} ·{' '}
+                  {payment.metodoPagoNombreSnapshot ?? 'Método no indicado'}
+                </Link>
+                <EstadoBadge estado={payment.estado.valor} />
+                {payment.fechaCobro && <span>Cobrado el {dateLabel(payment.fechaCobro)}</span>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : (
+        <p>
+          Método:{' '}
+          {movement?.metodoPagoNombreSnapshot ??
+            row.metodoPagoNombreSnapshot ??
+            row.metodoPago.nombre}
+        </p>
+      )}
       {movement?.estado.valor === 'PENDIENTE' && (
         <p className="text-warning">
           Cobro pendiente. Previsto:{' '}
@@ -55,7 +74,9 @@ export function RenewalRecord({
           es un ingreso confirmado.
         </p>
       )}
-      {movement?.fechaCobro && <p>Cobrado el {dateLabel(movement.fechaCobro)}</p>}
+      {row.movimientos.length === 1 && movement?.fechaCobro && (
+        <p>Cobrado el {dateLabel(movement.fechaCobro)}</p>
+      )}
       {row.observaciones && <p>{row.observaciones}</p>}
       {row.motivoAnulacion && <p>Motivo de anulación: {row.motivoAnulacion}</p>}
       <div className="flex flex-wrap gap-2">

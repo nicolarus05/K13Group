@@ -135,11 +135,56 @@ const isolated = process.env.TEST_DATABASE_URL;
           .post('/api/v1/suscripciones/' + randomUUID() + '/' + suffix)
           .send({})
           .expect(401);
-      for (const suffix of ['cobrar', 'anular'])
+      for (const suffix of ['cobrar', 'cobro-adicional', 'anular'])
         await api()
           .post('/api/v1/renovaciones/' + randomUUID() + '/' + suffix)
           .send({})
           .expect(401);
+    });
+    it('conserva el cobro original, añade un suplemento una sola vez y no cambia la suscripción', async () => {
+      const sub = await create('2026-09-01');
+      const row = await renew(sub, { fechaCobro: '2026-09-01' }, true);
+      const original = await db.movimientoFinanciero.findUniqueOrThrow({ where: { id: row.movimientos[0].id } });
+      const beforeSub = await getSub(sub.id);
+      const dto = { version: row.version, solicitudId: randomUUID(), importe: '65.00', metodoPagoId: method, fechaCobro: '2026-09-25', motivo: 'Ampliación del importe del mismo periodo' };
+      const send = () => api().post(`/api/v1/renovaciones/${row.id}/cobro-adicional`).set('Cookie', cookie).send(dto);
+      const results = await Promise.all([send(), send()]);
+      expect(results.map(r => r.status)).toEqual([201, 201]);
+      const after = results[0].body.data;
+      expect(after.importe).toBe('140');
+      expect(after.movimientos).toHaveLength(2);
+      expect(after.movimientos.map((m: { importe: string }) => m.importe).sort()).toEqual(['65', '75']);
+      expect(await db.movimientoFinanciero.findUnique({ where: { id: original.id } })).toEqual(original);
+      expect(await getSub(sub.id)).toEqual(beforeSub);
+      await api().post(`/api/v1/renovaciones/${row.id}/cobro-adicional`).set('Cookie', cookie).send({ ...dto, importe: '66' }).expect(409);
+      await api().post(`/api/v1/renovaciones/${row.id}/cobro-adicional`).set('Cookie', cookie).send({ ...dto, solicitudId: randomUUID() }).expect(409);
+      await api().post(`/api/v1/renovaciones/${row.id}/anular`).set('Cookie', cookie).send({ version: after.version, motivo: 'Anular operación completa con suplemento' }).expect(201);
+      const movements = await db.movimientoFinanciero.findMany({ where: { renovacionId: row.id }, include: { estado: true } });
+      expect(movements).toHaveLength(2);
+      expect(movements.every(m => m.estado.valor === 'ANULADO')).toBe(true);
+    });
+    it('valida suplementos y no permite añadir cobros a una deuda o gratuidad', async () => {
+      const sub = await create('2026-09-01');
+      const row = await renew(sub, { fechaCobro: '2026-09-01' }, true);
+      const dto = { version: row.version, solicitudId: randomUUID(), importe: '65', metodoPagoId: method, fechaCobro: '2026-09-25', motivo: 'Suplemento revisado' };
+      for (const change of [{ importe: '0' }, { importe: '-1' }, { importe: '65.001' }, { fechaCobro: '2026-09-26' }, { fechaCobro: '2026-08-31' }, { metodoPagoId: free }])
+        await api().post(`/api/v1/renovaciones/${row.id}/cobro-adicional`).set('Cookie', cookie).send({ ...dto, ...change }).expect(400);
+      const pending = await renew(await create('2026-09-01'), { cobro: 'PENDIENTE', fechaPrevistaCobro: '2026-09-30' }, true);
+      const gratis = await renew(await create('2026-09-01'), { importe: '0', metodoPagoId: free, motivoImporte: 'Cortesía de prueba' }, true);
+      for (const target of [pending, gratis])
+        await api().post(`/api/v1/renovaciones/${target.id}/cobro-adicional`).set('Cookie', cookie).send(dto).expect(409);
+      expect(await db.movimientoFinanciero.count({ where: { renovacionId: row.id } })).toBe(1);
+    });
+    it('revierte el suplemento y su total si falla la auditoría', async () => {
+      const sub = await create('2026-09-01');
+      const row = await renew(sub, { fechaCobro: '2026-09-01' }, true);
+      const actor = await db.usuario.findUniqueOrThrow({ where: { username: 'admin' } });
+      const invalidActor = randomUUID();
+      const dto = { version: row.version, solicitudId: randomUUID(), importe: '65', metodoPagoId: method, fechaCobro: '2026-09-25', motivo: 'Rollback del suplemento' };
+      await expect(app.get(RenovacionesService).addCollection(row.id, dto, invalidActor)).rejects.toThrow();
+      expect((await app.get(RenovacionesService).findOne(row.id)).importe.toString()).toBe('75');
+      expect(await db.movimientoFinanciero.count({ where: { operacionClave: dto.solicitudId } })).toBe(0);
+      expect((await app.get(RenovacionesService).addCollection(row.id, dto, actor.id)).importe.toString()).toBe('140');
     });
     it('registra primer pago sin ampliar fechas e impide repetirlo con otra clave', async () => {
       const sub = await create('2026-09-01');

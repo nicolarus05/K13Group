@@ -1,5 +1,6 @@
 'use client';
 import { ExportButton } from '@/modules/exportaciones/export-button';
+import { MessageMenu } from '@/modules/mensajes/message-menu';
 import { useConfiguredPage } from '@/modules/configuracion/preferences';
 import { usePageBounds } from '@/modules/recordatorios/use-page-bounds';
 import { catalogError } from '@/modules/catalogos/services/catalogos.service';
@@ -63,7 +64,8 @@ export default function ClientesPage() {
     {
       header: '',
       accessor: (r) => (
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <MessageMenu clienteId={r.id} nombre={r.nombre} />
           <Button
             size="sm"
             variant="secondary"
@@ -87,7 +89,7 @@ export default function ClientesPage() {
           </Button>
         </div>
       ),
-      className: 'w-40',
+      className: 'w-72',
     },
   ];
 

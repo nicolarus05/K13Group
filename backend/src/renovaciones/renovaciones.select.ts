@@ -23,6 +23,7 @@ export const renewalSelect = {
   estado: { select: { valor: true, etiqueta: true } },
   suscripcion: { select: subscriptionSelect },
   movimientos: {
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     select: {
       id: true,
       importe: true,
